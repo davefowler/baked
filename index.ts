@@ -113,15 +113,15 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
     // Load layouts
     const baseLayout = await fs.readFile('templates/layouts/base.html', 'utf-8');
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
-        ['layouts/base', baseLayout]);
+        ['base', baseLayout]);
 
     // Load partials
     const headerPartial = await fs.readFile('templates/partials/header.html', 'utf-8');
     const footerPartial = await fs.readFile('templates/partials/footer.html', 'utf-8');
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['header', headerPartial]);
+        ['partials/header', headerPartial]);
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['footer', footerPartial]);
+        ['partials/footer', footerPartial]);
 
     // Load page templates
     const defaultTemplate = await fs.readFile('templates/default.html', 'utf-8');
