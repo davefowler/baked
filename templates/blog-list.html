@@ -3,32 +3,39 @@ ${(() => {
     const postsPerPage = 10;
     const offset = (page - 1) * postsPerPage;
     
-    // Get posts from database
-    const posts = engine.db.prepare(`
-        SELECT p.*, json_extract(p.metadata, '$.date') as post_date,
-               json_extract(p.metadata, '$.excerpt') as excerpt
-        FROM pages p
-        WHERE p.template = 'blog'
-        ORDER BY post_date DESC
+    // Get posts from database using engine methods
+    const posts = engine.query(`
+        SELECT slug, title, metadata
+        FROM pages 
+        WHERE template = 'blog'
+        ORDER BY json_extract(metadata, '$.date') DESC
         LIMIT ? OFFSET ?
-    `).all(postsPerPage, offset);
+    `, [postsPerPage, offset]);
     
     // Check if there are more posts
-    const hasMore = engine.db.prepare(`
+    const totalPosts = engine.query(`
         SELECT COUNT(*) as count
         FROM pages
         WHERE template = 'blog'
-    `).get().count > (offset + postsPerPage);
+    `)[0].count;
+    
+    const hasMore = totalPosts > (offset + postsPerPage);
+
+    // Process posts to extract metadata
+    const processedPosts = posts.map(post => ({
+        ...post,
+        metadata: JSON.parse(post.metadata),
+    }));
 
     return engine.render('base', {
         ...data,
         content: `
             <ul class="blog-list">
-                ${posts.length > 0 ? posts.map(post => `
+                ${processedPosts.length > 0 ? processedPosts.map(post => `
                     <li>
                         <h2><a href="/${post.slug}">${post.title}</a></h2>
-                        ${post.post_date ? `<time datetime="${post.post_date}">${post.post_date}</time>` : ''}
-                        ${post.excerpt ? `<p>${post.excerpt}</p>` : ''}
+                        ${post.metadata.date ? `<time datetime="${post.metadata.date}">${post.metadata.date}</time>` : ''}
+                        ${post.metadata.excerpt ? `<p>${post.metadata.excerpt}</p>` : ''}
                     </li>
                 `).join('') : '<li>No posts available</li>'}
             </ul>

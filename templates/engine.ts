@@ -21,6 +21,10 @@ export class TemplateEngine {
         return result;
     }
 
+    query(sql: string, params: any[] = []): any[] {
+        return this.db.prepare(sql).all(...params);
+    }
+
     registerTemplate(name: string, templateStr: string) {
         const templateFn = (data: any, engine: TemplateEngine) => {
             // Create a function that will process the template string
