@@ -1,6 +1,5 @@
-${(() => {
-    try {
-        const page = Math.max(1, Number(data?.page || 1));
+${(function() {
+    const page = Math.max(1, Number(data?.page || 1));
         const postsPerPage = 10;
         const offset = (page - 1) * postsPerPage;
         
