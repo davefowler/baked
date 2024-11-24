@@ -1,6 +1,6 @@
+(data) => `
 <article>
-    {{#if metadata.date}}
-    <time datetime="{{metadata.date}}">{{metadata.date}}</time>
-    {{/if}}
-    {{{content}}}
+    ${data.metadata?.date ? `<time datetime="${data.metadata.date}">${data.metadata.date}</time>` : ''}
+    ${data.content}
 </article>
+`

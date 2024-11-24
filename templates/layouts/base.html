@@ -1,16 +1,18 @@
+(data) => `
 <!DOCTYPE html>
-<html lang="{{lang}}">
+<html lang="${data.lang || 'en'}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{#if title}}{{title}}{{else}}Site Title{{/if}}</title>
-    <meta name="description" content="{{metadata.description}}">
+    <title>${data.title || 'Site Title'}</title>
+    <meta name="description" content="${data.metadata?.description || ''}">
 </head>
 <body>
-    {{> header}}
+    ${templates.get('header')(data)}
     <main>
-        {{{content}}}
+        ${data.content}
     </main>
-    {{> footer}}
+    ${templates.get('footer')(data)}
 </body>
 </html>
+`
