@@ -17,9 +17,9 @@ describe("TemplateEngine", () => {
         engine.registerTemplate("base", `
             <!DOCTYPE html>
             <html>
-                <head><title>${'${data.title}'}</title></head>
+                <head><title>\${data.title}</title></head>
                 <body>
-                    ${'${data.blocks?.get("content") ?? ""}'}
+                    \${data.blocks?.get("content") ?? ""}
                 </body>
             </html>
         `);
