@@ -1,0 +1,69 @@
+/* Base styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+    color: #333;
+}
+
+header {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 2rem;
+}
+
+header nav {
+    padding: 1rem 0;
+}
+
+header nav a {
+    margin-right: 1rem;
+    color: #333;
+    text-decoration: none;
+}
+
+header nav a:hover {
+    text-decoration: underline;
+}
+
+/* Blog styles */
+.blog-list {
+    list-style: none;
+    padding: 0;
+}
+
+.blog-list li {
+    margin-bottom: 2rem;
+}
+
+.blog-list h2 {
+    margin: 0;
+}
+
+.blog-list time {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 0;
+}
+
+article {
+    margin: 2rem 0;
+}
+
+article time {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    color: #666;
+}

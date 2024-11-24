@@ -89,6 +89,9 @@ async function insertPage(page: PageRecord): Promise<void> {
 }
 
 async function initializeDatabase(dbPath: string): Promise<Database> {
+    // Read CSS file
+    const mainCss = await fs.readFile('public/styles/main.css', 'utf-8');
+    
     const db = new Database(dbPath);
     
     db.run(`
@@ -101,12 +104,26 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
             lang TEXT,
             tags TEXT,
             path TEXT NOT NULL,
-            metadata TEXT
+            metadata TEXT,
+            published_date DATETIME,
+            UNIQUE(slug)
         );
         
         CREATE TABLE IF NOT EXISTS templates (
             name TEXT PRIMARY KEY,
             content TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS assets (
+            path TEXT PRIMARY KEY,
+            content TEXT NOT NULL,
+            mime_type TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS site_content (
+            key TEXT PRIMARY KEY,
+            content TEXT NOT NULL,
+            last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     `);
 
@@ -130,6 +147,25 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
         ['default', defaultTemplate]);
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
         ['blog', blogTemplate]);
+
+    // Store CSS in assets
+    db.run('INSERT OR REPLACE INTO assets (path, content, mime_type) VALUES (?, ?, ?)',
+        ['/styles/main.css', mainCss, 'text/css']);
+
+    // Generate and store RSS feed
+    const rss = generateRSSFeed(db);
+    db.run('INSERT OR REPLACE INTO site_content (key, content) VALUES (?, ?)',
+        ['rss.xml', rss]);
+
+    // Generate and store sitemap
+    const sitemap = generateSitemap(db);
+    db.run('INSERT OR REPLACE INTO site_content (key, content) VALUES (?, ?)',
+        ['sitemap.xml', sitemap]);
+
+    // Store robots.txt
+    const robotsTxt = `User-agent: *\nAllow: /\nSitemap: /sitemap.xml`;
+    db.run('INSERT OR REPLACE INTO site_content (key, content) VALUES (?, ?)',
+        ['robots.txt', robotsTxt]);
 
     console.log('Database schema created successfully');
     return db;
@@ -195,3 +231,41 @@ async function main() {
 }
 
 main().catch(console.error);
+function generateRSSFeed(db: Database): string {
+    const posts = db.prepare(`
+        SELECT * FROM pages 
+        WHERE template = 'blog' 
+        ORDER BY published_date DESC 
+        LIMIT 10
+    `).all();
+
+    return `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+    <title>AbsurdSite Blog</title>
+    <link>https://absurdsite.com</link>
+    <description>Latest blog posts</description>
+    ${posts.map(post => `
+        <item>
+            <title>${post.title}</title>
+            <link>https://absurdsite.com/${post.slug}</link>
+            <pubDate>${new Date(post.published_date).toUTCString()}</pubDate>
+            <guid>https://absurdsite.com/${post.slug}</guid>
+        </item>
+    `).join('')}
+</channel>
+</rss>`;
+}
+
+function generateSitemap(db: Database): string {
+    const pages = db.prepare('SELECT slug, path FROM pages').all();
+    
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    ${pages.map(page => `
+        <url>
+            <loc>https://absurdsite.com/${page.slug}</loc>
+        </url>
+    `).join('')}
+</urlset>`;
+}

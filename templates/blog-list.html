@@ -1,0 +1,25 @@
+${engine.render('base', {
+    ...data,
+    content: `
+        <ul class="blog-list">
+            ${data.posts.map(post => `
+                <li>
+                    <h2><a href="/${post.slug}">${post.title}</a></h2>
+                    ${post.metadata?.date ? `<time datetime="${post.metadata.date}">${post.metadata.date}</time>` : ''}
+                    ${post.metadata?.excerpt ? `<p>${post.metadata.excerpt}</p>` : ''}
+                </li>
+            `).join('')}
+        </ul>
+        
+        <nav class="pagination">
+            ${data.page > 1 ? 
+                `<a href="?page=${data.page - 1}">← Previous</a>` : 
+                '<span></span>'
+            }
+            ${data.hasNextPage ? 
+                `<a href="?page=${data.page + 1}">Next →</a>` : 
+                '<span></span>'
+            }
+        </nav>
+    `
+})}

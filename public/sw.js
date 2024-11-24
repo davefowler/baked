@@ -3,7 +3,11 @@ const ASSETS = [
   '/',
   '/db.js',
   '/site.db',
-  '/manifest.json'
+  '/manifest.json',
+  '/styles/main.css',
+  '/rss.xml',
+  '/sitemap.xml',
+  '/robots.txt'
 ];
 
 // Cache all HTML pages that are accessed
