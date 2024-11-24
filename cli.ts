@@ -94,7 +94,7 @@ program
     .action(() => {
         console.log('Building site...');
         // Import and run the build process
-        import('./index.js').then(module => module.default());
+        import('./index.ts').then(module => module.default());
     });
 
 program
@@ -103,7 +103,7 @@ program
     .action(() => {
         console.log('Starting development server...');
         // Import and run the serve process
-        import('./serve.js').then(module => module.default());
+        import('./serve.ts').then(module => module.default());
     });
 
 program.parse();
