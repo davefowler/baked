@@ -6,9 +6,10 @@ import yaml from 'yaml';
 
 async function createSiteStructure(siteName: string) {
     const siteDir = path.join(process.cwd(), siteName);
+    const templateDir = path.join(import.meta.dir, 'examples', 'mysite');
     
-    // Create main directory
-    await fs.mkdir(siteDir);
+    // Copy example site structure
+    await fs.cp(templateDir, siteDir, { recursive: true });
     
     // Create subdirectories
     const dirs = [
