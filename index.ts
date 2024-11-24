@@ -110,10 +110,14 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
         );
     `);
 
-    // Load default template if it doesn't exist
+    // Load templates
     const defaultTemplate = await fs.readFile('templates/default.html', 'utf-8');
+    const blogTemplate = await fs.readFile('templates/blog.html', 'utf-8');
+    
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
         ['default', defaultTemplate]);
+    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
+        ['blog', blogTemplate]);
 
     console.log('Database schema created successfully');
     return db;
@@ -124,12 +128,13 @@ async function renderPages(db: Database): Promise<void> {
     
     for (const page of pages) {
         // Get the template
-        const template = db.prepare('SELECT content FROM templates WHERE name = ?')
+        let template = db.prepare('SELECT content FROM templates WHERE name = ?')
             .get(page.template);
             
         if (!template) {
-            console.error(`Template ${page.template} not found for ${page.slug}`);
-            continue;
+            console.warn(`Template ${page.template} not found for ${page.slug}, using default`);
+            template = db.prepare('SELECT content FROM templates WHERE name = ?')
+                .get('default');
         }
         
         // Parse markdown to HTML
