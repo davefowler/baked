@@ -52,14 +52,40 @@ export class TemplateEngine {
     }
 
     registerTemplate(name: string, templateStr: string) {
-        // Escape backticks and handle template expressions
-        const escapedStr = templateStr
+        // Parse extends and blocks
+        const { parent, blocks } = this.parseExtends(templateStr);
+        
+        // If template extends another, store the relationship
+        if (parent) {
+            const templateFn = (data: any, engine: TemplateEngine) => {
+                // Get parent template
+                const parentTemplate = this.templates.get(parent);
+                if (!parentTemplate) {
+                    throw new Error(`Parent template ${parent} not found`);
+                }
+
+                // Create a new data object with block overrides
+                const blockData = { ...data, blocks };
+                
+                // Render parent template with block overrides
+                return parentTemplate(blockData, engine);
+            };
+            this.templates.set(name, templateFn);
+            return;
+        }
+
+        // Process regular template
+        const processedStr = templateStr.replace(/\{\% block (\w+) \%\}([\s\S]*?)\{\% endblock \%\}/g, 
+            (_, blockName, defaultContent) => {
+                return `\${data.blocks?.get('${blockName}') ?? \`${defaultContent.replace(/`/g, '\\`')}\`}`;
+            });
+
+        const escapedStr = processedStr
             .replace(/`/g, '\\`')
-            .replace(/\$\{/g, '\\${');
+            .replace(/\$\{(?!data\.blocks)/g, '\\${');
             
         const templateFn = (data: any, engine: TemplateEngine) => {
             try {
-                // Create a function that will process the template string
                 const fn = new Function('data', 'engine', `
                     try {
                         with (data) {
