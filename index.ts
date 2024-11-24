@@ -174,6 +174,13 @@ async function main() {
     await fs.mkdir('scripts', { recursive: true });
     await fs.mkdir('dist', { recursive: true });
     await fs.mkdir('templates', { recursive: true });
+    await fs.mkdir('public', { recursive: true });
+
+    // Copy public files to dist
+    const publicFiles = ['sw.js', 'db.js', 'manifest.json'];
+    for (const file of publicFiles) {
+        await fs.copyFile(`public/${file}`, `dist/${file}`);
+    }
 
     // Initialize the database
     const db = await initializeDatabase('dist/site.db');
