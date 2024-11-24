@@ -25,12 +25,12 @@ ${(function() {
         // Process posts to extract metadata
         const processedPosts = posts.map(post => {
             try {
-                return {
-                    ...post,
-                    metadata: JSON.parse(post.metadata || '{}')
-                };
+                const metadata = typeof post.metadata === 'string' ? 
+                    JSON.parse(post.metadata || '{}') : 
+                    post.metadata || {};
+                return { ...post, metadata };
             } catch (e) {
-                console.error(`Failed to parse metadata for post ${post.slug}:`, e);
+                console.error(\`Failed to parse metadata for post \${post.slug}:\`, e);
                 return { ...post, metadata: {} };
             }
         });
@@ -39,18 +39,18 @@ ${(function() {
         ...data,
         content: `
             <ul class="blog-list">
-                ${processedPosts.length > 0 ? processedPosts.map(post => `
+                \${processedPosts.length > 0 ? processedPosts.map(post => \`
                     <li>
-                        <h2><a href="/${post.slug}">${post.title || 'Untitled'}</a></h2>
-                        ${post.metadata?.date ? `<time datetime="${post.metadata.date}">${post.metadata.date}</time>` : ''}
+                        <h2><a href="/\${post.slug}">\${post.title || 'Untitled'}</a></h2>
+                        \${post.metadata?.date ? \`<time datetime="\${post.metadata.date}">\${post.metadata.date}</time>\` : ''}
                         ${post.metadata.excerpt ? `<p>${post.metadata.excerpt}</p>` : ''}
                     </li>
                 `).join('') : '<li>No posts available</li>'}
             </ul>
             
             <nav class="pagination">
-                ${page > 1 ? 
-                    `<a href="?page=${page - 1}" rel="prev">← Previous</a>` : 
+                \${page > 1 ? 
+                    \`<a href="?page=\${page - 1}" rel="prev">← Previous</a>\` : 
                     '<span class="pagination-placeholder"></span>'
                 }
                 ${hasMore ? 
