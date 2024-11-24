@@ -3,8 +3,8 @@ import { promises as fs } from 'fs';
 import { parse as parseYAML } from 'yaml';
 import matter from 'gray-matter';
 import path from 'path';
-import Handlebars from 'handlebars';
 import { marked } from 'marked';
+import { TemplateEngine } from './templates/engine';
 
 interface PageRecord {
     id?: number;
@@ -136,39 +136,26 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
 }
 
 async function renderPages(db: Database): Promise<void> {
-    // Register all partials first
-    const partials = db.prepare('SELECT name, content FROM templates WHERE name IN (?, ?)').all('header', 'footer');
-    for (const partial of partials) {
-        Handlebars.registerPartial(partial.name, partial.content);
-    }
+    const engine = new TemplateEngine();
 
-    // Register layouts
-    const layouts = db.prepare('SELECT name, content FROM templates WHERE name LIKE ?').all('layouts/%');
-    for (const layout of layouts) {
-        Handlebars.registerPartial(layout.name, layout.content);
+    // Register all templates and partials
+    const templates = db.prepare('SELECT name, content FROM templates').all();
+    for (const template of templates) {
+        if (template.name.startsWith('partials/')) {
+            engine.registerPartial(template.name, template.content);
+        } else {
+            engine.registerTemplate(template.name, template.content);
+        }
     }
 
     const pages = db.prepare('SELECT * FROM pages').all();
     
     for (const page of pages) {
-        // Get the template
-        let template = db.prepare('SELECT content FROM templates WHERE name = ?')
-            .get(page.template);
-            
-        if (!template) {
-            console.warn(`Template ${page.template} not found for ${page.slug}, using default`);
-            template = db.prepare('SELECT content FROM templates WHERE name = ?')
-                .get('default');
-        }
-        
         // Parse markdown to HTML
         const htmlContent = marked(page.content);
         
-        // Compile template
-        const compiledTemplate = Handlebars.compile(template.content);
-        
-        // Render page
-        const html = compiledTemplate({
+        // Render page using our template engine
+        const html = engine.render(page.template || 'default', {
             ...page,
             content: htmlContent,
             metadata: JSON.parse(page.metadata)

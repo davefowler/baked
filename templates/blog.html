@@ -1,8 +1,6 @@
-{{#> base}}
-    <article>
-        {{#if metadata.date}}
-        <time datetime="{{metadata.date}}">{{metadata.date}}</time>
-        {{/if}}
-        {{{content}}}
-    </article>
-{{/layouts/base}}
+<article>
+    {{#if metadata.date}}
+    <time datetime="{{metadata.date}}">{{metadata.date}}</time>
+    {{/if}}
+    {{{content}}}
+</article>
