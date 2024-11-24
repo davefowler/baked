@@ -110,10 +110,22 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
         );
     `);
 
-    // Load templates
+    // Load layouts
+    const baseLayout = await fs.readFile('templates/layouts/base.html', 'utf-8');
+    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
+        ['layouts/base', baseLayout]);
+
+    // Load partials
+    const headerPartial = await fs.readFile('templates/partials/header.html', 'utf-8');
+    const footerPartial = await fs.readFile('templates/partials/footer.html', 'utf-8');
+    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
+        ['header', headerPartial]);
+    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
+        ['footer', footerPartial]);
+
+    // Load page templates
     const defaultTemplate = await fs.readFile('templates/default.html', 'utf-8');
     const blogTemplate = await fs.readFile('templates/blog.html', 'utf-8');
-    
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
         ['default', defaultTemplate]);
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
@@ -124,6 +136,18 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
 }
 
 async function renderPages(db: Database): Promise<void> {
+    // Register all partials first
+    const partials = db.prepare('SELECT name, content FROM templates WHERE name IN (?, ?)').all('header', 'footer');
+    for (const partial of partials) {
+        Handlebars.registerPartial(partial.name, partial.content);
+    }
+
+    // Register layouts
+    const layouts = db.prepare('SELECT name, content FROM templates WHERE name LIKE ?').all('layouts/%');
+    for (const layout of layouts) {
+        Handlebars.registerPartial(layout.name, layout.content);
+    }
+
     const pages = db.prepare('SELECT * FROM pages').all();
     
     for (const page of pages) {
