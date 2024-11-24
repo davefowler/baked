@@ -19,16 +19,16 @@ export class TemplateEngine {
     private Post: typeof Post;
     private Page: typeof Page;
 
-    private parseExtends(templateStr: string): { parent: string | null, blocks: Map<string, string> } {
+    private parseExtends(templateStr: string): { parent: string | null, blocks: Record<string, string> } {
         const extendsMatch = templateStr.match(/\{\% extends ['"](.+?)['"] \%\}/);
         const parent = extendsMatch ? extendsMatch[1] : null;
         
-        const blocks = new Map<string, string>();
+        const blocks: Record<string, string> = {};
         const blockRegex = /\{\% block (\w+) \%\}([\s\S]*?)\{\% endblock \%\}/g;
         
         let match;
         while ((match = blockRegex.exec(templateStr)) !== null) {
-            blocks.set(match[1], match[2].trim());
+            blocks[match[1]] = match[2].trim();
         }
 
         return { parent, blocks };
@@ -65,7 +65,10 @@ export class TemplateEngine {
                 }
 
                 // Create a new data object with block overrides
-                const blockData = { ...data, blocks };
+                const blockData = { 
+                    ...data, 
+                    blocks: new Map(Object.entries(blocks))
+                };
                 
                 // Render parent template with block overrides
                 return parentTemplate(blockData, engine);
@@ -76,18 +79,22 @@ export class TemplateEngine {
 
         // Process regular template
         const processedStr = templateStr
-            // First handle extends
+            // Remove extends directive
             .replace(/\{\% extends ['"](.+?)['"] \%\}/g, '')
-            // Then handle blocks
+            // Process blocks
             .replace(/\{\% block (\w+) \%\}([\s\S]*?)\{\% endblock \%\}/g, 
-                (_, blockName, defaultContent) => {
-                    return `\${data.blocks?.get('${blockName}') ?? \`${defaultContent.replace(/`/g, '\\`')}\`}`;
-                })
-            .trim();
+                (_, blockName, content) => {
+                    const escapedContent = content
+                        .trim()
+                        .replace(/`/g, '\\`')
+                        .replace(/\$\{/g, '\\${');
+                    return `\${data.blocks?.get('${blockName}') ?? \`${escapedContent}\`}`;
+                });
 
         const escapedStr = processedStr
             .replace(/`/g, '\\`')
-            .replace(/\$\{(?!data\.blocks)/g, '\\${');
+            .replace(/\$\{(?!data\.blocks)/g, '\\${')
+            .trim();
             
         const templateFn = (data: any, engine: TemplateEngine) => {
             try {
