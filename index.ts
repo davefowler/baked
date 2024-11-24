@@ -3,6 +3,8 @@ import { promises as fs } from 'fs';
 import { parse as parseYAML } from 'yaml';
 import matter from 'gray-matter';
 import path from 'path';
+import Handlebars from 'handlebars';
+import { marked } from 'marked';
 
 interface PageRecord {
     id?: number;
@@ -101,10 +103,53 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
             path TEXT NOT NULL,
             metadata TEXT
         );
+        
+        CREATE TABLE IF NOT EXISTS templates (
+            name TEXT PRIMARY KEY,
+            content TEXT NOT NULL
+        );
     `);
+
+    // Load default template if it doesn't exist
+    const defaultTemplate = await fs.readFile('templates/default.html', 'utf-8');
+    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
+        ['default', defaultTemplate]);
 
     console.log('Database schema created successfully');
     return db;
+}
+
+async function renderPages(db: Database): Promise<void> {
+    const pages = db.prepare('SELECT * FROM pages').all();
+    
+    for (const page of pages) {
+        // Get the template
+        const template = db.prepare('SELECT content FROM templates WHERE name = ?')
+            .get(page.template);
+            
+        if (!template) {
+            console.error(`Template ${page.template} not found for ${page.slug}`);
+            continue;
+        }
+        
+        // Parse markdown to HTML
+        const htmlContent = marked(page.content);
+        
+        // Compile template
+        const compiledTemplate = Handlebars.compile(template.content);
+        
+        // Render page
+        const html = compiledTemplate({
+            ...page,
+            content: htmlContent,
+            metadata: JSON.parse(page.metadata)
+        });
+        
+        // Write to file
+        const outputPath = path.join('dist', `${page.slug}.html`);
+        await fs.mkdir(path.dirname(outputPath), { recursive: true });
+        await fs.writeFile(outputPath, html);
+    }
 }
 
 async function main() {
@@ -112,6 +157,7 @@ async function main() {
     await fs.mkdir('content', { recursive: true });
     await fs.mkdir('scripts', { recursive: true });
     await fs.mkdir('dist', { recursive: true });
+    await fs.mkdir('templates', { recursive: true });
 
     // Initialize the database
     const db = await initializeDatabase('dist/site.db');
@@ -119,7 +165,10 @@ async function main() {
     // Process content directory
     await processDirectory('content');
     
-    console.log('Content processed and stored in database');
+    // Generate HTML files
+    await renderPages(db);
+    
+    console.log('Content processed and static files generated');
 }
 
 main().catch(console.error);
