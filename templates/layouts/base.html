@@ -1,4 +1,4 @@
-(data) => `
+(data, engine) => `
 <!DOCTYPE html>
 <html lang="${data.lang || 'en'}">
 <head>
@@ -8,11 +8,11 @@
     <meta name="description" content="${data.metadata?.description || ''}">
 </head>
 <body>
-    ${templates.get('header')(data)}
+    ${engine.render('header', data)}
     <main>
         ${data.content}
     </main>
-    ${templates.get('footer')(data)}
+    ${engine.render('footer', data)}
 </body>
 </html>
 `

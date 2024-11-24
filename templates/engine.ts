@@ -10,6 +10,6 @@ export class TemplateEngine {
         if (!template) {
             throw new Error(`Template ${templateName} not found`);
         }
-        return template(data);
+        return template(data, this);
     }
 }
