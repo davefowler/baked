@@ -1,4 +1,9 @@
-<article>
-    ${data.metadata?.date ? `<time datetime="${data.metadata.date}">${data.metadata.date}</time>` : ''}
-    ${data.content}
-</article>
+${engine.render('base', {
+    ...data,
+    content: `
+        <article>
+            ${data.metadata?.date ? `<time datetime="${data.metadata.date}">${data.metadata.date}</time>` : ''}
+            ${data.content}
+        </article>
+    `
+})}
