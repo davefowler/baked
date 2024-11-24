@@ -2,7 +2,7 @@ ${engine.render('base', {
     ...data,
     content: `
         <ul class="blog-list">
-            ${Array.isArray(data.posts) ? data.posts.map(post => `
+            ${Array.isArray(data?.posts) && data.posts.length > 0 ? data.posts.map(post => `
                 <li>
                     <h2><a href="/${post?.slug || '#'}">${post?.title || 'Untitled'}</a></h2>
                     ${post?.metadata?.date ? `<time datetime="${post.metadata.date}">${post.metadata.date}</time>` : ''}
@@ -12,8 +12,8 @@ ${engine.render('base', {
         </ul>
         
         <nav class="pagination">
-            ${parseInt(data.page || 1) > 1 ? 
-                `<a href="?page=${parseInt(data.page || 1) - 1}">← Previous</a>` : 
+            ${Number(data?.page || 1) > 1 ? 
+                `<a href="?page=${Number(data?.page || 1) - 1}">← Previous</a>` : 
                 '<span></span>'
             }
             ${data.hasNextPage === true ? 
