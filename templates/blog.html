@@ -1,9 +1,8 @@
-${engine.render('base', {
-    ...data,
-    content: `
-        <article>
-            ${data.metadata?.date ? `<time datetime="${data.metadata.date}">${data.metadata.date}</time>` : ''}
-            ${data.content}
-        </article>
-    `
-})}
+{% extends "base" %}
+
+{% block content %}
+<article>
+    ${data.metadata?.date ? `<time datetime="${data.metadata.date}">${data.metadata.date}</time>` : ''}
+    ${data.content}
+</article>
+{% endblock %}

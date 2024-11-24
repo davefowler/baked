@@ -1,44 +1,21 @@
+{% extends "base" %}
+
+{% block content %}
 ${(function() {
     const page = Math.max(1, Number(data?.page || 1));
-        const postsPerPage = 10;
-        const offset = (page - 1) * postsPerPage;
-        
-        // Get posts from database using engine methods
-        const posts = engine.query(`
-            SELECT slug, title, metadata
-            FROM pages 
-            WHERE template = ?
-            ORDER BY json_extract(metadata, '$.date') DESC
-            LIMIT ? OFFSET ?
-        `, ['blog', postsPerPage, offset]);
-        
-        // Check if there are more posts
-        const totalPosts = engine.query(`
-            SELECT COUNT(*) as count
-            FROM pages
-            WHERE template = ?
-        `, ['blog'])[0].count;
-        
-        const hasMore = totalPosts > (offset + postsPerPage);
-        const totalPages = Math.ceil(totalPosts / postsPerPage);
+    const { items: posts, total: totalPosts } = db.Post.paginate(page);
+    
+    const hasMore = totalPosts > (page * 10);
+    const totalPages = Math.ceil(totalPosts / 10);
 
-        // Process posts to extract metadata
-        const processedPosts = posts.map(post => {
-            try {
-                const metadata = post.metadata;
-                if (typeof metadata === 'string') {
-                    return { ...post, metadata: JSON.parse(metadata || '{}') };
-                }
-                return { ...post, metadata: metadata || {} };
-            } catch (e) {
-                console.error(`Failed to parse metadata for post ${post.slug}:`, e);
-                return { ...post, metadata: {} };
-            }
-        });
+    const processedPosts = posts.map(post => ({
+        ...post,
+        metadata: typeof post.metadata === 'string' ? 
+            JSON.parse(post.metadata || '{}') : 
+            post.metadata || {}
+    }));
 
-        return engine.render('base', {
-        ...data,
-        content: `
+    return `
             <ul class="blog-list">
                 ${processedPosts.length > 0 ? processedPosts.map(post => `
                     <li>

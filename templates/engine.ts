@@ -1,4 +1,5 @@
 import { Database } from 'bun:sqlite';
+import { Post, Page } from '../models/orm';
 
 export class TemplateEngine {
     private templates: Map<string, Function> = new Map();
@@ -6,6 +7,23 @@ export class TemplateEngine {
 
     constructor(db: Database) {
         this.db = db;
+        Post.setDatabase(db);
+        Page.setDatabase(db);
+    }
+
+    private parseExtends(templateStr: string): { parent: string | null, blocks: Map<string, string> } {
+        const extendsMatch = templateStr.match(/\{\% extends ['"](.+?)['"] \%\}/);
+        const parent = extendsMatch ? extendsMatch[1] : null;
+        
+        const blocks = new Map<string, string>();
+        const blockRegex = /\{\% block (\w+) \%\}([\s\S]*?)\{\% endblock \%\}/g;
+        
+        let match;
+        while ((match = blockRegex.exec(templateStr)) !== null) {
+            blocks.set(match[1], match[2].trim());
+        }
+
+        return { parent, blocks };
     }
 
     getAsset(path: string): string {
