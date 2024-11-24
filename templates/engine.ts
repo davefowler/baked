@@ -52,17 +52,25 @@ export class TemplateEngine {
     }
 
     registerTemplate(name: string, templateStr: string) {
+        // Escape backticks and handle template expressions
+        const escapedStr = templateStr
+            .replace(/`/g, '\\`')
+            .replace(/\$\{/g, '\\${');
+            
         const templateFn = (data: any, engine: TemplateEngine) => {
-            // Create a function that will process the template string
             try {
-                return new Function('data', 'engine', `
+                // Create a function that will process the template string
+                const fn = new Function('data', 'engine', `
                     try {
-                        return \`${templateStr}\`;
+                        with (data) {
+                            return \`${escapedStr}\`;
+                        }
                     } catch (e) {
                         console.error('Template error:', e);
                         return 'Error rendering template';
                     }
-                `)(data, engine);
+                `);
+                return fn(data, engine);
             } catch (e) {
                 console.error('Template compilation error:', e);
                 return 'Error compiling template';
