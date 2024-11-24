@@ -17,5 +17,9 @@
     "sql.js": "^1.12.0",
     "sqlite3": "^5.1.6",
     "yaml": "^2.3.4"
+  },
+  "scripts": {
+    "build": "bun run index.ts",
+    "serve": "bun run serve.ts"
   }
 }
