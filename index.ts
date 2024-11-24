@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import { Database } from 'bun:sqlite';
 import { promises as fs } from 'fs';
 import { parse as parseYAML } from 'yaml';
 import matter from 'gray-matter';
@@ -71,21 +71,25 @@ async function processMarkdownFile(filePath: string, inheritedMeta: MetaData): P
 
 async function insertPage(page: PageRecord): Promise<void> {
     const db = await initializeDatabase('dist/site.db');
-    const stmt = db.prepare(`
+    db.run(`
         INSERT OR REPLACE INTO pages (slug, title, content, template, lang, tags, path, metadata)
-        VALUES (@slug, @title, @content, @template, @lang, @tags, @path, @metadata)
-    `);
-    
-    stmt.run({
-        ...page,
-        metadata: JSON.stringify(page.metadata)
-    });
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+        page.slug,
+        page.title,
+        page.content,
+        page.template,
+        page.lang,
+        page.tags,
+        page.path,
+        JSON.stringify(page.metadata)
+    ]);
 }
 
 async function initializeDatabase(dbPath: string): Promise<Database> {
     const db = new Database(dbPath);
     
-    db.exec(`
+    db.run(`
         CREATE TABLE IF NOT EXISTS pages (
             id INTEGER PRIMARY KEY,
             slug TEXT NOT NULL,

@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "absurd-sql": "^0.0.46",
-    "better-sqlite3": "^9.2.2",
+    "sqlite3": "^5.1.6",
     "gray-matter": "^4.0.3",
     "yaml": "^2.3.4"
   }
