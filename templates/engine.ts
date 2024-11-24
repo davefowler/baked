@@ -28,7 +28,11 @@ export class TemplateEngine {
         
         let match;
         while ((match = blockRegex.exec(templateStr)) !== null) {
-            blocks[match[1]] = match[2].trim();
+            const blockContent = match[2]
+                .trim()
+                .replace(/`/g, '\\`')
+                .replace(/\$\{/g, '\\${');
+            blocks[match[1]] = blockContent;
         }
 
         return { parent, blocks };
@@ -100,9 +104,7 @@ export class TemplateEngine {
             try {
                 const fn = new Function('data', 'engine', `
                     try {
-                        with (data) {
-                            return \`${escapedStr}\`;
-                        }
+                        return \`${escapedStr}\`;
                     } catch (e) {
                         console.error('Template error:', e);
                         return 'Error rendering template';
