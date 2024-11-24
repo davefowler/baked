@@ -75,10 +75,15 @@ export class TemplateEngine {
         }
 
         // Process regular template
-        const processedStr = templateStr.replace(/\{\% block (\w+) \%\}([\s\S]*?)\{\% endblock \%\}/g, 
-            (_, blockName, defaultContent) => {
-                return `\${data.blocks?.get('${blockName}') ?? \`${defaultContent.replace(/`/g, '\\`')}\`}`;
-            });
+        const processedStr = templateStr
+            // First handle extends
+            .replace(/\{\% extends ['"](.+?)['"] \%\}/g, '')
+            // Then handle blocks
+            .replace(/\{\% block (\w+) \%\}([\s\S]*?)\{\% endblock \%\}/g, 
+                (_, blockName, defaultContent) => {
+                    return `\${data.blocks?.get('${blockName}') ?? \`${defaultContent.replace(/`/g, '\\`')}\`}`;
+                })
+            .trim();
 
         const escapedStr = processedStr
             .replace(/`/g, '\\`')
