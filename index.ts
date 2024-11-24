@@ -105,7 +105,6 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
             tags TEXT,
             path TEXT NOT NULL,
             metadata TEXT,
-            published_date DATETIME,
             UNIQUE(slug)
         );
         
@@ -233,9 +232,10 @@ async function main() {
 main().catch(console.error);
 function generateRSSFeed(db: Database): string {
     const posts = db.prepare(`
-        SELECT * FROM pages 
+        SELECT p.*, json_extract(p.metadata, '$.date') as post_date 
+        FROM pages p
         WHERE template = 'blog' 
-        ORDER BY published_date DESC 
+        ORDER BY post_date DESC 
         LIMIT 10
     `).all();
 
@@ -249,7 +249,7 @@ function generateRSSFeed(db: Database): string {
         <item>
             <title>${post.title}</title>
             <link>https://absurdsite.com/${post.slug}</link>
-            <pubDate>${new Date(post.published_date).toUTCString()}</pubDate>
+            <pubDate>${new Date(JSON.parse(post.metadata).date).toUTCString()}</pubDate>
             <guid>https://absurdsite.com/${post.slug}</guid>
         </item>
     `).join('')}
