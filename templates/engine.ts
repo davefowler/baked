@@ -1,13 +1,17 @@
 export class TemplateEngine {
     private templates: Map<string, Function> = new Map();
 
-    registerTemplate(name: string, templateFn: Function) {
+    registerTemplate(name: string, templateStr: string) {
+        const templateFn = (data: any, engine: TemplateEngine) => {
+            // Create a function that will process the template string
+            return new Function('data', 'engine', `return \`${templateStr}\`;`)(data, engine);
+        };
         this.templates.set(name, templateFn);
     }
 
-    registerPartial(name: string, templateFn: Function) {
+    registerPartial(name: string, templateStr: string) {
         // Partials are just templates, so we can use the same storage
-        this.registerTemplate(name, templateFn);
+        this.registerTemplate(name, templateStr);
     }
 
     render(templateName: string, data: any): string {
