@@ -177,7 +177,7 @@ async function main() {
     await fs.mkdir('public', { recursive: true });
 
     // Copy public files to dist
-    const publicFiles = ['sw.js', 'db.js', 'manifest.json'];
+    const publicFiles = ['sw.js', 'db.js', 'manifest.json', 'offline.html'];
     for (const file of publicFiles) {
         await fs.copyFile(`public/${file}`, `dist/${file}`);
     }
