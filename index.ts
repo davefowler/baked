@@ -142,10 +142,14 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
     // Load page templates
     const defaultTemplate = await fs.readFile('templates/default.html', 'utf-8');
     const blogTemplate = await fs.readFile('templates/blog.html', 'utf-8');
+    const blogListTemplate = await fs.readFile('templates/blog-list.html', 'utf-8');
+    
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
         ['default', defaultTemplate]);
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
         ['blog', blogTemplate]);
+    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
+        ['blog-list', blogListTemplate]);
 
     // Store CSS in assets
     db.run('INSERT OR REPLACE INTO assets (path, content, mime_type) VALUES (?, ?, ?)',
