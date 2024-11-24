@@ -1,5 +1,25 @@
+import { Database } from 'bun:sqlite';
+
 export class TemplateEngine {
     private templates: Map<string, Function> = new Map();
+    private db: Database;
+
+    constructor(db: Database) {
+        this.db = db;
+    }
+
+    getAsset(path: string): string {
+        const result = this.db.prepare('SELECT content FROM assets WHERE path = ?').get(path);
+        return result ? result.content : '';
+    }
+
+    getPage(slug: string): any {
+        const result = this.db.prepare('SELECT * FROM pages WHERE slug = ?').get(slug);
+        if (result) {
+            result.metadata = JSON.parse(result.metadata);
+        }
+        return result;
+    }
 
     registerTemplate(name: string, templateStr: string) {
         const templateFn = (data: any, engine: TemplateEngine) => {

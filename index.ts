@@ -175,7 +175,7 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
 }
 
 async function renderPages(db: Database): Promise<void> {
-    const engine = new TemplateEngine();
+    const engine = new TemplateEngine(db);
 
     // Register all templates and partials
     const templates = db.prepare('SELECT name, content FROM templates').all();
@@ -215,7 +215,7 @@ async function main() {
     await fs.mkdir('templates', { recursive: true });
     await fs.mkdir('public', { recursive: true });
 
-    // Copy public files to dist
+    // Copy public files to dist (except CSS which is now inline)
     const publicFiles = ['sw.js', 'db.js', 'manifest.json', 'offline.html'];
     for (const file of publicFiles) {
         await fs.copyFile(`public/${file}`, `dist/${file}`);

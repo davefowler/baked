@@ -7,7 +7,9 @@
     <meta name="description" content="${data.metadata?.description || ''}">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#000000">
-    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        ${engine.getAsset('/styles/main.css')}
+    </style>
     <script type="module" src="/db.js" async></script>
     <script>
         if ('serviceWorker' in navigator) {

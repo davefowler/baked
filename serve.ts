@@ -1,7 +1,7 @@
 import { serve } from "bun";
 
 const server = serve({
-  port: 3000,
+  port: 42,
   fetch(req) {
     const url = new URL(req.url);
     let path = url.pathname;

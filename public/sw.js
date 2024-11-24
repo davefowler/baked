@@ -4,7 +4,6 @@ const ASSETS = [
   '/db.js',
   '/site.db',
   '/manifest.json',
-  '/styles/main.css',
   '/rss.xml',
   '/sitemap.xml',
   '/robots.txt'
