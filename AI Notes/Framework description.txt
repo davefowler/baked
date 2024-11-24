@@ -1,0 +1,167 @@
+
+This framework is a SQLite-based static site generator with the following features and benefits:
+
+1. AbsurdSQL as the Core:
+   - SQLite database serves as the single source of truth for all content, metadata, and templates.
+   - Powered by AbsurdSQL, it runs entirely in the browser, enabling offline functionality.
+
+2. Offline-First PWA Design:
+   - Utilizes service workers and AbsurdSQL for offline-first performance.
+   - Pages and data load instantly, even without an internet connection.
+
+3. Custom Metadata System:
+   - Supports meta.yaml files for folder-level metadata and Markdown front matter for per-page settings.
+   - Automates routing, path generation, and template assignment.
+
+4. Pre-Rendering and Caching:
+   - Pre-renders all pages as static HTML for SEO and fast initial loads.
+   - Caches HTML, SQLite database, and service worker during deployment.
+
+5. Incremental Updates:
+   - Supports syncing updates to the SQLite database from a server or CDN, ensuring dynamic updates while maintaining static content benefits.
+
+6. Self-Contained Deployment:
+   - The deployment consists of a single SQLite file, pre-rendered HTML, and static assets.
+   - Ideal for lightweight blogs, documentation sites, or offline-first apps.
+
+---
+
+Development Steps for Aider:
+
+Phase 1: SQLite Database Initialization
+- Define the database schema:
+  - pages: Stores page content, metadata, and routing information.
+  - Other tables can be added in later versions (e.g., assets for image handling).
+- Initialize the SQLite database using AbsurdSQL.
+
+Phase 2: Recursive Metadata Handling
+- Process meta.yaml files recursively.
+- Merge metadata from meta.yaml with front matter in Markdown files.
+
+Phase 3: Markdown Parsing and Path Management
+- Parse Markdown files to extract content and metadata.
+- Generate routing paths based on file structure and/or front matter.
+- Store parsed data into the SQLite pages table.
+
+Phase 4: Pre-Rendering Static HTML
+- make a template folder with some default templates
+- load them in the assets table in the database
+- Generate static HTML pages from the SQLite database using the templates from the database.
+- Ensure the HTML is SEO-friendly and supports smooth offline functionality.
+- make this pre rendring happen with the bun build command
+
+Phase 5: PWA and Service Worker
+- Create a service worker to:
+  - Cache pre-rendered HTML files and the SQLite database.
+  - Enable offline navigation and seamless updates.
+
+Phase 6: Incremental Updates
+- Implement a mechanism to sync updated SQLite databases from a server or CDN.
+- Dynamically apply updates to the local SQLite database.
+
+Phase 7: Deployment
+- Package the SQLite database, pre-rendered HTML files, and service worker.
+- Deploy the package to a hosting platform like Netlify or AWS S3.
+
+---
+
+Setup:
+1. Create the project folder with the following structure:
+   /project
+     /content        # Markdown files and meta.yaml for site content
+     /scripts        # Build and pre-rendering scripts
+     /dist           # Output directory for SQLite, HTML, and assets
+
+2. Install dependencies:
+   - Node.js modules: sqlite, absurd-sql, gray-matter, and yaml.
+
+---
+
+Phase-by-Phase Development Code (Summarized):
+
+Phase 1: SQLite Database Initialization
+const { open } = require('sqlite');
+const sqlite3 = require('sqlite3');
+
+async function createDatabase(dbFilePath) {
+    const db = await open({
+        filename: dbFilePath,
+        driver: sqlite3.Database,
+    });
+
+    await db.exec(\`
+        CREATE TABLE IF NOT EXISTS pages (
+            id INTEGER PRIMARY KEY,
+            slug TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            template TEXT NOT NULL,
+            lang TEXT,
+            tags TEXT,
+            path TEXT NOT NULL
+        );
+    \`);
+
+    console.log('Database schema created.');
+    return db;
+}
+
+Phase 2: Recursive Metadata Handling
+const fs = require('fs/promises');
+const path = require('path');
+const yaml = require('yaml');
+const grayMatter = require('gray-matter');
+
+async function loadMeta(filePath) {
+    const content = await fs.readFile(filePath, 'utf8');
+    return yaml.parse(content);
+}
+
+async function collectMetadata(baseDir, parentMeta = {}) {
+    const entries = await fs.readdir(baseDir, { withFileTypes: true });
+    const metaFile = entries.find((entry) => entry.name === 'meta.yaml');
+
+    const currentMeta = metaFile
+        ? { ...parentMeta, ...(await loadMeta(path.join(baseDir, metaFile.name))) }
+        : { ...parentMeta };
+
+    const results = [];
+    for (const entry of entries) {
+        const entryPath = path.join(baseDir, entry.name);
+        if (entry.isDirectory()) {
+            results.push(...(await collectMetadata(entryPath, currentMeta)));
+        } else if (entry.name.endsWith('.md')) {
+            const content = await fs.readFile(entryPath, 'utf8');
+            const { data: frontMatter, content: markdown } = grayMatter(content);
+            const finalMeta = { ...currentMeta, ...frontMatter };
+            results.push({ path: entryPath, metadata: finalMeta, content: markdown });
+        }
+    }
+
+    return results;
+}
+
+Phase 3: Markdown Parsing and Path Management
+async function storePagesInDatabase(db, pages) {
+    for (const page of pages) {
+        const { path: filePath, metadata, content } = page;
+        const slug = metadata.slug || path.basename(filePath, '.md');
+
+        await db.run(\`
+            INSERT INTO pages (slug, title, content, template, lang, tags, path)
+            VALUES (?, ?, ?, ?, ?, ?, ?)\`,
+            [
+                slug,
+                metadata.title || 'Untitled',
+                content,
+                metadata.template || 'default',
+                metadata.lang || 'en',
+                (metadata.tags || []).join(','),
+                metadata.path || `/${slug}.html`
+            ]
+        );
+    }
+    console.log(\`\${pages.length} pages stored in database.\`);
+}
+
+Phase 4-7: TBD based on full implementation.
