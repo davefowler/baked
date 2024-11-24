@@ -119,9 +119,9 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
     const headerPartial = await fs.readFile('templates/partials/header.html', 'utf-8');
     const footerPartial = await fs.readFile('templates/partials/footer.html', 'utf-8');
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['partials/header', headerPartial]);
+        ['header', headerPartial]);
     db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['partials/footer', footerPartial]);
+        ['footer', footerPartial]);
 
     // Load page templates
     const defaultTemplate = await fs.readFile('templates/default.html', 'utf-8');
@@ -141,7 +141,7 @@ async function renderPages(db: Database): Promise<void> {
     // Register all templates and partials
     const templates = db.prepare('SELECT name, content FROM templates').all();
     for (const template of templates) {
-        if (template.name.startsWith('partials/')) {
+        if (template.name === 'header' || template.name === 'footer') {
             engine.registerPartial(template.name, template.content);
         } else {
             engine.registerTemplate(template.name, template.content);
