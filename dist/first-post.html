@@ -1,28 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>First Post | Blog</title>
-    <meta name="description" content="">
-</head>
-<body>
-    <header>
-        <nav>
-            <a href="/">Home</a>
-            <a href="/blog">Blog</a>
-        </nav>
-        <h1>First Post</h1>
-    </header>
-    <main>
+${engine.render('base', {
+    ...data,
+    content: `
         <article>
-            &lt;h1&gt;Hello World&lt;/h1&gt;
-&lt;p&gt;This is my first post.&lt;/p&gt;
-
+            ${data.metadata?.date ? `<time datetime="${data.metadata.date}">${data.metadata.date}</time>` : ''}
+            ${data.content}
         </article>
-    </main>
-    <footer>
-        <p>Generated with AbsurdSite</p>
-    </footer>
-</body>
-</html>
+    `
+})}
