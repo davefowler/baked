@@ -1,4 +1,4 @@
-import { Database } from 'better-sqlite3';
+import Database from 'better-sqlite3';
 import { promises as fs } from 'fs';
 import { parse as parseYAML } from 'yaml';
 import matter from 'gray-matter';
