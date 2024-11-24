@@ -3,17 +3,25 @@
 {% block content %}
 ${(function() {
     const page = Math.max(1, Number(data?.page || 1));
-    const { items: posts, total: totalPosts } = db.Post.paginate(page);
+    const perPage = 10;
+    const { items: posts, total: totalPosts } = engine.Post.paginate(page, perPage);
     
-    const hasMore = totalPosts > (page * 10);
-    const totalPages = Math.ceil(totalPosts / 10);
+    const hasMore = totalPosts > (page * perPage);
+    const totalPages = Math.ceil(totalPosts / perPage);
 
-    const processedPosts = posts.map(post => ({
-        ...post,
-        metadata: typeof post.metadata === 'string' ? 
-            JSON.parse(post.metadata || '{}') : 
-            post.metadata || {}
-    }));
+    const processedPosts = posts.map(post => {
+        try {
+            return {
+                ...post,
+                metadata: typeof post.metadata === 'string' ? 
+                    JSON.parse(post.metadata) : 
+                    post.metadata || {}
+            };
+        } catch (e) {
+            console.error(`Failed to parse metadata for post ${post.slug}:`, e);
+            return { ...post, metadata: {} };
+        }
+    });
 
     return `
             <ul class="blog-list">

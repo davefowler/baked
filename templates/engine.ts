@@ -9,7 +9,15 @@ export class TemplateEngine {
         this.db = db;
         Post.setDatabase(db);
         Page.setDatabase(db);
+        
+        // Expose models to templates
+        this.Post = Post;
+        this.Page = Page;
     }
+
+    // Make Post and Page accessible as properties
+    private Post: typeof Post;
+    private Page: typeof Page;
 
     private parseExtends(templateStr: string): { parent: string | null, blocks: Map<string, string> } {
         const extendsMatch = templateStr.match(/\{\% extends ['"](.+?)['"] \%\}/);
