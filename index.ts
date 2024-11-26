@@ -4,7 +4,7 @@ import { parse as parseYAML } from 'yaml';
 import matter from 'gray-matter';
 import path from 'path';
 import { marked } from 'marked';
-import { TemplateEngine } from './templates/engine';
+const TemplateComponent = require('./assets/components/template');
 
 interface PageRecord {
     id?: number;
@@ -162,31 +162,44 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
     return db;
 }
 
-async function renderPages(db: Database): Promise<void> {
-    const engine = new TemplateEngine(db);
-
-    // Register all templates and partials
-    const templates = db.prepare('SELECT name, content FROM templates').all();
-    for (const template of templates) {
-        if (template.name === 'header' || template.name === 'footer') {
-            engine.registerPartial(template.name, template.content);
-        } else {
-            engine.registerTemplate(template.name, template.content);
-        }
-    }
-
+async function renderPages(db: Database, TemplateComponent: any): Promise<void> {
     const pages = db.prepare('SELECT * FROM pages').all();
     
     for (const page of pages) {
         // Parse markdown to HTML
         const htmlContent = marked(page.content);
         
-        // Render page using our template engine
-        const html = engine.render(page.template || 'default', {
-            ...page,
-            content: htmlContent,
-            metadata: JSON.parse(page.metadata)
-        });
+        // Get template content
+        const templateResult = db.prepare('SELECT content FROM templates WHERE name = ?')
+            .get(page.template || 'default');
+            
+        if (!templateResult) {
+            console.error(`Template ${page.template} not found`);
+            continue;
+        }
+        
+        // Create template component
+        const template = TemplateComponent(templateResult.content);
+        
+        // Render page using template component
+        const html = template.render(
+            {
+                getTemplate: (name: string) => {
+                    const result = db.prepare('SELECT content FROM templates WHERE name = ?').get(name);
+                    return result ? TemplateComponent(result.content) : null;
+                },
+                getAsset: (path: string) => {
+                    const result = db.prepare('SELECT content FROM assets WHERE path = ?').get(path);
+                    return result ? result.content : '';
+                }
+            },
+            {
+                ...page,
+                content: htmlContent,
+                metadata: JSON.parse(page.metadata)
+            },
+            {}
+        );
         
         // Write to file
         const outputPath = path.join('dist', `${page.slug}.html`);
@@ -216,7 +229,7 @@ export async function main() {
     await processDirectory('content');
     
     // Generate HTML files
-    await renderPages(db);
+    await renderPages(db, TemplateComponent);
     
     console.log('Content processed and static files generated');
 }
