@@ -3,6 +3,11 @@ import { Database } from 'bun:sqlite';
 export class TemplateEngine {
     constructor(private db: Database) {}
 
+    registerTemplate(name: string, content: string) {
+        this.db.prepare('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)')
+            .run(name, content);
+    }
+
     render(templateName: string, data: any) {
         const template = this.db.prepare('SELECT content FROM templates WHERE name = ?')
             .get(templateName);
