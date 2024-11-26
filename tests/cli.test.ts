@@ -27,15 +27,11 @@ describe("CLI Commands", () => {
         // Create test directory
         await fs.mkdir(testDir, { recursive: true });
         
-        // Copy the CLI script to test directory
+        // Use CLI script from project root
         try {
-            const cliPath = path.join(process.cwd(), 'cli.ts');
-            await fs.copyFile(
-                cliPath,
-                path.join(testDir, 'cli.ts')
-            );
-            // Make it executable
-            await fs.chmod(path.join(testDir, 'cli.ts'), 0o755);
+            const cliPath = path.join(projectRoot, 'cli.ts');
+            // Make sure CLI script is executable
+            await fs.chmod(cliPath, 0o755);
         } catch (error) {
             console.error('Failed to setup CLI:', error);
             throw error;
@@ -67,7 +63,7 @@ describe("CLI Commands", () => {
         try {
             // Execute the CLI command
             console.log('Executing CLI command from:', process.cwd());
-            const result = execSync(`./cli.ts new testsite`, {
+            const result = execSync(`${path.join(projectRoot, 'cli.ts')} new testsite`, {
                 stdio: 'pipe',
                 env: { ...process.env, PATH: process.env.PATH }
             });
