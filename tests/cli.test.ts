@@ -5,8 +5,8 @@ import { execSync } from 'child_process';
 
 describe("CLI Commands", () => {
     const projectRoot = process.cwd();
-    const testDir = path.resolve(projectRoot, 'tmp', 'test-cli-site');
-    const examplesDir = path.resolve(projectRoot, 'examples', 'defaultsite');
+    const testDir = path.join(projectRoot, 'tmp', 'test-cli-site');
+    const examplesDir = path.join(projectRoot, '..', 'examples', 'defaultsite');
     let originalDir: string;
 
     beforeAll(async () => {
@@ -23,8 +23,12 @@ describe("CLI Commands", () => {
             console.log('Clean up error (safe to ignore if dir not exists):', error.message);
         }
         
-        // Create test directory and copy example site
+        // Create test directory structure
         await fs.mkdir(path.dirname(testDir), { recursive: true });
+        
+        // Create examples directory structure if it doesn't exist
+        await fs.mkdir(path.dirname(examplesDir), { recursive: true });
+        await fs.mkdir(examplesDir, { recursive: true });
         
         // Ensure examples directory exists
         try {
