@@ -8,8 +8,10 @@ describe("CLI Commands", () => {
     const TEST_ROOT = path.join(os.tmpdir(), 'absurdsite-tests');
     let testDir: string;
     let originalDir: string;
+    let projectRoot: string;
 
-    const examplesDir = path.join(process.cwd(), 'examples', 'defaultsite');
+    // Store project root for accessing example templates
+    projectRoot = process.cwd();
     
     beforeEach(async () => {
         // Save original directory
@@ -22,16 +24,8 @@ describe("CLI Commands", () => {
         // Change to test directory
         process.chdir(testDir);
         
-        // Create examples directory structure
-        await fs.mkdir(path.join(testDir, 'examples', 'defaultsite'), { recursive: true });
-        
-        // Ensure examples directory exists
-        try {
-            await fs.access(examplesDir);
-        } catch (error) {
-            console.error('Examples directory not found:', error);
-            throw new Error('Examples directory not found. Please ensure the project is properly set up.');
-        }
+        // Create test directory
+        await fs.mkdir(testDir, { recursive: true });
         
         // Link the package globally
         try {
@@ -67,7 +61,7 @@ describe("CLI Commands", () => {
         try {
             // Execute the CLI command
             console.log('Executing CLI command from:', process.cwd());
-            const result = execSync('absurd new test-cli-site', {
+            const result = execSync(`absurd new testsite`, {
                 stdio: 'pipe',
                 env: { ...process.env, PATH: process.env.PATH }
             });
