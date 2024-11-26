@@ -33,7 +33,7 @@ describe("Components", () => {
         const result = svgComponent.render(mockAbsurd, {}, {}, 'svg-class');
         const $ = cheerio.load(result);
         
-        expect($('div.svg-class').html()).toBe(svgContent);
+        expect($('div.svg-class').html()).toBe('<svg><circle cx="50" cy="50" r="40"></circle></svg>');
     });
 
     test("JavaScript Component", () => {

@@ -1,4 +1,5 @@
 const BaseComponent = require('./base');
+const { marked } = require('marked');
 
 class PageComponent extends BaseComponent {
     render(absurd, page, site) {
