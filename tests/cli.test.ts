@@ -153,7 +153,12 @@ describe("CLI Commands", () => {
             console.log('Changed to test directory:', process.cwd());
             
             // Run build command using cli.ts directly
-            const buildOutput = execSync(`${path.join(projectRoot, 'cli.ts')} build`, {
+            const cliPath = path.join(projectRoot, 'cli.ts');
+            console.log('CLI Path:', cliPath);
+            console.log('Project Root:', projectRoot);
+            console.log('Full command:', `${cliPath} build`);
+            
+            const buildOutput = execSync(`${cliPath} build`, {
                 stdio: 'pipe',
                 env: { ...process.env, PATH: process.env.PATH }
             });
