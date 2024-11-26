@@ -1,6 +1,4 @@
 {% extends "base" %}
-
-{% block content %}
 <div class="blog-list-container">
     ${(() => {
         const page = Math.max(1, Number(data?.page || 1));
@@ -46,4 +44,3 @@
         `;
     })()}
 </div>
-{% endblock %}
