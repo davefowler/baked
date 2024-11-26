@@ -106,8 +106,6 @@ program
         
         // Create necessary directories
         const dirs = [
-            'content',
-            'content/blog',
             'scripts',
             'dist',
             'templates',
@@ -160,10 +158,44 @@ program
                 }
             }
         };
-        await loadPagesFromDir('content');
+        await loadPagesFromDir('pages');
         
         // Generate HTML files
-        await renderPages(db, TemplateComponent);
+        await renderPages(db);
+
+async function renderPages(db: Database) {
+    const pages = db.prepare('SELECT * FROM pages').all();
+    const distDir = path.join(process.cwd(), 'dist');
+    
+    for (const page of pages) {
+        const template = db.prepare('SELECT content FROM templates WHERE name = ?')
+            .get(page.template);
+            
+        if (!template) {
+            console.warn(`Template ${page.template} not found for page ${page.slug}`);
+            continue;
+        }
+        
+        // Parse metadata if it exists
+        const metadata = page.metadata ? JSON.parse(page.metadata) : {};
+        
+        // Render the page
+        const html = template.content.replace(/\${([^}]+)}/g, (_, expr) => {
+            try {
+                const fn = new Function('page', `return ${expr}`);
+                return fn({ ...page, metadata });
+            } catch (err) {
+                console.error(`Template rendering error for ${page.slug}:`, err);
+                return '';
+            }
+        });
+        
+        // Write the rendered HTML
+        const outputPath = path.join(distDir, `${page.slug}.html`);
+        await fs.mkdir(path.dirname(outputPath), { recursive: true });
+        await fs.writeFile(outputPath, html);
+    }
+}
         
         console.log('Content processed and static files generated');
     });
