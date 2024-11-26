@@ -29,8 +29,9 @@ describe("CLI Commands", () => {
         
         // Copy the CLI script to test directory
         try {
+            const cliPath = path.join(process.cwd(), 'cli.ts');
             await fs.copyFile(
-                path.join(projectRoot, 'cli.ts'),
+                cliPath,
                 path.join(testDir, 'cli.ts')
             );
             // Make it executable
