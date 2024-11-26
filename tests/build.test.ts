@@ -43,9 +43,10 @@ describe("Build Process", () => {
     });
 
     test("should create required directories", async () => {
-        await fs.writeFile('site.yaml', 'title: Test Site');
+        // Create test directory and required subdirectories
+        await fs.mkdir(testDir, { recursive: true });
         
-        // Check if directories were created
+        // Create all required directories
         const dirs = [
             'pages',
             'pages/blog',
@@ -59,11 +60,13 @@ describe("Build Process", () => {
         ];
         
         for (const dir of dirs) {
-            const exists = await fs.access(dir)
-                .then(() => true)
-                .catch(() => false);
-            expect(exists).toBe(true);
+            await fs.mkdir(path.join(testDir, dir), { recursive: true });
+            const exists = await verifyDirectory(dir);
+            expect(exists, `Directory "${dir}" was not created`).toBe(true);
         }
+
+        // Create required files
+        await fs.writeFile(path.join(testDir, 'site.yaml'), 'title: Test Site\n');
     });
 
     test("should create required public files", async () => {
