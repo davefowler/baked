@@ -6,26 +6,34 @@
 {% block content %}
 <div class="blog-list-container">
     ${(() => {
-        const page = Math.max(1, Number(data?.page || 1));
-        const perPage = 10;
-        const { items: posts, total: totalPosts } = engine.Post.paginate(page, perPage);
-        
-        const hasMore = totalPosts > (page * perPage);
-        const totalPages = Math.ceil(totalPosts / perPage);
+        try {
+            const page = Math.max(1, Number(data?.page || 1));
+            const perPage = 10;
+            const posts = engine.query(`
+                SELECT * FROM pages 
+                WHERE template = 'blog'
+                ORDER BY json_extract(metadata, '$.date') DESC
+                LIMIT ? OFFSET ?
+            `, [perPage, (page - 1) * perPage]);
+            
+            const totalPosts = engine.query(`
+                SELECT COUNT(*) as count FROM pages WHERE template = 'blog'
+            `)[0].count;
+            
+            const hasMore = totalPosts > (page * perPage);
+            const totalPages = Math.ceil(totalPosts / perPage);
 
-        const processedPosts = posts.map(post => {
-            try {
-                return {
-                    ...post,
-                    metadata: typeof post.metadata === 'string' ? 
-                        JSON.parse(post.metadata) : 
-                        post.metadata || {}
-                };
-            } catch (e) {
-                console.error(`Failed to parse metadata for post ${post.slug}:`, e);
-                return { ...post, metadata: {} };
-            }
-        });
+            const processedPosts = posts.map(post => {
+                try {
+                    return {
+                        ...post,
+                        metadata: JSON.parse(post.metadata || '{}')
+                    };
+                } catch (e) {
+                    console.error(`Failed to parse metadata for post ${post.slug}:`, e);
+                    return { ...post, metadata: {} };
+                }
+            });
 
         return `
             <ul class="blog-list">
