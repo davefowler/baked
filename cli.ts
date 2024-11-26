@@ -138,57 +138,11 @@ program
             );
         `);
         
-        // Process content directory
-        const loadPagesFromDir = async (dir: string, db: Database, parentMetadata: any = {}) => {
-            const entries = await fs.readdir(dir, { withFileTypes: true });
-            const metaPath = path.join(dir, 'meta.yaml');
-            let metadata = {...parentMetadata};
-            
-            try {
-                const dirMetadata = await fs.readFile(metaPath, 'utf8');
-                if (dirMetadata) {
-                    metadata = {...metadata, ...yaml.parse(dirMetadata)};
-                }
-            } catch (error) {
-                // meta.yaml doesn't exist, just use parent metadata
-            }
-
-            for (const entry of entries) {
-                if (entry.isDirectory()) {
-                    // load metadata from meta.yaml file in the directory
-                    await loadPagesFromDir(path.join(dir, entry.name), metadata);
-                } else if (entry.name.endsWith('.md')) {
-                    const content = await fs.readFile(path.join(dir, entry.name), 'utf8');
-                    // parse the frontmatter from the markdown and extend the metadata
-                    const frontmatter = matter(content);
-                    const newMetadata = {...metadata, ...frontmatter.data};
-                    // Process markdown files
-                    db.prepare('INSERT INTO pages (slug, content, template, published_date) VALUES (?, ?, ?, ?)')
-                        .run(entry.name.replace('.md', ''), content, newMetadata.template, newMetadata.date);
-                    console.log(`loaded page: ${entry.name.replace('.md', '')}`, 'with metadata', newMetadata);
-                }
-            }
-        };
+        // Import and use loading functions
+        const { loadPagesFromDir, loadAssetsFromDir } = await import('./loading');
+        
         const siteDir = process.cwd();
         await loadPagesFromDir(path.join(siteDir, 'pages'), db);
-
-        // Load all the assets into the database
-        // TODO - do assets need metadata?  I think for now no.
-        const loadAssetsFromDir = async (dir: string, db: Database) => {
-            const entries = await fs.readdir(dir, { withFileTypes: true });
-            for (const entry of entries) {
-                if (entry.isDirectory()) {
-                    await loadAssetsFromDir(path.join(dir, entry.name));
-                    return;
-                }  
-                // the type of asset gets defined by the directory name that the file is in
-                const type = entry.name;
-                const content = await fs.readFile(path.join(dir, entry.name), 'utf8');
-                db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)')
-                    .run(entry.name, content, type);
-                console.log(`Loaded asset: ${entry.name} as ${type}`);
-            }
-        };
         await loadAssetsFromDir(path.join(siteDir, 'assets'), db);
 
         // TODO render pages
