@@ -39,17 +39,28 @@ describe("CLI Commands", () => {
         await fs.rm(testDir, { recursive: true, force: true });
     });
 
-    test("should create new site with correct structure", async () => {
-        // Run CLI command to create new site
-        execSync(`bun run ${path.join(process.cwd(), 'cli.ts')} new ${path.basename(testDir)}`);
+    test("should find CLI script", async () => {
+        const cliPath = path.resolve(process.cwd(), 'cli.ts');
+        const exists = await fs.access(cliPath)
+            .then(() => true)
+            .catch(() => false);
+        expect(exists).toBe(true);
+    });
+
+    test("should create site directory", async () => {
+        const cliPath = path.resolve(process.cwd(), 'cli.ts');
+        execSync(`bun ${cliPath} new ${path.basename(testDir)}`, {
+            stdio: 'inherit',
+            cwd: process.cwd()
+        });
         
-        // Check if site directory was created
         const exists = await fs.access(testDir)
             .then(() => true)
             .catch(() => false);
         expect(exists).toBe(true);
+    });
 
-        // Check for required directories
+    test("should create required directories", async () => {
         const requiredDirs = [
             'pages',
             'pages/blog',
@@ -67,8 +78,9 @@ describe("CLI Commands", () => {
                 .catch(() => false);
             expect(dirExists).toBe(true);
         }
+    });
 
-        // Check for required files
+    test("should create required files", async () => {
         const requiredFiles = [
             'site.yaml',
             'pages/index.md',
@@ -85,28 +97,36 @@ describe("CLI Commands", () => {
     });
 
     test("should build site successfully", async () => {
-        // Change to test directory
-        process.chdir(testDir);
+        const originalDir = process.cwd();
+        const cliPath = path.resolve(originalDir, 'cli.ts');
+        
+        try {
+            // Change to test directory
+            process.chdir(testDir);
 
-        // Run build command with proper path
-        execSync('bun run ../../cli.ts build', { stdio: 'inherit' });
+            // Run build command with absolute path
+            execSync(`bun ${cliPath} build`, {
+                stdio: 'inherit',
+                cwd: testDir
+            });
 
-        // Check for build artifacts
-        const buildFiles = [
-            'dist/site.db',
-            'public/sw.js',
-            'public/manifest.json',
-            'public/offline.html'
-        ];
+            // Check for build artifacts
+            const buildFiles = [
+                'dist/site.db',
+                'public/sw.js',
+                'public/manifest.json',
+                'public/offline.html'
+            ];
 
-        for (const file of buildFiles) {
-            const fileExists = await fs.access(file)
-                .then(() => true)
-                .catch(() => false);
-            expect(fileExists).toBe(true);
+            for (const file of buildFiles) {
+                const fileExists = await fs.access(file)
+                    .then(() => true)
+                    .catch(() => false);
+                expect(fileExists).toBe(true);
+            }
+        } finally {
+            // Always change back to original directory
+            process.chdir(originalDir);
         }
-
-        // Change back to original directory
-        process.chdir('../..');
     });
 });
