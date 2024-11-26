@@ -227,11 +227,95 @@ export async function main() {
         await fs.mkdir(dir, { recursive: true });
     }
 
-    // Copy public files to dist (except CSS which is now inline)
-    const publicFiles = ['sw.js', 'db.js', 'manifest.json', 'offline.html'];
-    for (const file of publicFiles) {
-        await fs.copyFile(`public/${file}`, `dist/${file}`);
+    // Create public directory if it doesn't exist
+    await fs.mkdir(path.join(siteDir, 'public'), { recursive: true });
+    
+    // Copy required public files
+    const publicFiles = {
+        'sw.js': `const CACHE_NAME = 'absurdsite-v1';
+const ASSETS = [
+  '/',
+  '/db.js',
+  '/site.db',
+  '/manifest.json',
+  '/rss.xml',
+  '/sitemap.xml',
+  '/robots.txt'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
+});`,
+        'manifest.json': JSON.stringify({
+            name: siteName,
+            short_name: siteName,
+            start_url: '/',
+            display: 'standalone',
+            background_color: '#ffffff',
+            theme_color: '#000000',
+            icons: [
+                {
+                    src: '/icon-192.png',
+                    sizes: '192x192',
+                    type: 'image/png'
+                },
+                {
+                    src: '/icon-512.png',
+                    sizes: '512x512',
+                    type: 'image/png'
+                }
+            ]
+        }, null, 2),
+        'offline.html': `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - ${siteName}</title>
+</head>
+<body>
+    <h1>You're Offline</h1>
+    <p>Sorry, you're currently offline and we couldn't load this page. Please check your internet connection and try again.</p>
+    <p>You can still access any previously visited pages.</p>
+</body>
+</html>`
+    };
+
+    for (const [filename, content] of Object.entries(publicFiles)) {
+        await fs.writeFile(path.join(siteDir, 'public', filename), content);
     }
+
+    // Copy db.js from the package
+    await fs.copyFile(
+        path.join(import.meta.dir, 'public', 'db.js'),
+        path.join(siteDir, 'public', 'db.js')
+    );
 
     // Initialize the database
     const db = await initializeDatabase('dist/site.db');
