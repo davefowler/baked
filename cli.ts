@@ -138,8 +138,16 @@ program
         const loadPagesFromDir = async (dir: string, db: Database, parentMetadata: any = {}) => {
             const entries = await fs.readdir(dir, { withFileTypes: true });
             const metaPath = path.join(dir, 'meta.yaml');
-            const dirMetadata = await fs.readFile(metaPath, 'utf8');
-            const metadata = dirMetadata ? {...parentMetadata, ...yaml.parse(dirMetadata)} : parentMetadata;
+            let metadata = {...parentMetadata};
+            
+            try {
+                const dirMetadata = await fs.readFile(metaPath, 'utf8');
+                if (dirMetadata) {
+                    metadata = {...metadata, ...yaml.parse(dirMetadata)};
+                }
+            } catch (error) {
+                // meta.yaml doesn't exist, just use parent metadata
+            }
 
             for (const entry of entries) {
                 if (entry.isDirectory()) {
