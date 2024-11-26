@@ -27,9 +27,12 @@ describe("CLI Commands", () => {
         // Create test directory
         await fs.mkdir(testDir, { recursive: true });
         
-        // Link the package globally
+        // Link the package in the test directory
         try {
-            execSync('bun link absurd');
+            // First link the package from the project root
+            execSync('cd .. && bun link', { stdio: 'pipe' });
+            // Then link it in the test directory
+            execSync('bun link absurd', { stdio: 'pipe' });
         } catch (error) {
             console.error('Failed to link package:', error);
             throw error;
