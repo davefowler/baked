@@ -114,7 +114,29 @@ program
         }
 
         // Initialize the database
-        const db = await initializeDatabase('dist/site.db');
+        const db = new Database('dist/site.db');
+        
+        // Create required tables
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS pages (
+                slug TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                template TEXT NOT NULL,
+                metadata TEXT
+            );
+            
+            CREATE TABLE IF NOT EXISTS templates (
+                name TEXT PRIMARY KEY,
+                content TEXT NOT NULL
+            );
+            
+            CREATE TABLE IF NOT EXISTS assets (
+                path TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                type TEXT NOT NULL
+            );
+        `);
         
         // Process content directory
         await processDirectory('content');

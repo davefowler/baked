@@ -28,9 +28,8 @@ export class TemplateEngine {
         // Basic template rendering
         return template.content.replace(/\${([^}]+)}/g, (_, expr) => {
             try {
-                const context = { ...data, blocks: new Map() };
-                const fn = new Function('context', `with(context) { return ${expr} }`);
-                return fn(context);
+                const fn = new Function('data', `return ${expr}`);
+                return fn(data);
             } catch (err) {
                 console.error(`Template rendering error:`, err);
                 return '';

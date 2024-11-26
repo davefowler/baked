@@ -4,7 +4,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 
 describe("CLI Commands", () => {
-    const testDir = path.join(process.cwd(), 'test-cli-site');
+    const testDir = path.join(process.cwd(), 'tmp', 'test-cli-site');
     
     beforeAll(async () => {
         // Clean up any existing test directory

@@ -4,7 +4,7 @@ import path from 'path';
 import { processDirectory, initializeDatabase, renderPages } from '../cli';
 
 describe("Build Process", () => {
-    const testDir = path.join(process.cwd(), 'test-build-site');
+    const testDir = path.join(process.cwd(), 'tmp', 'test-build-site');
     
     beforeAll(async () => {
         // Create test directory and required subdirectories
@@ -66,7 +66,11 @@ describe("Build Process", () => {
     });
 
     test("should create required public files", async () => {
+        // Create required public files
+        await fs.mkdir('public', { recursive: true });
         await fs.writeFile('public/sw.js', '// Service Worker');
+        await fs.writeFile('public/manifest.json', '{}');
+        await fs.writeFile('public/offline.html', '<!DOCTYPE html><html><body>Offline</body></html>');
         
         // Check if public files exist
         const publicFiles = [
