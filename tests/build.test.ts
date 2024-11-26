@@ -7,12 +7,31 @@ describe("Build Process", () => {
     const testDir = path.join(process.cwd(), 'test-build-site');
     
     beforeAll(async () => {
-        // Create test directory
+        // Create test directory and required subdirectories
         await fs.mkdir(testDir, { recursive: true });
         process.chdir(testDir);
         
-        // Create public directory
-        await fs.mkdir('public', { recursive: true });
+        // Create all required directories
+        const dirs = [
+            'public',
+            'public/styles',
+            'pages',
+            'pages/blog',
+            'assets',
+            'assets/templates',
+            'assets/css',
+            'assets/components',
+            'assets/images',
+            'dist'
+        ];
+        
+        for (const dir of dirs) {
+            await fs.mkdir(dir, { recursive: true });
+        }
+        
+        // Create required CSS file
+        await fs.writeFile('public/styles/main.css', '/* Test CSS */');
+        
         global.siteDir = process.cwd();
     });
 

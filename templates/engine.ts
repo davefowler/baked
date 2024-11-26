@@ -19,7 +19,9 @@ export class TemplateEngine {
         // Basic template rendering
         return template.content.replace(/\${([^}]+)}/g, (_, expr) => {
             try {
-                return eval(`with(data) { ${expr} }`);
+                // Create a function instead of using eval with 'with'
+                const fn = new Function('data', `return ${expr}`);
+                return fn(data);
             } catch (err) {
                 console.error(`Template rendering error:`, err);
                 return '';
