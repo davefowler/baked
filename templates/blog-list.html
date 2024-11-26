@@ -9,26 +9,38 @@
         try {
             const page = Math.max(1, Number(data?.page || 1));
             const perPage = 10;
+            
+            // Use a single query with proper date parsing
             const posts = engine.query(`
-                SELECT * FROM pages 
+                SELECT *, 
+                    COALESCE(
+                        CAST(json_extract(metadata, '$.date') AS TEXT),
+                        datetime('now')
+                    ) as post_date
+                FROM pages 
                 WHERE template = 'blog'
-                ORDER BY json_extract(metadata, '$.date') DESC
+                ORDER BY post_date DESC
                 LIMIT ? OFFSET ?
             `, [perPage, (page - 1) * perPage]);
             
-            const totalPosts = engine.query(`
-                SELECT COUNT(*) as count FROM pages WHERE template = 'blog'
-            `)[0].count;
+            // Get total count in a safe way
+            const result = engine.query(`
+                SELECT COUNT(*) as count 
+                FROM pages 
+                WHERE template = 'blog'
+            `);
+            const totalPosts = result?.[0]?.count || 0;
             
             const hasMore = totalPosts > (page * perPage);
             const totalPages = Math.ceil(totalPosts / perPage);
 
-            const processedPosts = posts.map(post => {
+            // Process posts with better error handling
+            const processedPosts = (posts || []).map(post => {
                 try {
-                    return {
-                        ...post,
-                        metadata: JSON.parse(post.metadata || '{}')
-                    };
+                    const metadata = typeof post.metadata === 'string' ? 
+                        JSON.parse(post.metadata) : 
+                        post.metadata || {};
+                    return { ...post, metadata };
                 } catch (e) {
                     console.error(`Failed to parse metadata for post ${post.slug}:`, e);
                     return { ...post, metadata: {} };
