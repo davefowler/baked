@@ -29,7 +29,7 @@ describe("CLI Commands", () => {
         
         // Link the package globally
         try {
-            execSync('bun link', { stdio: 'pipe' });
+            execSync('bun link absurd');
         } catch (error) {
             console.error('Failed to link package:', error);
             throw error;
