@@ -4,8 +4,9 @@ import path from 'path';
 import { execSync } from 'child_process';
 
 describe("CLI Commands", () => {
-    const testDir = path.resolve(process.cwd(), 'tmp', 'test-cli-site');
-    const cliPath = path.resolve(process.cwd(), 'cli.ts');
+    const projectRoot = process.cwd();
+    const testDir = path.resolve(projectRoot, 'tmp', 'test-cli-site');
+    const cliPath = path.resolve(projectRoot, 'cli.ts');
     
     beforeAll(async () => {
         // Clean up any existing test directory
@@ -15,21 +16,8 @@ describe("CLI Commands", () => {
             // Ignore if directory doesn't exist
         }
         
-        // Create required subdirectories
-        const dirs = [
-            'pages',
-            'pages/blog',
-            'assets',
-            'assets/templates',
-            'assets/css',
-            'assets/components',
-            'assets/images',
-            'dist'
-        ];
-        
-        for (const dir of dirs) {
-            await fs.mkdir(path.join(testDir, dir), { recursive: true });
-        }
+        // Create test directory
+        await fs.mkdir(path.join(testDir), { recursive: true });
     });
 
     afterAll(async () => {
@@ -38,9 +26,10 @@ describe("CLI Commands", () => {
     });
 
     test("should create site directory", async () => {
-        execSync(`bun ${cliPath} new test-cli-site`, {
-            stdio: 'inherit',
-            cwd: path.dirname(testDir)
+        const result = execSync(`bun ${cliPath} new test-cli-site`, {
+            stdio: 'pipe',
+            cwd: path.dirname(testDir),
+            env: { ...process.env, PATH: process.env.PATH }
         });
         
         const exists = await fs.access(testDir)
@@ -86,17 +75,12 @@ describe("CLI Commands", () => {
     });
 
     test("should build site successfully", async () => {
-        const originalDir = process.cwd();
-        const cliPath = path.resolve(originalDir, 'cli.ts');
-        
         try {
-            // Change to test directory
-            process.chdir(testDir);
-
-            // Run build command
+            // Run build command from test directory
             execSync(`bun ${cliPath} build`, {
                 stdio: 'pipe',
-                cwd: testDir
+                cwd: testDir,
+                env: { ...process.env, PATH: process.env.PATH }
             });
 
             // Check for build artifacts
