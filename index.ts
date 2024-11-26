@@ -210,11 +210,22 @@ async function renderPages(db: Database, TemplateComponent: any): Promise<void> 
 
 export async function main() {
     // Create necessary directories
-    await fs.mkdir('content', { recursive: true });
-    await fs.mkdir('scripts', { recursive: true });
-    await fs.mkdir('dist', { recursive: true });
-    await fs.mkdir('templates', { recursive: true });
-    await fs.mkdir('public', { recursive: true });
+    const dirs = [
+        'content',
+        'content/blog',
+        'scripts',
+        'dist',
+        'dist/styles',
+        'templates',
+        'public',
+        'assets',
+        'assets/components',
+        'assets/templates'
+    ];
+    
+    for (const dir of dirs) {
+        await fs.mkdir(dir, { recursive: true });
+    }
 
     // Copy public files to dist (except CSS which is now inline)
     const publicFiles = ['sw.js', 'db.js', 'manifest.json', 'offline.html'];
