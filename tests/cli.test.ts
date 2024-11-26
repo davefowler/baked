@@ -110,15 +110,6 @@ describe("CLI Commands", () => {
         return exists;
     };
 
-    const verifyDirectory = async (dir: string) => {
-        try {
-            await fs.access(path.join(testDir, dir));
-            return true;
-        } catch {
-            return false;
-        }
-    };
-
     test("should create required directories", async () => {
         // Create directories first
         const requiredDirs = [

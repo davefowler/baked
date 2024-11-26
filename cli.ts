@@ -4,7 +4,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import { Database } from 'bun:sqlite';
-
+import type { Page } from './types.ts';
+import matter from 'gray-matter';
 async function createSiteStructure(siteName: string) {
     const siteDir = path.join(process.cwd(), siteName);
     const templateDir = path.join(import.meta.dir, 'examples', 'defaultsite');
@@ -106,15 +107,8 @@ program
         
         // Create necessary directories
         const dirs = [
-            'scripts',
             'dist',
-            'templates',
-            'public',
-            'assets',
-            'assets/components',
-            'assets/templates'
         ];
-        
         for (const dir of dirs) {
             await fs.mkdir(dir, { recursive: true });
         }
@@ -129,14 +123,10 @@ program
                 title TEXT NOT NULL,
                 content TEXT NOT NULL,
                 template TEXT NOT NULL,
-                metadata TEXT
+                metadata TEXT,
+                published_date TEXT
             );
-            
-            CREATE TABLE IF NOT EXISTS templates (
-                name TEXT PRIMARY KEY,
-                content TEXT NOT NULL
-            );
-            
+                        
             CREATE TABLE IF NOT EXISTS assets (
                 path TEXT PRIMARY KEY,
                 content TEXT NOT NULL,
@@ -145,59 +135,50 @@ program
         `);
         
         // Process content directory
-        const loadPagesFromDir = async (dir: string) => {
+        const loadPagesFromDir = async (dir: string, parentMetadata: any = {}) => {
             const entries = await fs.readdir(dir, { withFileTypes: true });
+            const metaPath = path.join(dir, 'meta.yaml');
+            const dirMetadata = await fs.readFile(metaPath, 'utf8');
+            const metadata = dirMetadata ? {...parentMetadata, ...yaml.parse(dirMetadata)} : parentMetadata;
+
             for (const entry of entries) {
                 if (entry.isDirectory()) {
-                    await loadPagesFromDir(path.join(dir, entry.name));
+                    // load metadata from meta.yaml file in the directory
+                    await loadPagesFromDir(path.join(dir, entry.name), metadata);
                 } else if (entry.name.endsWith('.md')) {
                     const content = await fs.readFile(path.join(dir, entry.name), 'utf8');
+                    // parse the frontmatter from the markdown and extend the metadata
+                    const frontmatter = matter(content);
+                    const newMetadata = {...metadata, ...frontmatter.data};
                     // Process markdown files
-                    db.prepare('INSERT INTO pages (slug, content, template) VALUES (?, ?, ?)')
-                        .run(entry.name.replace('.md', ''), content, 'default');
+                    db.prepare('INSERT INTO pages (slug, content, template, published_date) VALUES (?, ?, ?, ?)')
+                        .run(entry.name.replace('.md', ''), content, newMetadata.template, newMetadata.date);
+                    console.log(`loaded page: ${entry.name.replace('.md', '')}`, 'with metadata', newMetadata);
                 }
             }
         };
         await loadPagesFromDir('pages');
-        
-        // Generate HTML files
-        await renderPages(db);
 
-async function renderPages(db: Database) {
-    const pages = db.prepare('SELECT * FROM pages').all();
-    const distDir = path.join(process.cwd(), 'dist');
-    
-    for (const page of pages) {
-        const template = db.prepare('SELECT content FROM templates WHERE name = ?')
-            .get(page.template);
-            
-        if (!template) {
-            console.warn(`Template ${page.template} not found for page ${page.slug}`);
-            continue;
-        }
-        
-        // Parse metadata if it exists
-        const metadata = page.metadata ? JSON.parse(page.metadata) : {};
-        
-        // Render the page
-        const html = template.content.replace(/\${([^}]+)}/g, (_, expr) => {
-            try {
-                const fn = new Function('page', `return ${expr}`);
-                return fn({ ...page, metadata });
-            } catch (err) {
-                console.error(`Template rendering error for ${page.slug}:`, err);
-                return '';
+        // Load all the assets into the database
+        // TODO - do assets need metadata?  I think for now no.
+        const loadAssetsFromDir = async (dir: string) => {
+            const entries = await fs.readdir(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isDirectory()) {
+                    await loadAssetsFromDir(path.join(dir, entry.name));
+                    return;
+                }  
+                // the type of asset gets defined by the directory name that the file is in
+                const type = entry.name;
+                const content = await fs.readFile(path.join(dir, entry.name), 'utf8');
+                db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)')
+                    .run(entry.name, content, type);
+                console.log(`Loaded asset: ${entry.name} as ${type}`);
             }
-        });
-        
-        // Write the rendered HTML
-        const outputPath = path.join(distDir, `${page.slug}.html`);
-        await fs.mkdir(path.dirname(outputPath), { recursive: true });
-        await fs.writeFile(outputPath, html);
-    }
-}
-        
-        console.log('Content processed and static files generated');
+        };
+        await loadAssetsFromDir('assets');
+
+        // TODO render pages
     });
 
 program
