@@ -9,6 +9,8 @@ describe("CLI Commands", () => {
     let testDir: string;
     let originalDir: string;
 
+    const examplesDir = path.join(process.cwd(), 'examples', 'defaultsite');
+    
     beforeEach(async () => {
         // Save original directory
         originalDir = process.cwd();
@@ -20,9 +22,8 @@ describe("CLI Commands", () => {
         // Change to test directory
         process.chdir(testDir);
         
-        // Ensure examples directory exists and is properly set up
-        await fs.mkdir(path.dirname(examplesDir), { recursive: true });
-        await fs.mkdir(examplesDir, { recursive: true });
+        // Create examples directory structure
+        await fs.mkdir(path.join(testDir, 'examples', 'defaultsite'), { recursive: true });
         
         // Ensure examples directory exists
         try {
