@@ -157,7 +157,8 @@ program
                 }
             }
         };
-        await loadPagesFromDir('pages', db);
+        const siteDir = process.cwd();
+        await loadPagesFromDir(path.join(siteDir, 'pages'), db);
 
         // Load all the assets into the database
         // TODO - do assets need metadata?  I think for now no.
@@ -176,7 +177,7 @@ program
                 console.log(`Loaded asset: ${entry.name} as ${type}`);
             }
         };
-        await loadAssetsFromDir('assets', db);
+        await loadAssetsFromDir(path.join(siteDir, 'assets'), db);
 
         // TODO render pages
     });
