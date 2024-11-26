@@ -1,31 +1,24 @@
-import { expect, test, describe, beforeAll, afterAll, beforeEach } from "bun:test";
+import { expect, test, describe, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
 import { promises as fs } from 'fs';
 import path from 'path';
+import os from 'os';
 import { execSync } from 'child_process';
 
 describe("CLI Commands", () => {
-    const projectRoot = process.cwd();
-    const testDir = path.join(projectRoot, 'tmp', 'test-cli-site');
-    const examplesDir = path.join(projectRoot, '..', 'examples', 'defaultsite');
+    const TEST_ROOT = path.join(os.tmpdir(), 'absurdsite-tests');
+    let testDir: string;
     let originalDir: string;
 
-    beforeAll(async () => {
-        console.log('Project root:', projectRoot);
-        console.log('Test directory:', testDir);
-        console.log('Examples directory:', examplesDir);
-        
+    beforeEach(async () => {
+        // Save original directory
         originalDir = process.cwd();
         
-        // Clean up any existing test directories
-        const tmpParentDir = path.dirname(testDir);
-        try {
-            await fs.rm(tmpParentDir, { recursive: true, force: true });
-        } catch (error) {
-            console.log('Initial cleanup error (safe to ignore if dir not exists):', error.message);
-        }
+        // Create unique test directory for each test
+        testDir = path.join(TEST_ROOT, `test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+        await fs.mkdir(testDir, { recursive: true });
         
-        // Create fresh test directory structure
-        await fs.mkdir(tmpParentDir, { recursive: true });
+        // Change to test directory
+        process.chdir(testDir);
         
         // Ensure examples directory exists and is properly set up
         await fs.mkdir(path.dirname(examplesDir), { recursive: true });
@@ -48,32 +41,24 @@ describe("CLI Commands", () => {
         }
     });
 
-    beforeEach(() => {
-        // Ensure we're in the project root before each test
-        process.chdir(projectRoot);
-    });
-
-    afterAll(async () => {
-        // Always restore original directory first
+    afterEach(async () => {
+        // Always restore original directory
         process.chdir(originalDir);
         
-        // Clean up parent tmp directory to ensure complete cleanup
-        const tmpParentDir = path.dirname(testDir);
+        // Clean up test directory
         try {
-            await fs.rm(tmpParentDir, { recursive: true, force: true });
+            await fs.rm(testDir, { recursive: true, force: true });
         } catch (error) {
-            console.error('Cleanup error:', error);
-            // Even if rm fails, try to ensure directory is empty
-            try {
-                const files = await fs.readdir(tmpParentDir);
-                await Promise.all(
-                    files.map(file => 
-                        fs.rm(path.join(tmpParentDir, file), { recursive: true, force: true })
-                    )
-                );
-            } catch (e) {
-                console.error('Secondary cleanup error:', e);
-            }
+            console.error(`Failed to clean up test directory ${testDir}:`, error);
+        }
+    });
+
+    // Clean up the entire test root directory after all tests
+    afterAll(async () => {
+        try {
+            await fs.rm(TEST_ROOT, { recursive: true, force: true });
+        } catch (error) {
+            console.error(`Failed to clean up test root ${TEST_ROOT}:`, error);
         }
     });
 
