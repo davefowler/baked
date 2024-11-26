@@ -3,31 +3,37 @@ import { program } from 'commander';
 import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
+import { Database } from 'bun:sqlite';
 
 async function createSiteStructure(siteName: string) {
     const siteDir = path.join(process.cwd(), siteName);
     const templateDir = path.join(import.meta.dir, 'examples', 'defaultsite');
     
-    // Create site directory first
-    await fs.mkdir(siteDir, { recursive: true });
-    
-    // Copy example site structure
-    await fs.cp(templateDir, siteDir, { recursive: true, force: true });
-    
-    // Create subdirectories
-    const dirs = [
-        'pages',
-        'pages/blog',
-        'assets',
-        'assets/templates',
-        'assets/css',
-        'assets/components',
-        'assets/images',
-        'dist'
-    ];
-    
-    for (const dir of dirs) {
-        await fs.mkdir(path.join(siteDir, dir), { recursive: true });
+    try {
+        // Create site directory first
+        await fs.mkdir(siteDir, { recursive: true });
+        
+        // Create subdirectories before copying template
+        const dirs = [
+            'pages',
+            'pages/blog',
+            'assets',
+            'assets/templates',
+            'assets/css',
+            'assets/components',
+            'assets/images',
+            'dist'
+        ];
+        
+        for (const dir of dirs) {
+            await fs.mkdir(path.join(siteDir, dir), { recursive: true });
+        }
+
+        // Copy example site structure after directories are created
+        await fs.cp(templateDir, siteDir, { recursive: true, force: true });
+    } catch (error) {
+        console.error('Error creating site structure:', error);
+        throw error;
     }
     
     // Create site.yaml
