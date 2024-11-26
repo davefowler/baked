@@ -126,30 +126,18 @@ async function initializeDatabase(dbPath: string): Promise<Database> {
         );
     `);
 
-    // Load layouts
-    const baseLayout = await fs.readFile('templates/layouts/base.html', 'utf-8');
-    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
-        ['base', baseLayout]);
-
-    // Load partials
-    const headerPartial = await fs.readFile('templates/partials/header.html', 'utf-8');
-    const footerPartial = await fs.readFile('templates/partials/footer.html', 'utf-8');
-    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['header', headerPartial]);
-    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['footer', footerPartial]);
-
-    // Load page templates
-    const defaultTemplate = await fs.readFile('templates/default.html', 'utf-8');
-    const blogTemplate = await fs.readFile('templates/blog.html', 'utf-8');
-    const blogListTemplate = await fs.readFile('templates/blog-list.html', 'utf-8');
+    // Load templates from examples/defaultsite/assets/templates
+    const templatesDir = 'examples/defaultsite/assets/templates';
+    const templates = await fs.readdir(templatesDir);
     
-    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)', 
-        ['default', defaultTemplate]);
-    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['blog', blogTemplate]);
-    db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
-        ['blog-list', blogListTemplate]);
+    for (const template of templates) {
+        if (template.endsWith('.html')) {
+            const name = path.basename(template, '.html');
+            const content = await fs.readFile(path.join(templatesDir, template), 'utf-8');
+            db.run('INSERT OR REPLACE INTO templates (name, content) VALUES (?, ?)',
+                [name, content]);
+        }
+    }
 
     // Store CSS in assets
     db.run('INSERT OR REPLACE INTO assets (path, content, mime_type) VALUES (?, ?, ?)',
