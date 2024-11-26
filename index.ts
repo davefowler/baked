@@ -228,7 +228,7 @@ export async function main() {
     }
 
     // Create public directory if it doesn't exist
-    await fs.mkdir(path.join(siteDir, 'public'), { recursive: true });
+    await fs.mkdir(path.join(process.cwd(), 'public'), { recursive: true });
     
     // Copy required public files
     const publicFiles = {
