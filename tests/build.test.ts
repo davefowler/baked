@@ -42,6 +42,15 @@ describe("Build Process", () => {
         await fs.rm(testDir, { recursive: true, force: true });
     });
 
+    const verifyDirectory = async (dir: string) => {
+        try {
+            await fs.access(path.join(testDir, dir));
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
     test("should create required directories", async () => {
         // Create test directory and required subdirectories
         await fs.mkdir(testDir, { recursive: true });

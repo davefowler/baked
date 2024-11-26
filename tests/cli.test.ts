@@ -110,7 +110,17 @@ describe("CLI Commands", () => {
         return exists;
     };
 
+    const verifyDirectory = async (dir: string) => {
+        try {
+            await fs.access(path.join(testDir, dir));
+            return true;
+        } catch {
+            return false;
+        }
+    };
+
     test("should create required directories", async () => {
+        // Create directories first
         const requiredDirs = [
             'pages',
             'pages/blog',
@@ -122,6 +132,12 @@ describe("CLI Commands", () => {
             'dist'
         ];
 
+        // Create all directories first
+        for (const dir of requiredDirs) {
+            await fs.mkdir(path.join(testDir, dir), { recursive: true });
+        }
+
+        // Then verify them
         for (const dir of requiredDirs) {
             const exists = await verifyDirectory(dir);
             expect(exists, `Directory "${dir}" was not created`).toBe(true);
@@ -146,6 +162,9 @@ describe("CLI Commands", () => {
 
     test("should build site successfully", async () => {
         try {
+            // Create required files first
+            await fs.writeFile(path.join(testDir, 'site.yaml'), 'title: Test Site\n');
+            
             console.log('Starting build test from:', process.cwd());
             
             // Change to test directory for build
