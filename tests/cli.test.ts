@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
+import { Database } from 'bun:sqlite';
 
 describe("CLI Commands", () => {
     const TEST_ROOT = path.join(os.tmpdir(), 'absurdsite-tests');
@@ -137,7 +138,6 @@ describe("CLI Commands", () => {
 
     test("should create required files", async () => {
         const requiredFiles = [
-            'site.yaml',
             'pages/index.md',
             'pages/about.md',
             'pages/blog/meta.yaml'

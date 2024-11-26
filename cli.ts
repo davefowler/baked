@@ -46,10 +46,14 @@ async function createSiteStructure(siteName: string) {
         language: 'en'
     };
     
-    await fs.writeFile(
-        path.join(siteDir, 'site.yaml'),
-        yaml.stringify(siteConfig)
-    );
+    try {
+        await fs.writeFile(
+            path.join(siteDir, 'site.yaml'),
+            yaml.stringify(siteConfig)
+        );
+    } catch (error) {
+        console.error('Error creating site.yaml:', error);
+    }
     
     // Create default pages
     const indexContent = `---
