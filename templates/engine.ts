@@ -97,7 +97,7 @@ export class TemplateEngine {
 
         const escapedStr = processedStr
             .replace(/`/g, '\\`')
-            .replace(/\$\{/g, '${')
+            .replace(/\$\{/g, '\\${')
             .trim();
             
         const templateFn = (data: any, engine: TemplateEngine) => {
