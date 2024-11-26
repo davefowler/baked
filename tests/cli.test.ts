@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeAll, afterAll } from "bun:test";
+import { expect, test, describe, beforeAll, afterAll, beforeEach } from "bun:test";
 import { promises as fs } from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
@@ -7,35 +7,66 @@ describe("CLI Commands", () => {
     const projectRoot = process.cwd();
     const testDir = path.resolve(projectRoot, 'tmp', 'test-cli-site');
     const cliPath = path.resolve(projectRoot, 'cli.ts');
-    
+    let originalDir: string;
+
     beforeAll(async () => {
+        console.log('Project root:', projectRoot);
+        console.log('Test directory:', testDir);
+        console.log('CLI path:', cliPath);
+        
+        originalDir = process.cwd();
+        
         // Clean up any existing test directory
         try {
             await fs.rm(testDir, { recursive: true, force: true });
         } catch (error) {
-            // Ignore if directory doesn't exist
+            console.log('Clean up error (safe to ignore if dir not exists):', error.message);
         }
         
         // Create test directory
-        await fs.mkdir(path.join(testDir), { recursive: true });
+        await fs.mkdir(testDir, { recursive: true });
+    });
+
+    beforeEach(() => {
+        // Ensure we're in the project root before each test
+        process.chdir(projectRoot);
     });
 
     afterAll(async () => {
-        // Clean up test directory
-        await fs.rm(testDir, { recursive: true, force: true });
+        // Clean up and restore original directory
+        try {
+            process.chdir(originalDir);
+            await fs.rm(testDir, { recursive: true, force: true });
+        } catch (error) {
+            console.error('Cleanup error:', error);
+        }
     });
 
     test("should create site directory", async () => {
-        const result = execSync(`bun ${cliPath} new test-cli-site`, {
-            stdio: 'pipe',
-            cwd: path.dirname(testDir),
-            env: { ...process.env, PATH: process.env.PATH }
-        });
-        
-        const exists = await fs.access(testDir)
-            .then(() => true)
-            .catch(() => false);
-        expect(exists).toBe(true);
+        try {
+            console.log('Executing CLI command from:', process.cwd());
+            const result = execSync(`bun ${cliPath} new test-cli-site`, {
+                stdio: 'pipe',
+                env: { ...process.env, PATH: process.env.PATH }
+            });
+            console.log('CLI output:', result.toString());
+            
+            const exists = await fs.access(testDir)
+                .then(() => true)
+                .catch(() => false);
+            
+            if (!exists) {
+                console.error('Directory not created:', testDir);
+                console.error('Current directory:', process.cwd());
+                const dirContents = await fs.readdir(process.cwd());
+                console.log('Current directory contents:', dirContents);
+            }
+            
+            expect(exists).toBe(true);
+        } catch (error) {
+            console.error('CLI execution error:', error);
+            throw error;
+        }
     });
 
     test("should create required directories", async () => {
@@ -76,12 +107,18 @@ describe("CLI Commands", () => {
 
     test("should build site successfully", async () => {
         try {
-            // Run build command from test directory
-            execSync(`bun ${cliPath} build`, {
+            console.log('Starting build test from:', process.cwd());
+            
+            // Change to test directory for build
+            process.chdir(testDir);
+            console.log('Changed to test directory:', process.cwd());
+            
+            // Run build command
+            const buildOutput = execSync(`bun ${cliPath} build`, {
                 stdio: 'pipe',
-                cwd: testDir,
                 env: { ...process.env, PATH: process.env.PATH }
             });
+            console.log('Build output:', buildOutput.toString());
 
             // Check for build artifacts
             const buildFiles = [
@@ -92,14 +129,23 @@ describe("CLI Commands", () => {
             ];
 
             for (const file of buildFiles) {
-                const fileExists = await fs.access(file)
+                const fullPath = path.join(testDir, file);
+                console.log('Checking file:', fullPath);
+                
+                const fileExists = await fs.access(fullPath)
                     .then(() => true)
-                    .catch(() => false);
+                    .catch((err) => {
+                        console.error(`File check failed for ${fullPath}:`, err);
+                        return false;
+                    });
                 expect(fileExists).toBe(true);
             }
+        } catch (error) {
+            console.error('Build test error:', error);
+            throw error;
         } finally {
-            // Always change back to original directory
-            process.chdir(originalDir);
+            // Return to project root
+            process.chdir(projectRoot);
         }
     });
 });
