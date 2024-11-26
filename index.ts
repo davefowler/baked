@@ -273,8 +273,8 @@ self.addEventListener('fetch', (event) => {
   );
 });`,
         'manifest.json': JSON.stringify({
-            name: siteName,
-            short_name: siteName,
+            name: "AbsurdSite",
+            short_name: "AbsurdSite",
             start_url: '/',
             display: 'standalone',
             background_color: '#ffffff',

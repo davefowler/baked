@@ -23,8 +23,8 @@ describe("Build Process", () => {
         
         // Check if directories were created
         const dirs = [
-            'content',
-            'content/blog',
+            'pages',
+            'pages/blog',
             'assets',
             'assets/templates',
             'assets/css',
