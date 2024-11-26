@@ -6,13 +6,13 @@ import { execSync } from 'child_process';
 describe("CLI Commands", () => {
     const projectRoot = process.cwd();
     const testDir = path.resolve(projectRoot, 'tmp', 'test-cli-site');
-    const cliPath = path.resolve(projectRoot, 'cli.ts');
+    const examplesDir = path.resolve(projectRoot, 'examples', 'defaultsite');
     let originalDir: string;
 
     beforeAll(async () => {
         console.log('Project root:', projectRoot);
         console.log('Test directory:', testDir);
-        console.log('CLI path:', cliPath);
+        console.log('Examples directory:', examplesDir);
         
         originalDir = process.cwd();
         
@@ -23,8 +23,24 @@ describe("CLI Commands", () => {
             console.log('Clean up error (safe to ignore if dir not exists):', error.message);
         }
         
-        // Create test directory
-        await fs.mkdir(testDir, { recursive: true });
+        // Create test directory and copy example site
+        await fs.mkdir(path.dirname(testDir), { recursive: true });
+        
+        // Ensure examples directory exists
+        try {
+            await fs.access(examplesDir);
+        } catch (error) {
+            console.error('Examples directory not found:', error);
+            throw new Error('Examples directory not found. Please ensure the project is properly set up.');
+        }
+        
+        // Link the package globally
+        try {
+            execSync('bun link', { stdio: 'pipe' });
+        } catch (error) {
+            console.error('Failed to link package:', error);
+            throw error;
+        }
     });
 
     beforeEach(() => {
@@ -44,9 +60,7 @@ describe("CLI Commands", () => {
 
     test("should create site directory", async () => {
         try {
-            // Link the package globally first
-            execSync('bun link', { stdio: 'pipe' });
-            
+            // Execute the CLI command
             console.log('Executing CLI command from:', process.cwd());
             const result = execSync('absurd new test-cli-site', {
                 stdio: 'pipe',
@@ -54,23 +68,44 @@ describe("CLI Commands", () => {
             });
             console.log('CLI output:', result.toString());
             
+            // Verify the site directory was created
             const exists = await fs.access(testDir)
                 .then(() => true)
                 .catch(() => false);
             
             if (!exists) {
                 console.error('Directory not created:', testDir);
-                console.error('Current directory:', process.cwd());
-                const dirContents = await fs.readdir(process.cwd());
-                console.log('Current directory contents:', dirContents);
+                const parentDir = await fs.readdir(path.dirname(testDir));
+                console.log('Parent directory contents:', parentDir);
             }
             
             expect(exists).toBe(true);
+            
+            // List created files for debugging
+            const files = await fs.readdir(testDir, { recursive: true });
+            console.log('Created files:', files);
+            
         } catch (error) {
             console.error('CLI execution error:', error);
             throw error;
         }
     });
+
+    const verifyDirectory = async (dir: string) => {
+        const exists = await fs.access(path.join(testDir, dir))
+            .then(() => true)
+            .catch(() => false);
+        if (!exists) {
+            const parentPath = path.join(testDir, path.dirname(dir));
+            try {
+                const parentContents = await fs.readdir(parentPath);
+                console.error(`Directory "${dir}" not found. Parent contents:`, parentContents);
+            } catch (error) {
+                console.error(`Cannot read parent directory for "${dir}":`, error);
+            }
+        }
+        return exists;
+    };
 
     test("should create required directories", async () => {
         const requiredDirs = [
@@ -85,10 +120,8 @@ describe("CLI Commands", () => {
         ];
 
         for (const dir of requiredDirs) {
-            const dirExists = await fs.access(path.join(testDir, dir))
-                .then(() => true)
-                .catch(() => false);
-            expect(dirExists, `Directory "${dir}" was not created`).toBe(true);
+            const exists = await verifyDirectory(dir);
+            expect(exists, `Directory "${dir}" was not created`).toBe(true);
         }
     });
 
