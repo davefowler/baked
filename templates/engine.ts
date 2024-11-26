@@ -28,11 +28,7 @@ export class TemplateEngine {
         
         let match;
         while ((match = blockRegex.exec(templateStr)) !== null) {
-            const blockContent = match[2]
-                .trim()
-                .replace(/`/g, '\\`')
-                .replace(/\$\{/g, '\\${');
-            blocks[match[1]] = blockContent;
+            blocks[match[1]] = match[2].trim();
         }
 
         return { parent, blocks };
@@ -88,26 +84,20 @@ export class TemplateEngine {
             // Process blocks
             .replace(/\{\% block (\w+) \%\}([\s\S]*?)\{\% endblock \%\}/g, 
                 (_, blockName, content) => {
-                    const escapedContent = content
-                        .trim()
-                        .replace(/`/g, '\\`')
-                        .replace(/\$\{/g, '\\${');
-                    return `\${data.blocks?.get('${blockName}') ?? \`${escapedContent}\`}`;
-                });
-
-        const escapedStr = processedStr
-            .replace(/`/g, '\\`')
-            .replace(/\$\{/g, '\\${')
+                    return `\${data.blocks?.get('${blockName}') ?? \`${content.trim()}\`}`;
+                })
             .trim();
             
         const templateFn = (data: any, engine: TemplateEngine) => {
             try {
                 const fn = new Function('data', 'engine', `
-                    try {
-                        return \`${escapedStr}\`;
-                    } catch (e) {
-                        console.error('Template error:', e);
-                        return 'Error rendering template';
+                    with (data) {
+                        try {
+                            return \`${processedStr}\`;
+                        } catch (e) {
+                            console.error('Template error:', e);
+                            return 'Error rendering template';
+                        }
                     }
                 `);
                 return fn(data, engine);
