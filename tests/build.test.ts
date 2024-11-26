@@ -9,6 +9,7 @@ describe("Build Process", () => {
     beforeAll(async () => {
         // Create test directory and required subdirectories
         await fs.mkdir(testDir, { recursive: true });
+        await fs.mkdir(path.join(testDir, 'public'), { recursive: true });
         process.chdir(testDir);
         
         // Create all required directories

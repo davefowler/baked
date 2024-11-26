@@ -20,9 +20,11 @@ export class TemplateEngine {
         const extendsMatch = template.content.match(/^\{%\s*extends\s+["']([^"']+)["']\s*%\}/m);
         if (extendsMatch) {
             const parentName = extendsMatch[1];
-            const parentTemplate = this.render(parentName, data);
-            const childContent = template.content.replace(/^\{%\s*extends\s+["'][^"']+["']\s*%\}/m, '');
-            return parentTemplate.replace(/\${blocks\.content}/g, childContent);
+            const childContent = template.content
+                .replace(/^\{%\s*extends\s+["'][^"']+["']\s*%\}/m, '')
+                .replace(/\{%\s*block\s+content\s*%\}([\s\S]*?)\{%\s*endblock\s*%\}/m, '$1');
+            const parentTemplate = this.render(parentName, { ...data, content: childContent });
+            return parentTemplate;
         }
 
         // Basic template rendering

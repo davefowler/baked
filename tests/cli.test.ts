@@ -13,6 +13,8 @@ describe("CLI Commands", () => {
         } catch (error) {
             // Ignore if directory doesn't exist
         }
+        // Create tmp directory
+        await fs.mkdir(path.dirname(testDir), { recursive: true });
     });
 
     afterAll(async () => {
