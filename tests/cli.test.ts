@@ -238,21 +238,23 @@ tags: [test, blog]
 
     test("should build site successfully", async () => {
         try {
-            // Create required files first
-            await fs.writeFile(path.join(testDir, 'site.yaml'), 'title: Test Site\n');
+            // Create a new site first
+            const siteName = 'testbuild';
+            console.log('Creating new site for build test...');
             
-            console.log('Starting build test from:', process.cwd());
-            
-            // Change to test directory for build
-            process.chdir(testDir);
-            console.log('Changed to test directory:', process.cwd());
-            
-            // Run build command using cli.ts directly
+            // Run new command using cli.ts directly
             const cliPath = path.join(projectRoot, 'cli.ts');
-            console.log('CLI Path:', cliPath);
-            console.log('Project Root:', projectRoot);
-            console.log('Full command:', `${cliPath} build`);
+            execSync(`${cliPath} new ${siteName}`, {
+                stdio: 'pipe',
+                env: { ...process.env, PATH: process.env.PATH }
+            });
+
+            // Change to the new site directory
+            const siteDir = path.join(testDir, siteName);
+            process.chdir(siteDir);
+            console.log('Changed to site directory:', process.cwd());
             
+            // Now run the build command
             const buildOutput = execSync(`${cliPath} build`, {
                 stdio: 'pipe',
                 env: { ...process.env, PATH: process.env.PATH }
