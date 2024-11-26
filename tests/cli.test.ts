@@ -27,14 +27,16 @@ describe("CLI Commands", () => {
         // Create test directory
         await fs.mkdir(testDir, { recursive: true });
         
-        // Link the package in the test directory
+        // Copy the CLI script to test directory
         try {
-            // First link the package from the project root
-            execSync('cd .. && bun link', { stdio: 'pipe' });
-            // Then link it in the test directory
-            execSync('bun link absurd', { stdio: 'pipe' });
+            await fs.copyFile(
+                path.join(projectRoot, 'cli.ts'),
+                path.join(testDir, 'cli.ts')
+            );
+            // Make it executable
+            await fs.chmod(path.join(testDir, 'cli.ts'), 0o755);
         } catch (error) {
-            console.error('Failed to link package:', error);
+            console.error('Failed to setup CLI:', error);
             throw error;
         }
     });
@@ -64,7 +66,7 @@ describe("CLI Commands", () => {
         try {
             // Execute the CLI command
             console.log('Executing CLI command from:', process.cwd());
-            const result = execSync(`absurd new testsite`, {
+            const result = execSync(`./cli.ts new testsite`, {
                 stdio: 'pipe',
                 env: { ...process.env, PATH: process.env.PATH }
             });
