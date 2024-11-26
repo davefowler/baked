@@ -3,36 +3,14 @@
 {% block content %}
 <div class="blog-list-container">
     ${(() => {
-        try {
-            const page = Math.max(1, Number(data?.page || 1));
-            const perPage = 10;
-            
-            // Use a single query with proper date parsing
-            const posts = engine.query(`
-                SELECT *, 
-                    COALESCE(
-                        CAST(json_extract(metadata, '$.date') AS TEXT),
-                        datetime('now')
-                    ) as post_date
-                FROM pages 
-                WHERE template = 'blog'
-                ORDER BY post_date DESC
-                LIMIT ? OFFSET ?
-            `, [perPage, (page - 1) * perPage]);
-            
-            // Get total count in a safe way
-            const result = engine.query(`
-                SELECT COUNT(*) as count 
-                FROM pages 
-                WHERE template = 'blog'
-            `);
-            const totalPosts = result?.[0]?.count || 0;
-            
-            const hasMore = totalPosts > (page * perPage);
-            const totalPages = Math.ceil(totalPosts / perPage);
-
-            // Process posts with better error handling
-            const processedPosts = (posts || []).map(post => {
+        const page = Math.max(1, Number(data?.page || 1));
+        const perPage = 10;
+        
+        // Use Post model for pagination
+        const { items: posts, total: totalPosts } = engine.Post.paginate(page, perPage);
+        
+        // Process posts with better error handling
+        const processedPosts = posts.map(post => {
                 try {
                     const metadata = typeof post.metadata === 'string' ? 
                         JSON.parse(post.metadata) : 
@@ -46,7 +24,7 @@
 
         return `
             <ul class="blog-list">
-                ${processedPosts.length > 0 ? processedPosts.map(post => `
+                ${processedPosts?.length ? processedPosts.map(post => `
                     <li>
                         <h2><a href="/${post.slug}">${post.title || 'Untitled'}</a></h2>
                         ${post.metadata?.date ? `<time datetime="${post.metadata.date}">${post.metadata.date}</time>` : ''}
@@ -56,7 +34,7 @@
             </ul>
             
             <nav class="pagination">
-                ${page > 1 ? 
+                ${page > 1 && totalPosts > 0 ? 
                     `<a href="?page=${page - 1}" rel="prev">← Previous</a>` : 
                     '<span class="pagination-placeholder"></span>'
                 }
