@@ -41,7 +41,7 @@ describe("CLI Commands", () => {
 
     test("should create new site with correct structure", async () => {
         // Run CLI command to create new site
-        execSync(`bun run cli.ts new ${path.basename(testDir)}`);
+        execSync(`bun run ${path.join(process.cwd(), 'cli.ts')} new ${path.basename(testDir)}`);
         
         // Check if site directory was created
         const exists = await fs.access(testDir)

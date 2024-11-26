@@ -20,23 +20,9 @@ describe("TemplateEngine", () => {
 
     test("should properly handle template inheritance", () => {
         // Register base template
-        engine.registerTemplate("base", `
-            <!DOCTYPE html>
-            <html>
-                <head><title>\${data.title}</title></head>
-                <body>
-                    \${data.blocks?.get("content") ?? ""}
-                </body>
-            </html>
-        `);
+        engine.registerTemplate("base", `<!DOCTYPE html><html><head><title>\${data.title}</title></head><body>\${data.blocks?.get("content") ?? ""}</body></html>`);
 
-        // Register child template
-        engine.registerTemplate("child", `
-            {% extends "base" %}
-            {% block content %}
-            <h1>Hello World</h1>
-            {% endblock %}
-        `);
+        engine.registerTemplate("child", `{% extends "base" %}{% block content %}<h1>Hello World</h1>{% endblock %}`);
 
         const result = engine.render("child", { title: "Test Page" });
         const $ = cheerio.load(result);
@@ -46,18 +32,9 @@ describe("TemplateEngine", () => {
     });
 
     test("should handle nested blocks", () => {
-        engine.registerTemplate("base", `
-            <main>
-                ${'${data.blocks?.get("content") ?? ""}'}
-            </main>
-        `);
-
-        engine.registerTemplate("nested", `
-            {% extends "base" %}
-            {% block content %}
-            <article>Test Content</article>
-            {% endblock %}
-        `);
+        engine.registerTemplate("base", `<main>\${data.blocks?.get("content") ?? ""}</main>`);
+        
+        engine.registerTemplate("nested", `{% extends "base" %}{% block content %}<article>Test Content</article>{% endblock %}`);
 
         const result = engine.render("nested", {});
         const $ = cheerio.load(result);

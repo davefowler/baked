@@ -33,7 +33,10 @@ export class TemplateEngine {
                 throw new Error(`Parent template ${parentName} not found`);
             }
             
-            return parentTemplate.content.replace(/\${data\.blocks\.get\("content"\)\s*\?\?\s*""}/g, blockContent);
+            return this.render(parentName, {
+                ...data,
+                blocks: new Map([['content', blockContent]])
+            });
         }
 
         // Basic template rendering
