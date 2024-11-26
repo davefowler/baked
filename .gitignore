@@ -1,4 +1,6 @@
 .aider*
+.aider.chat.history.md
+.aider.tags.cache.v3
 .env
 dist/
 tmp/
