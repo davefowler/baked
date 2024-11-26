@@ -8,8 +8,11 @@ async function createSiteStructure(siteName: string) {
     const siteDir = path.join(process.cwd(), siteName);
     const templateDir = path.join(import.meta.dir, 'examples', 'defaultsite');
     
+    // Create site directory first
+    await fs.mkdir(siteDir, { recursive: true });
+    
     // Copy example site structure
-    await fs.cp(templateDir, siteDir, { recursive: true });
+    await fs.cp(templateDir, siteDir, { recursive: true, force: true });
     
     // Create subdirectories
     const dirs = [

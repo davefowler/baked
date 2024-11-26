@@ -13,8 +13,9 @@ describe("CLI Commands", () => {
         } catch (error) {
             // Ignore if directory doesn't exist
         }
-        // Create tmp directory
+        // Create tmp directory and ensure parent directories exist
         await fs.mkdir(path.dirname(testDir), { recursive: true });
+        await fs.mkdir(testDir, { recursive: true });
     });
 
     afterAll(async () => {
