@@ -13,9 +13,25 @@ describe("CLI Commands", () => {
         } catch (error) {
             // Ignore if directory doesn't exist
         }
-        // Create tmp directory and ensure parent directories exist
-        await fs.mkdir(path.dirname(testDir), { recursive: true });
+        
+        // Create test directory structure
         await fs.mkdir(testDir, { recursive: true });
+        
+        // Create required subdirectories
+        const dirs = [
+            'pages',
+            'pages/blog',
+            'assets',
+            'assets/templates',
+            'assets/css',
+            'assets/components',
+            'assets/images',
+            'dist'
+        ];
+        
+        for (const dir of dirs) {
+            await fs.mkdir(path.join(testDir, dir), { recursive: true });
+        }
     });
 
     afterAll(async () => {
@@ -73,7 +89,7 @@ describe("CLI Commands", () => {
         process.chdir(testDir);
 
         // Run build command with proper path
-        execSync('bun run ../cli.ts build', { stdio: 'inherit' });
+        execSync('bun run ../../cli.ts build', { stdio: 'inherit' });
 
         // Check for build artifacts
         const buildFiles = [

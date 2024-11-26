@@ -20,11 +20,20 @@ export class TemplateEngine {
         const extendsMatch = template.content.match(/^\{%\s*extends\s+["']([^"']+)["']\s*%\}/m);
         if (extendsMatch) {
             const parentName = extendsMatch[1];
-            const childContent = template.content
-                .replace(/^\{%\s*extends\s+["'][^"']+["']\s*%\}/m, '')
-                .replace(/\{%\s*block\s+content\s*%\}([\s\S]*?)\{%\s*endblock\s*%\}/m, '$1');
-            const parentTemplate = this.render(parentName, { ...data, content: childContent });
-            return parentTemplate;
+            
+            // Extract block content
+            const blockMatch = template.content.match(/\{%\s*block\s+content\s*%\}([\s\S]*?)\{%\s*endblock\s*%\}/m);
+            const blockContent = blockMatch ? blockMatch[1].trim() : '';
+            
+            // Get parent template and render with block content
+            const parentTemplate = this.db.prepare('SELECT content FROM templates WHERE name = ?')
+                .get(parentName);
+                
+            if (!parentTemplate) {
+                throw new Error(`Parent template ${parentName} not found`);
+            }
+            
+            return parentTemplate.content.replace(/\${data\.blocks\.get\("content"\)\s*\?\?\s*""}/g, blockContent);
         }
 
         // Basic template rendering
