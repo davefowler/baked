@@ -148,6 +148,19 @@ program
         `);
         
         // Process content directory
+        const processDirectory = async (dir: string) => {
+            const entries = await fs.readdir(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                if (entry.isDirectory()) {
+                    await processDirectory(path.join(dir, entry.name));
+                } else if (entry.name.endsWith('.md')) {
+                    const content = await fs.readFile(path.join(dir, entry.name), 'utf8');
+                    // Process markdown files
+                    db.prepare('INSERT INTO pages (slug, content, template) VALUES (?, ?, ?)')
+                        .run(entry.name.replace('.md', ''), content, 'default');
+                }
+            }
+        };
         await processDirectory('content');
         
         // Generate HTML files

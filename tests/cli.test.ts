@@ -24,8 +24,10 @@ describe("CLI Commands", () => {
         // Change to test directory
         process.chdir(testDir);
         
-        // Create test directory
+        // Create test directory and initial structure
         await fs.mkdir(testDir, { recursive: true });
+        await fs.mkdir(path.join(testDir, 'pages'), { recursive: true });
+        await fs.mkdir(path.join(testDir, 'content'), { recursive: true });
         
         // Use CLI script from project root
         try {
