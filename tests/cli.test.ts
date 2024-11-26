@@ -151,6 +151,91 @@ describe("CLI Commands", () => {
         }
     });
 
+    test("loadPagesFromDir should properly load pages with metadata", async () => {
+        // Create test pages
+        await fs.mkdir(path.join(testDir, 'pages', 'blog'), { recursive: true });
+        
+        // Create meta.yaml
+        const metaContent = `
+template: blog
+author: Test Author
+`;
+        await fs.writeFile(path.join(testDir, 'pages', 'blog', 'meta.yaml'), metaContent);
+        
+        // Create test markdown file
+        const pageContent = `---
+title: Test Post
+date: 2024-01-01
+tags: [test, blog]
+---
+# Test Content
+`;
+        await fs.writeFile(path.join(testDir, 'pages', 'blog', 'test-post.md'), pageContent);
+        
+        // Initialize test database
+        const db = new Database(':memory:');
+        db.exec(`
+            CREATE TABLE pages (
+                slug TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                template TEXT NOT NULL,
+                metadata TEXT,
+                published_date TEXT
+            );
+        `);
+        
+        // Run loadPagesFromDir
+        await loadPagesFromDir('pages', db);
+        
+        // Verify the page was loaded correctly
+        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/test-post');
+        expect(page).toBeDefined();
+        expect(page.template).toBe('blog');
+        expect(page.published_date).toBe('2024-01-01');
+        
+        const metadata = JSON.parse(page.metadata);
+        expect(metadata.author).toBe('Test Author');
+        expect(metadata.tags).toEqual(['test', 'blog']);
+    });
+
+    test("loadAssetsFromDir should properly load assets", async () => {
+        // Create test assets
+        await fs.mkdir(path.join(testDir, 'assets', 'templates'), { recursive: true });
+        await fs.mkdir(path.join(testDir, 'assets', 'css'), { recursive: true });
+        
+        // Create test files
+        const templateContent = '<div>${content}</div>';
+        const cssContent = '.test { color: red; }';
+        
+        await fs.writeFile(path.join(testDir, 'assets', 'templates', 'test.html'), templateContent);
+        await fs.writeFile(path.join(testDir, 'assets', 'css', 'test.css'), cssContent);
+        
+        // Initialize test database
+        const db = new Database(':memory:');
+        db.exec(`
+            CREATE TABLE assets (
+                path TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                type TEXT NOT NULL
+            );
+        `);
+        
+        // Run loadAssetsFromDir
+        await loadAssetsFromDir('assets', db);
+        
+        // Verify assets were loaded correctly
+        const template = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.html');
+        expect(template).toBeDefined();
+        expect(template.content).toBe(templateContent);
+        expect(template.type).toBe('templates');
+        
+        const css = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.css');
+        expect(css).toBeDefined();
+        expect(css.content).toBe(cssContent);
+        expect(css.type).toBe('css');
+    });
+
     test("should build site successfully", async () => {
         try {
             // Create required files first

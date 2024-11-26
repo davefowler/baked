@@ -135,7 +135,7 @@ program
         `);
         
         // Process content directory
-        const loadPagesFromDir = async (dir: string, parentMetadata: any = {}) => {
+        const loadPagesFromDir = async (dir: string, db: Database, parentMetadata: any = {}) => {
             const entries = await fs.readdir(dir, { withFileTypes: true });
             const metaPath = path.join(dir, 'meta.yaml');
             const dirMetadata = await fs.readFile(metaPath, 'utf8');
@@ -157,11 +157,11 @@ program
                 }
             }
         };
-        await loadPagesFromDir('pages');
+        await loadPagesFromDir('pages', db);
 
         // Load all the assets into the database
         // TODO - do assets need metadata?  I think for now no.
-        const loadAssetsFromDir = async (dir: string) => {
+        const loadAssetsFromDir = async (dir: string, db: Database) => {
             const entries = await fs.readdir(dir, { withFileTypes: true });
             for (const entry of entries) {
                 if (entry.isDirectory()) {
@@ -176,7 +176,7 @@ program
                 console.log(`Loaded asset: ${entry.name} as ${type}`);
             }
         };
-        await loadAssetsFromDir('assets');
+        await loadAssetsFromDir('assets', db);
 
         // TODO render pages
     });
