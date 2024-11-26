@@ -44,8 +44,11 @@ describe("CLI Commands", () => {
 
     test("should create site directory", async () => {
         try {
+            // Link the package globally first
+            execSync('bun link', { stdio: 'pipe' });
+            
             console.log('Executing CLI command from:', process.cwd());
-            const result = execSync(`bun ${cliPath} new test-cli-site`, {
+            const result = execSync('absurd new test-cli-site', {
                 stdio: 'pipe',
                 env: { ...process.env, PATH: process.env.PATH }
             });
@@ -114,7 +117,7 @@ describe("CLI Commands", () => {
             console.log('Changed to test directory:', process.cwd());
             
             // Run build command
-            const buildOutput = execSync(`bun ${cliPath} build`, {
+            const buildOutput = execSync('absurd build', {
                 stdio: 'pipe',
                 env: { ...process.env, PATH: process.env.PATH }
             });
