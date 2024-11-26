@@ -88,7 +88,7 @@ describe("CLI Commands", () => {
             const dirExists = await fs.access(path.join(testDir, dir))
                 .then(() => true)
                 .catch(() => false);
-            expect(dirExists).toBe(true);
+            expect(dirExists, `Directory "${dir}" was not created`).toBe(true);
         }
     });
 
@@ -104,7 +104,7 @@ describe("CLI Commands", () => {
             const fileExists = await fs.access(path.join(testDir, file))
                 .then(() => true)
                 .catch(() => false);
-            expect(fileExists).toBe(true);
+            expect(fileExists, `File "${file}" was not created`).toBe(true);
         }
     });
 
