@@ -1,0 +1,16 @@
+#!/bin/zsh
+
+# Run tests and capture output
+TEST_OUTPUT=$(bun test 2>&1)
+TEST_STATUS=$?
+
+# Save test output to temporary file
+echo "$TEST_OUTPUT" > /tmp/test_output.txt
+
+# Start aider with all tracked files and test output
+aider $(git ls-files) /tmp/test_output.txt
+
+# Clean up
+rm /tmp/test_output.txt
+
+exit $TEST_STATUS
