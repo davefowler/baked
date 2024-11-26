@@ -94,9 +94,35 @@ program
     .description('Build the static site')
     .action(async () => {
         console.log('Building site...');
-        // Import and run the build process
-        const { main } = await import('./index.ts');
-        await main();
+        
+        // Create necessary directories
+        const dirs = [
+            'content',
+            'content/blog',
+            'scripts',
+            'dist',
+            'dist/styles',
+            'templates',
+            'public',
+            'assets',
+            'assets/components',
+            'assets/templates'
+        ];
+        
+        for (const dir of dirs) {
+            await fs.mkdir(dir, { recursive: true });
+        }
+
+        // Initialize the database
+        const db = await initializeDatabase('dist/site.db');
+        
+        // Process content directory
+        await processDirectory('content');
+        
+        // Generate HTML files
+        await renderPages(db, TemplateComponent);
+        
+        console.log('Content processed and static files generated');
     });
 
 program
