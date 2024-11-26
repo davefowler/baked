@@ -1,29 +1,33 @@
 {% extends "base" %}
 
 {% block content %}
-${(function() {
-    const page = Math.max(1, Number(data?.page || 1));
-    const perPage = 10;
-    const { items: posts, total: totalPosts } = engine.Post.paginate(page, perPage);
-    
-    const hasMore = totalPosts > (page * perPage);
-    const totalPages = Math.ceil(totalPosts / perPage);
+{% extends "base" %}
 
-    const processedPosts = posts.map(post => {
-        try {
-            return {
-                ...post,
-                metadata: typeof post.metadata === 'string' ? 
-                    JSON.parse(post.metadata) : 
-                    post.metadata || {}
-            };
-        } catch (e) {
-            console.error(`Failed to parse metadata for post ${post.slug}:`, e);
-            return { ...post, metadata: {} };
-        }
-    });
+{% block content %}
+<div class="blog-list-container">
+    ${(() => {
+        const page = Math.max(1, Number(data?.page || 1));
+        const perPage = 10;
+        const { items: posts, total: totalPosts } = engine.Post.paginate(page, perPage);
+        
+        const hasMore = totalPosts > (page * perPage);
+        const totalPages = Math.ceil(totalPosts / perPage);
 
-    return `
+        const processedPosts = posts.map(post => {
+            try {
+                return {
+                    ...post,
+                    metadata: typeof post.metadata === 'string' ? 
+                        JSON.parse(post.metadata) : 
+                        post.metadata || {}
+                };
+            } catch (e) {
+                console.error(`Failed to parse metadata for post ${post.slug}:`, e);
+                return { ...post, metadata: {} };
+            }
+        });
+
+        return `
             <ul class="blog-list">
                 ${processedPosts.length > 0 ? processedPosts.map(post => `
                     <li>
@@ -44,6 +48,7 @@ ${(function() {
                     '<span></span>'
                 }
             </nav>
-        `
-    });
-})()}
+        `;
+    })()}
+</div>
+{% endblock %}
