@@ -110,7 +110,6 @@ program
             'content/blog',
             'scripts',
             'dist',
-            'dist/styles',
             'templates',
             'public',
             'assets',
@@ -148,11 +147,11 @@ program
         `);
         
         // Process content directory
-        const processDirectory = async (dir: string) => {
+        const loadPagesFromDir = async (dir: string) => {
             const entries = await fs.readdir(dir, { withFileTypes: true });
             for (const entry of entries) {
                 if (entry.isDirectory()) {
-                    await processDirectory(path.join(dir, entry.name));
+                    await loadPagesFromDir(path.join(dir, entry.name));
                 } else if (entry.name.endsWith('.md')) {
                     const content = await fs.readFile(path.join(dir, entry.name), 'utf8');
                     // Process markdown files
@@ -161,7 +160,7 @@ program
                 }
             }
         };
-        await processDirectory('content');
+        await loadPagesFromDir('content');
         
         // Generate HTML files
         await renderPages(db, TemplateComponent);
