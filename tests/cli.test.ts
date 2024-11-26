@@ -70,7 +70,7 @@ describe("CLI Commands", () => {
         process.chdir(testDir);
 
         // Run build command with proper path
-        execSync('bun run ../../cli.ts build', { stdio: 'inherit' });
+        execSync('bun run ../cli.ts build', { stdio: 'inherit' });
 
         // Check for build artifacts
         const buildFiles = [

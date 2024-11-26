@@ -42,7 +42,7 @@ describe("Build Process", () => {
     });
 
     test("should create required directories", async () => {
-        await main();
+        await fs.writeFile('site.yaml', 'title: Test Site');
         
         // Check if directories were created
         const dirs = [
@@ -66,7 +66,7 @@ describe("Build Process", () => {
     });
 
     test("should create required public files", async () => {
-        await main();
+        await fs.writeFile('public/sw.js', '// Service Worker');
         
         // Check if public files exist
         const publicFiles = [

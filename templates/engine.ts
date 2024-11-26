@@ -16,12 +16,21 @@ export class TemplateEngine {
             throw new Error(`Template ${templateName} not found`);
         }
 
+        // Handle template inheritance
+        const extendsMatch = template.content.match(/^\{%\s*extends\s+["']([^"']+)["']\s*%\}/m);
+        if (extendsMatch) {
+            const parentName = extendsMatch[1];
+            const parentTemplate = this.render(parentName, data);
+            const childContent = template.content.replace(/^\{%\s*extends\s+["'][^"']+["']\s*%\}/m, '');
+            return parentTemplate.replace(/\${blocks\.content}/g, childContent);
+        }
+
         // Basic template rendering
         return template.content.replace(/\${([^}]+)}/g, (_, expr) => {
             try {
-                // Create a function instead of using eval with 'with'
-                const fn = new Function('data', `return ${expr}`);
-                return fn(data);
+                const context = { ...data, blocks: new Map() };
+                const fn = new Function('context', `with(context) { return ${expr} }`);
+                return fn(context);
             } catch (err) {
                 console.error(`Template rendering error:`, err);
                 return '';
