@@ -11,7 +11,7 @@ describe("CLI Commands", () => {
     let projectRoot: string;
 
     // Store project root for accessing example templates
-    projectRoot = process.cwd();
+    projectRoot = path.resolve(__dirname, '..');
     
     beforeEach(async () => {
         // Save original directory
