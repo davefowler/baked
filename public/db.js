@@ -1,6 +1,40 @@
 import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
 import { Database } from 'sql.js';
 
+// Global absurd object
+window.absurd = {
+    db: null,
+    
+    async init() {
+        this.db = await SiteDatabase.getInstance();
+    },
+
+    getRawAsset(name, type = null) {
+        const path = type ? `/${type}/${name}` : name;
+        const result = this.db.prepare('SELECT content FROM assets WHERE path = ?').get(path);
+        return result ? result.content : null;
+    },
+
+    getAsset(name, type = null) {
+        const rawAsset = this.getRawAsset(name, type);
+        if (!rawAsset) return null;
+
+        if (type) {
+            const componentCode = this.getRawAsset(`${type}.js`, 'components');
+            if (componentCode) {
+                const componentFactory = eval(componentCode);
+                return componentFactory(rawAsset);
+            }
+        }
+
+        return rawAsset;
+    },
+
+    getTemplate(name) {
+        return this.getAsset(name, 'templates');
+    }
+};
+
 class SiteDatabase {
   static instance = null;
   
