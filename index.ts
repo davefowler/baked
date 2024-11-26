@@ -207,7 +207,7 @@ async function renderPages(db: Database): Promise<void> {
     }
 }
 
-async function main() {
+export async function main() {
     // Create necessary directories
     await fs.mkdir('content', { recursive: true });
     await fs.mkdir('scripts', { recursive: true });

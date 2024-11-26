@@ -92,10 +92,11 @@ program
 program
     .command('build')
     .description('Build the static site')
-    .action(() => {
+    .action(async () => {
         console.log('Building site...');
         // Import and run the build process
-        import('./index.ts').then(module => module.default());
+        const { main } = await import('./index.ts');
+        await main();
     });
 
 program
