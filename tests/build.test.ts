@@ -10,6 +10,10 @@ describe("Build Process", () => {
         // Create test directory
         await fs.mkdir(testDir, { recursive: true });
         process.chdir(testDir);
+        
+        // Create public directory
+        await fs.mkdir('public', { recursive: true });
+        global.siteDir = process.cwd();
     });
 
     afterAll(async () => {

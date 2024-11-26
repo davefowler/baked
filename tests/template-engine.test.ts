@@ -9,6 +9,12 @@ describe("TemplateEngine", () => {
 
     beforeEach(() => {
         db = new Database(":memory:");
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS templates (
+                name TEXT PRIMARY KEY,
+                content TEXT NOT NULL
+            );
+        `);
         engine = new TemplateEngine(db);
     });
 

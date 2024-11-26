@@ -70,7 +70,7 @@ describe("CLI Commands", () => {
         process.chdir(testDir);
 
         // Run build command
-        execSync('bun run ../../cli.ts build');
+        execSync('bun run ../cli.ts build');
 
         // Check for build artifacts
         const buildFiles = [
