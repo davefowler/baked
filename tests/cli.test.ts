@@ -16,17 +16,18 @@ describe("CLI Commands", () => {
         
         originalDir = process.cwd();
         
-        // Clean up any existing test directory
+        // Clean up any existing test directories
+        const tmpParentDir = path.dirname(testDir);
         try {
-            await fs.rm(testDir, { recursive: true, force: true });
+            await fs.rm(tmpParentDir, { recursive: true, force: true });
         } catch (error) {
-            console.log('Clean up error (safe to ignore if dir not exists):', error.message);
+            console.log('Initial cleanup error (safe to ignore if dir not exists):', error.message);
         }
         
-        // Create test directory structure
-        await fs.mkdir(path.dirname(testDir), { recursive: true });
+        // Create fresh test directory structure
+        await fs.mkdir(tmpParentDir, { recursive: true });
         
-        // Create examples directory structure if it doesn't exist
+        // Ensure examples directory exists and is properly set up
         await fs.mkdir(path.dirname(examplesDir), { recursive: true });
         await fs.mkdir(examplesDir, { recursive: true });
         
@@ -53,12 +54,26 @@ describe("CLI Commands", () => {
     });
 
     afterAll(async () => {
-        // Clean up and restore original directory
+        // Always restore original directory first
+        process.chdir(originalDir);
+        
+        // Clean up parent tmp directory to ensure complete cleanup
+        const tmpParentDir = path.dirname(testDir);
         try {
-            process.chdir(originalDir);
-            await fs.rm(testDir, { recursive: true, force: true });
+            await fs.rm(tmpParentDir, { recursive: true, force: true });
         } catch (error) {
             console.error('Cleanup error:', error);
+            // Even if rm fails, try to ensure directory is empty
+            try {
+                const files = await fs.readdir(tmpParentDir);
+                await Promise.all(
+                    files.map(file => 
+                        fs.rm(path.join(tmpParentDir, file), { recursive: true, force: true })
+                    )
+                );
+            } catch (e) {
+                console.error('Secondary cleanup error:', e);
+            }
         }
     });
 
