@@ -118,12 +118,41 @@ There are 3 objects passed to the templates on render:
    - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
    - getPage(slug) # fetch a page from the database
    - getLatestPages(limit=10, offset=0) # fetch the latest pages from the database
+   - getPrevPage(currentPage) # fetch the previous page from the database
+   - getNextPage(currentPage) # fetch the next page from the database
    - search(query, limit=10) # search the database for pages that match the query
    - query(sql, params) # run a sql query on the database and return the results
 
 ### Fetching assets and other pages in templates
 
 The absurd object is passed into templates and offers a number of helper functions for the most common fetches, and also a generic query function for fetching directly and flexibly with sql.  
+
+```html
+
+Here is a picture of my face ${absurd.getAsset('images/myface.png')}
+
+Here is my article [About dogs](${absurd.getPage('blog/about-dogs')}.path})
+
+Latest 5 pages
+<ul>
+    ${absurd.getLatestPages(5).map(latestPage => {
+        <li>${latestPage.title}</li>
+    })}
+</ul>
+
+
+Nav pages:
+${const navPages = absurd.getPrevAndNextPages(page); 
+<a href="${navPages.prev.path}">Previous</a>
+<a href="${navPages.next.path}">Next</a>
+}
+
+
+All images about dogs:
+${absurd.query('SELECT * FROM assets WHERE type = "image" AND path LIKE "%dog%"').map(image => {
+    <img src="${image.path}" />
+})}
+```
 
 
 

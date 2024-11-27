@@ -32,6 +32,7 @@
 
 ## Framework things
 
+ - [ ] generalize collections - like blog posts but general
  - [ ] Image assets and others can be loaded into the database optionally
  - [ ] Image processing (resizing, and setting default size and bg color before loading)
  - [ ] introduce a cache for image processing (so you don't have to redo them all each time)
