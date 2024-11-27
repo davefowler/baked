@@ -50,7 +50,7 @@ tags: [test]
         await fs.mkdir(path.join(testDir, 'pages'), { recursive: true });
         await fs.writeFile(path.join(testDir, 'pages', 'test.md'), mdContent);
         
-        await loadPagesFromDir(path.join(testDir, 'pages'), db);
+        await loadPagesFromDir(path.join(testDir, 'pages'), db, {}, testDir);
         
         const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test');
         expect(page).toBeDefined();

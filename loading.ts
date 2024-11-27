@@ -26,6 +26,9 @@ const markdownProcessor: FileProcessor = async (filepath, content, metadata, dis
 
 // Process image files
 const imageProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
+    if (!distPath) {
+        throw new Error('distPath is required for image processing');
+    }
     // Create images directory if it doesn't exist
     const imagesDir = path.join(distPath, 'images');
     await fs.mkdir(imagesDir, { recursive: true });
@@ -78,7 +81,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                 const { content: processedContent, metadata: finalMetadata } = 
                     await processor(fullPath, content, metadata, distPath);
                 
-                const slug = path.relative('pages', fullPath).replace(ext, '');
+                const slug = path.relative('pages', fullPath).replace(path.extname(fullPath), '');
                 
                 db.prepare(`
                     INSERT INTO pages (slug, content, template, metadata, published_date) 
