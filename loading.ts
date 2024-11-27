@@ -96,7 +96,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                     processedContent,
                     finalMetadata.template || 'default',
                     JSON.stringify(finalMetadata),
-                    finalMetadata.date?.toString() || null
+                    finalMetadata.date ? new Date(finalMetadata.date).toISOString().split('T')[0] : null
                 );
                 
                 console.log(`Loaded page: ${slug}`);

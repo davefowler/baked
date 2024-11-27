@@ -72,8 +72,10 @@ template: default
 
 Tell your visitors about your site.`;
     
-    await fs.writeFile(path.join(siteDir, 'pages', 'index.md'), indexContent);
-    await fs.writeFile(path.join(siteDir, 'pages', 'about.md'), aboutContent);
+    const pagesDir = path.join(siteDir, 'pages');
+    await fs.mkdir(pagesDir, { recursive: true });
+    await fs.writeFile(path.join(pagesDir, 'index.md'), indexContent);
+    await fs.writeFile(path.join(pagesDir, 'about.md'), aboutContent);
     
     // Create blog meta.yaml
     const blogMeta = {
@@ -112,6 +114,8 @@ program
         // Create necessary directories
         const dirs = [
             'dist',
+            'dist/images',
+            'dist/public'
         ];
         for (const dir of dirs) {
             await fs.mkdir(dir, { recursive: true });
