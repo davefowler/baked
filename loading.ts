@@ -18,9 +18,11 @@ const defaultProcessor: FileProcessor = async (filepath, content, metadata, dist
 // Process markdown files
 const markdownProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
     const frontmatter = matter(content);
+    const combinedMetadata = { ...metadata, ...frontmatter.data };
     return {
         content: frontmatter.content,
-        metadata: { ...metadata, ...frontmatter.data }
+        metadata: combinedMetadata,
+        title: combinedMetadata.title || path.basename(filepath, path.extname(filepath))
     };
 };
 
@@ -54,7 +56,7 @@ const processors: Record<string, FileProcessor> = {
     'pages': markdownProcessor
 };
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, distPath: string) {
+export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, distPath?: string) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
     let metadata = { ...parentMetadata };
@@ -84,14 +86,15 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                 const slug = path.relative('pages', fullPath).replace(path.extname(fullPath), '');
                 
                 db.prepare(`
-                    INSERT INTO pages (slug, content, template, metadata, published_date) 
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO pages (slug, title, content, template, metadata, published_date) 
+                    VALUES (?, ?, ?, ?, ?, ?)
                 `).run(
                     slug,
-                    processedContent,
-                    finalMetadata.template || 'default',
-                    JSON.stringify(finalMetadata),
-                    finalMetadata.date || null
+                    result.title,
+                    result.content,
+                    result.metadata.template || 'default',
+                    JSON.stringify(result.metadata),
+                    result.metadata.date || null
                 );
                 
                 console.log(`Loaded page: ${slug}`);
