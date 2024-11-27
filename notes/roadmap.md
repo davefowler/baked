@@ -5,6 +5,7 @@
  - [ ] get the cli working
  - [ ] confirm loading pages and assets
  - [ ] confirm the templating system working
+ - [ ] Figure out secure eval of components from db
  - [ ] pre-render pages
  - [ ] absurdsql working to store database on client
  - [ ] image assets 
@@ -12,7 +13,8 @@
  - [ ] app working offline for all pages
  - [ ] confirm lighthouse scores are good
  - [ ] confirm the build process is fast
- - [ ] 
+ - [ ] make components have both loading and rendering functions
+ - [ ] comprehensive testing
 
 
 ## Static site things
@@ -33,6 +35,7 @@
  - [ ] Image assets and others can be loaded into the database optionally
  - [ ] Image processing (resizing, and setting default size and bg color before loading)
  - [ ] introduce a cache for image processing (so you don't have to redo them all each time)
+ - [ ] add a /js type asset?
  - [ ] introduce site config 
  - [ ] Add support for plugins (hooks into the build process)
  - [ ] Docs - as an example of the framework too
@@ -42,3 +45,4 @@
  - [ ] updating from sqlite server (cache api requests? - have the app poll for changes but pasted on the last date it has in the database - this makes the responses cachable)
  - [ ] Incremental Static Regeneration (https://vercel.com/docs/functions/incremental-static-regeneration, https://www.smashingmagazine.com/2021/04/incremental-static-regeneration-nextjs/)
  - [ ] Load ahead - instead of load all (just load the pages that are linked from the current page - not the whole site)
+ - [ ] Create a "gallery" component example 
