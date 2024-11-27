@@ -28,11 +28,10 @@ const markdownProcessor: FileProcessor = async (filepath, content, metadata, dis
 
 // Process image files
 const imageProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
-    if (!distPath) {
-        throw new Error('distPath is required for image processing');
-    }
+    const defaultDistPath = path.join(process.cwd(), 'dist');
+    const targetDistPath = distPath || defaultDistPath;
     // Create images directory if it doesn't exist
-    const imagesDir = path.join(distPath, 'images');
+    const imagesDir = path.join(targetDistPath, 'images');
     await fs.mkdir(imagesDir, { recursive: true });
     
     // Copy image to images directory
@@ -80,7 +79,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
             
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
-                const { content: processedContent, metadata: finalMetadata } = 
+                const { content: processedContent, metadata: finalMetadata, title } = 
                     await processor(fullPath, content, metadata, distPath);
                 
                 const slug = path.relative('pages', fullPath).replace(path.extname(fullPath), '');
@@ -90,11 +89,11 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                     VALUES (?, ?, ?, ?, ?, ?)
                 `).run(
                     slug,
-                    result.title,
-                    result.content,
-                    result.metadata.template || 'default',
-                    JSON.stringify(result.metadata),
-                    result.metadata.date || null
+                    title || path.basename(fullPath, path.extname(fullPath)),
+                    processedContent,
+                    finalMetadata.template || 'default',
+                    JSON.stringify(finalMetadata),
+                    finalMetadata.date || null
                 );
                 
                 console.log(`Loaded page: ${slug}`);
