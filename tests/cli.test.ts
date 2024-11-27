@@ -4,6 +4,7 @@ import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
 import { Database } from 'bun:sqlite';
+import { loadPagesFromDir, loadAssetsFromDir } from '../loading';
 
 describe("CLI Commands", () => {
     const TEST_ROOT = path.join(os.tmpdir(), 'absurdsite-tests');

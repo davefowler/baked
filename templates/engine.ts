@@ -7,6 +7,16 @@ export class TemplateEngine {
 
     constructor(db: Database) {
         this.db = db;
+        
+        // Create assets table if it doesn't exist
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS assets (
+                path TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                type TEXT NOT NULL
+            );
+        `);
+        
         this.loadComponents();
     }
 
@@ -72,7 +82,10 @@ export class TemplateEngine {
         const renderContent = (template: string, context: any) => {
             return template.replace(/\${([^}]+)}/g, (_, expr) => {
                 try {
-                    return eval(`with(context) { ${expr} }`);
+                    const keys = Object.keys(context);
+                    const values = Object.values(context);
+                    const fn = new Function(...keys, `return ${expr};`);
+                    return fn(...values);
                 } catch (err) {
                     console.error('Template render error:', err);
                     return '';

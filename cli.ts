@@ -123,7 +123,10 @@ program
         }
 
         // Initialize the database
-        const db = new Database('dist/site.db');
+        const db = new Database('dist/site.db', { create: true });
+        
+        // Ensure the database file exists and is writable
+        await fs.writeFile('dist/site.db', '');
         
         // Create required tables
         db.exec(`
