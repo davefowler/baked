@@ -50,10 +50,32 @@ Phase 4: Pre-Rendering Static HTML
 - Ensure the HTML is SEO-friendly and supports smooth offline functionality.
 - make this pre rendring happen with the bun build command
 
+Phase 4.5: post-load the sqlite database into the browser with AbsurdSQL
+
+
 Phase 5: PWA and Service Worker
+
+ - make a js script that loads the sqlite database into the browser with absurdsql
+ - include this in the templates and load it after page load (it should not block)
+
 - Create a service worker to:
-  - Cache pre-rendered HTML files and the SQLite database.
-  - Enable offline navigation and seamless updates.
+  - Cache pre-rendered HTML files
+
+Phase 5.5: offline navigation and seamless updates
+ 
+  - Enable offline navigation and seamless updates using the templates and article data in sqlite 
+
+
+phase 5.8 - blog structure 
+
+ - make a few more example landing pages and blog posts that link to eachother
+ - have the home page have a paginated list of all the blog posts and a nav to the other pages
+ - the list of blog posts should come from a query to the database - you should be able to query it from a template
+ - make some basic css styling for the blog and put that in the assets table in teh database.  use it in the templates
+ - make an rss feed and sitemap stored in the database and able to be rendered offline
+ - make a robots.txt file stored in the database and able to be rendered offline
+ 
+ - add a search bar to the nav - powered by sqlite full text search
 
 Phase 6: Incremental Updates
 - Implement a mechanism to sync updated SQLite databases from a server or CDN.

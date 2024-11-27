@@ -5,18 +5,18 @@ import yaml from 'yaml';
 import matter from 'gray-matter';
 
 // File processor type definition
-type FileProcessor = (filepath: string, content: string, metadata: any) => Promise<{
+type FileProcessor = (filepath: string, content: string, metadata: any, distPath: string) => Promise<{
     content: string;
     metadata: any;
 }>;
 
 // Default processor just returns content and metadata unchanged
-const defaultProcessor: FileProcessor = async (filepath, content, metadata) => {
+const defaultProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
     return { content, metadata };
 };
 
 // Process markdown files
-const markdownProcessor: FileProcessor = async (filepath, content, metadata) => {
+const markdownProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
     const frontmatter = matter(content);
     return {
         content: frontmatter.content,
@@ -25,9 +25,9 @@ const markdownProcessor: FileProcessor = async (filepath, content, metadata) => 
 };
 
 // Process image files
-const imageProcessor: FileProcessor = async (filepath, content, metadata) => {
+const imageProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
     // Create images directory if it doesn't exist
-    const imagesDir = path.join(process.cwd(), 'dist', 'images');
+    const imagesDir = path.join(distPath, 'images');
     await fs.mkdir(imagesDir, { recursive: true });
     
     // Copy image to images directory
@@ -42,16 +42,16 @@ const imageProcessor: FileProcessor = async (filepath, content, metadata) => {
     };
 };
 
-// Map file extensions to processors
+// Map directories to processors
 const processors: Record<string, FileProcessor> = {
-    '.md': markdownProcessor,
-    '.png': imageProcessor,
-    '.jpg': imageProcessor,
-    '.jpeg': imageProcessor,
-    '.gif': imageProcessor
+    'images': imageProcessor,
+    'components': defaultProcessor,
+    'templates': defaultProcessor,
+    'css': defaultProcessor,
+    'pages': markdownProcessor
 };
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}) {
+export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, distPath: string) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
     let metadata = { ...parentMetadata };
@@ -67,15 +67,16 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
         const fullPath = path.join(dir, entry.name);
         
         if (entry.isDirectory()) {
-            await loadPagesFromDir(fullPath, db, metadata);
+            await loadPagesFromDir(fullPath, db, metadata, distPath);
         } else if (entry.name !== 'meta.yaml') {
-            const ext = path.extname(entry.name);
-            const processor = processors[ext] || defaultProcessor;
+            // Get the directory name to determine the processor
+            const dirName = path.basename(path.dirname(fullPath));
+            const processor = processors[dirName] || defaultProcessor;
             
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
                 const { content: processedContent, metadata: finalMetadata } = 
-                    await processor(fullPath, content, metadata);
+                    await processor(fullPath, content, metadata, distPath);
                 
                 const slug = path.relative('pages', fullPath).replace(ext, '');
                 
@@ -98,14 +99,14 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
     }
 }
 
-export async function loadAssetsFromDir(dir: string, db: Database) {
+export async function loadAssetsFromDir(dir: string, db: Database, distPath: string) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         
         if (entry.isDirectory()) {
-            await loadAssetsFromDir(fullPath, db);
+            await loadAssetsFromDir(fullPath, db, distPath);
         } else {
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
