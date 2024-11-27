@@ -143,7 +143,7 @@ program
         
         const siteDir = process.cwd();
         const distPath = path.join(siteDir, 'dist');
-        await loadPagesFromDir(path.join(siteDir, 'pages'), db, {}, distPath);
+        await loadPagesFromDir(path.join(siteDir, 'pages'), db);
         await loadAssetsFromDir(path.join(siteDir, 'assets'), db, distPath);
 
         // TODO render pages

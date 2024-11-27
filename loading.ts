@@ -5,7 +5,7 @@ import yaml from 'yaml';
 import matter from 'gray-matter';
 
 // File processor type definition
-type FileProcessor = (filepath: string, content: string, metadata: any, distPath: string) => Promise<{
+type FileProcessor = (filepath: string, content: string, metadata: any, distPath?: string) => Promise<{
     content: string;
     metadata: any;
 }>;
@@ -55,7 +55,7 @@ const processors: Record<string, FileProcessor> = {
     'pages': markdownProcessor
 };
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, distPath?: string) {
+export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
     let metadata = { ...parentMetadata };
@@ -71,7 +71,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
         const fullPath = path.join(dir, entry.name);
         
         if (entry.isDirectory()) {
-            await loadPagesFromDir(fullPath, db, metadata, distPath);
+            await loadPagesFromDir(fullPath, db, metadata);
         } else if (entry.name !== 'meta.yaml') {
             // Get the directory name to determine the processor
             const dirName = path.basename(path.dirname(fullPath));
@@ -79,21 +79,24 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
             
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
-                const { content: processedContent, metadata: finalMetadata, title } = 
-                    await processor(fullPath, content, metadata, distPath);
+                const { content: processedContent, metadata: finalMetadata } = 
+                    await processor(fullPath, content, metadata);
                 
-                const slug = path.relative('pages', fullPath).replace(path.extname(fullPath), '');
+                const slug = path.relative(dir, fullPath)
+                    .replace(path.extname(fullPath), '');
                 
+                const title = finalMetadata.title || path.basename(fullPath, path.extname(fullPath));
+                console.log(`Processing ${slug} with title ${title}`);
                 db.prepare(`
                     INSERT INTO pages (slug, title, content, template, metadata, published_date) 
                     VALUES (?, ?, ?, ?, ?, ?)
                 `).run(
                     slug,
-                    title || path.basename(fullPath, path.extname(fullPath)),
+                    title,
                     processedContent,
                     finalMetadata.template || 'default',
                     JSON.stringify(finalMetadata),
-                    finalMetadata.date || null
+                    finalMetadata.date?.toString() || null
                 );
                 
                 console.log(`Loaded page: ${slug}`);

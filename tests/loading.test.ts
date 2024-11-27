@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { Database } from 'bun:sqlite';
 import { loadPagesFromDir, loadAssetsFromDir } from '../loading';
+import type { Page, Asset } from "../types";
 
 describe("Loading Functions", () => {
     let testDir: string;
@@ -50,9 +51,9 @@ tags: [test]
         await fs.mkdir(path.join(testDir, 'pages'), { recursive: true });
         await fs.writeFile(path.join(testDir, 'pages', 'test.md'), mdContent);
         
-        await loadPagesFromDir(path.join(testDir, 'pages'), db, {}, testDir);
+        await loadPagesFromDir(path.join(testDir, 'pages'), db);
         
-        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test');
+        const page: Page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
         expect(page).toBeDefined();
         expect(page.title).toBe('Test Post');
         expect(page.content).toContain('# Test Content');
@@ -79,7 +80,7 @@ Content`;
         
         await loadPagesFromDir(path.join(testDir, 'pages'), db);
         
-        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post');
+        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
         expect(page).toBeDefined();
         expect(page.template).toBe('blog');
         
@@ -100,15 +101,15 @@ Content`;
             await fs.mkdir(path.dirname(fullPath), { recursive: true });
             await fs.writeFile(fullPath, content);
         }
-        
-        await loadAssetsFromDir(path.join(testDir, 'assets'), db);
+        const distPath = path.join(testDir, 'dist');
+        await loadAssetsFromDir(path.join(testDir, 'assets'), db, distPath);
         
         // Check each asset type
         for (const [filePath, content] of Object.entries(assets)) {
             const type = filePath.split('/')[0];
             const name = path.basename(filePath);
             
-            const asset = db.prepare('SELECT * FROM assets WHERE path = ?').get(name);
+            const asset = db.prepare('SELECT * FROM assets WHERE path = ?').get(name) as Asset;
             expect(asset).toBeDefined();
             expect(asset.content).toBe(content);
             expect(asset.type).toBe(type);
@@ -131,7 +132,7 @@ Content`;
         expect(imageExists).toBe(true);
         
         // Check if page entry was created with img tag
-        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('images/test');
+        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('images/test') as Page;
         expect(page).toBeDefined();
         expect(page.content).toContain('<img src="/images/test.jpg"');
     });

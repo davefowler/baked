@@ -10,3 +10,9 @@ export type Page = {
     published_date: string;
 }
 
+
+export type Asset = {
+    path: string;
+    content: string;
+    type: string;
+}
