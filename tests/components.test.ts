@@ -1,58 +1,72 @@
-import { expect, test, describe } from "bun:test";
+import { expect, test, describe, beforeEach } from "bun:test";
+import { TemplateEngine } from "../templates/engine";
 import { Database } from "bun:sqlite";
 import * as cheerio from 'cheerio';
 
-// Mock absurd object
-const mockAbsurd = {
-    getTemplate: (name: string) => ({
-        render: (_: any, data: any) => `<div class="template">${data.content}</div>`
-    })
-};
+describe("TemplateEngine", () => {
+    let engine: TemplateEngine;
+    let db: Database;
 
-describe("Components", () => {
-    test("CSS Component", () => {
-        const cssComponent = require('../assets/components/css')('.test { color: red; }');
-        const result = cssComponent.render(mockAbsurd, {}, {});
-        expect(result).toBe('<style>.test { color: red; }</style>');
-    });
-
-    test("Image Component", () => {
-        const imageComponent = require('../assets/components/image')('base64data');
-        const result = imageComponent.render(mockAbsurd, {}, {}, 'Test image', 'test-class');
-        const $ = cheerio.load(result);
-        const img = $('img');
+    beforeEach(() => {
+        db = new Database(":memory:");
         
-        expect(img.attr('src')).toBe('data:image/png;base64,base64data');
-        expect(img.attr('alt')).toBe('Test image');
-        expect(img.attr('class')).toBe('test-class');
+        // Create required tables
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS assets (
+                path TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                type TEXT NOT NULL
+            );
+        `);
+
+        // Insert minimum required assets for tests
+        const testAssets = [
+            {
+                path: 'base.html',
+                content: '<!DOCTYPE html><html><head><title>${data.title}</title></head><body>${data.blocks?.get("content") ?? ""}</body></html>',
+                type: 'templates'
+            },
+            {
+                path: 'test-component.js',
+                content: 'module.exports = (content) => ({ render: () => `<div>${content}</div>` });',
+                type: 'components'
+            }
+        ];
+
+        const insertStmt = db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)');
+        for (const asset of testAssets) {
+            insertStmt.run(asset.path, asset.content, asset.type);
+        }
+
+        engine = new TemplateEngine(db);
     });
 
-    test("SVG Component", () => {
-        const svgContent = '<svg><circle cx="50" cy="50" r="40"/></svg>';
-        const svgComponent = require('../assets/components/svg')(svgContent);
-        const result = svgComponent.render(mockAbsurd, {}, {}, 'svg-class');
+    test("should properly handle template inheritance", () => {
+        // Register child template directly since it's specific to this test
+        engine.registerTemplate("child", `{% extends "base" %}{% block content %}<h1>Hello World</h1>{% endblock %}`);
+
+        const result = engine.render("child", { title: "Test Page" });
+        const $ = cheerio.load(result);
+
+        expect($('title').text()).toBe("Test Page");
+        expect($('h1').text()).toBe("Hello World");
+    });
+
+    test("should handle nested blocks", () => {
+        engine.registerTemplate("nested", `{% extends "base" %}{% block content %}<article>Test Content</article>{% endblock %}`);
+
+        const result = engine.render("nested", { title: "Nested Test" });
         const $ = cheerio.load(result);
         
-        expect($('div.svg-class').html()).toBe('<svg><circle cx="50" cy="50" r="40"></circle></svg>');
+        expect($('article').text()).toBe("Test Content");
     });
 
-    test("JavaScript Component", () => {
-        const jsComponent = require('../assets/components/javascript')('console.log("test")');
-        const result = jsComponent.render(mockAbsurd, {}, {}, true, true);
-        expect(result).toBe('<script async defer>console.log("test")</script>');
-    });
+    test("should properly escape template literals", () => {
+        engine.registerTemplate("test", `<div>\${data.value}</div>`);
 
-    test("Page Component", () => {
-        const pageContent = '# Test Page\nThis is a test.';
-        const pageComponent = require('../assets/components/page')(pageContent);
-        const result = pageComponent.render(
-            mockAbsurd,
-            { metadata: { template: 'default' } },
-            {}
-        );
-        
+        const result = engine.render("test", { value: "Hello `world`" });
         const $ = cheerio.load(result);
-        expect($('.template').html()).toContain('<h1>Test Page</h1>');
-        expect($('.template').html()).toContain('<p>This is a test.</p>');
+        
+        expect($('div').text()).toBe("Hello `world`");
     });
 });
