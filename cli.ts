@@ -6,6 +6,7 @@ import yaml from 'yaml';
 import { Database } from 'bun:sqlite';
 import type { Page } from './types.ts';
 import matter from 'gray-matter';
+import { TemplateEngine } from './templates/engine';
 async function createSiteStructure(siteName: string) {
     const siteDir = path.join(process.cwd(), siteName);
     const templateDir = path.join(import.meta.dir, 'examples', 'defaultsite');
@@ -150,7 +151,33 @@ program
         await loadPagesFromDir(path.join(siteDir, 'pages'), db);
         await loadAssetsFromDir(path.join(siteDir, 'assets'), db, distPath);
 
-        // TODO render pages
+        // Initialize template engine
+        const engine = new TemplateEngine(db);
+        
+        // Load templates from database
+        const templates = db.prepare('SELECT path, content FROM assets WHERE type = ?').all('templates');
+        for (const template of templates) {
+            engine.registerTemplate(template.path.replace('.html', ''), template.content);
+        }
+
+        // Get all pages
+        const pages = db.prepare('SELECT * FROM pages').all();
+        
+        // Render each page
+        for (const page of pages) {
+            const rendered = engine.render(page.template, {
+                ...page,
+                metadata: JSON.parse(page.metadata || '{}'),
+                site: yaml.parse(await fs.readFile('site.yaml', 'utf8'))
+            });
+
+            // Write rendered page to dist
+            const outputPath = path.join(distPath, `${page.slug}.html`);
+            await fs.mkdir(path.dirname(outputPath), { recursive: true });
+            await fs.writeFile(outputPath, rendered);
+        }
+
+        console.log(`Built ${pages.length} pages`);
     });
 
 program
