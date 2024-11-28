@@ -93,7 +93,7 @@ describe('CLI Commands', () => {
             
             // Build without drafts
             await buildSite(false);
-            let db = new Database(join(tempDir, 'dist/site.db'));
+            let db = new Database(join(tempDir, 'dist/site.db'), { create: true });
             let draft = db.prepare('SELECT * FROM pages WHERE slug = ?')
                          .get('draft');
             expect(draft).toBeUndefined();
