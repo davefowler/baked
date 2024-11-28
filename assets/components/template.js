@@ -6,13 +6,12 @@ class TemplateComponent {
         this.template = templateString.replace(/^\{%\s*extends\s+["'][^"']+["']\s*%\}/, '').trim();
     }
 
-    render(absurd, page, site, ...props) {
+    render(absurd, page, site) {
         // Create a context object with all available data
         const context = {
             absurd,
             page,
-            site,
-            ...Object.fromEntries(props)
+            site
         };
 
         // Basic template rendering function
@@ -32,10 +31,13 @@ class TemplateComponent {
 
         // If this extends another template, wrap it
         if (this.extends) {
-            const parentTemplate = absurd.getTemplate(this.extends);
-            return parentTemplate.render(absurd, page, site, {
-                ...Object.fromEntries(props),
-                children: renderedTemplate
+            const parentTemplate = absurd.getAsset(this.extends, 'templates');
+            if (!parentTemplate) {
+                throw new Error(`Parent template ${this.extends} not found`);
+            }
+            return parentTemplate.render(absurd, page, {
+                ...site,
+                content: renderedTemplate
             });
         }
 

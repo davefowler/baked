@@ -154,27 +154,35 @@ program
         await loadPagesFromDir(path.join(siteDir, 'pages'), db);
         await loadAssetsFromDir(path.join(siteDir, 'assets'), db, distPath);
 
-        // Initialize template engine
-        const engine = new TemplateEngine(db);
-        
-        // Load templates from database
-        const templates = db.prepare('SELECT path, content FROM assets WHERE type = ?').all('templates');
-        for (const template of templates) {
-            engine.registerTemplate(template.path.replace('.html', ''), template.content);
-        }
+        // Create absurd helper object
+        const absurd = {
+            getAsset(name: string, type: string = null) {
+                const path = type ? `${type}/${name}` : name;
+                const asset = db.prepare('SELECT content, type FROM assets WHERE path = ?').get(path);
+                if (!asset) return null;
 
-        // Get all pages
+                // Get the component handler for this type
+                const componentPath = path.join(process.cwd(), 'assets', 'components', `${asset.type}.js`);
+                const component = require(componentPath);
+                return component(asset.content);
+            },
+
+            renderPage(page: any, site: any) {
+                const template = this.getAsset(page.template, 'templates');
+                if (!template) {
+                    throw new Error(`Template ${page.template} not found`);
+                }
+                return template.render(this, page, site);
+            }
+        };
+
+        // Get all pages and site config
         const pages = db.prepare('SELECT * FROM pages').all();
+        const site = yaml.parse(await fs.readFile('site.yaml', 'utf8'));
         
         // Render each page
         for (const page of pages) {
-            const rendered = engine.render(page.template, {
-                ...page,
-                metadata: JSON.parse(page.metadata || '{}'),
-                site: yaml.parse(await fs.readFile('site.yaml', 'utf8'))
-            });
-
-            // Write rendered page to dist
+            const rendered = absurd.renderPage(page, site);
             const outputPath = path.join(distPath, `${page.slug}.html`);
             await fs.mkdir(path.dirname(outputPath), { recursive: true });
             await fs.writeFile(outputPath, rendered);
