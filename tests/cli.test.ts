@@ -80,9 +80,10 @@ describe('CLI Commands', () => {
             const distDb = join(tempDir, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
             
-            const db = new Database(distDb);
+            const db = new Database(distDb, { create: true });
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?')
                           .get('test');
+            db.close(); // Properly close the database connection
             expect(page).toBeDefined();
             expect(page.title).toBe('Test');
         });
