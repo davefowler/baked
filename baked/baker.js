@@ -13,6 +13,7 @@
 */
 
 import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
+import { Components } from '../src/components.js';
 
 export class Baker {
     constructor(db, isClient) {
@@ -28,14 +29,6 @@ export class Baker {
         return result;
     }
 
-    getComponentProcessor(type) {
-      const componentCode = this.getRawAsset(`${type}.js`, 'components');
-      if (!componentCode) return null;
-
-      return this.isClient 
-          ? eval(componentCode)
-          : require(componentCode);
-  }
 
 
     getAsset(name, type = null) {
@@ -43,11 +36,11 @@ export class Baker {
         if (!asset) return null;
 
         // Get the component processor for this asset type
-        const processor = this.getComponentProcessor(asset.type);
+        const processor = Components[asset.type];
         if (processor) {
             return processor(asset.content);
         }
-
+        console.warn(`No component found for asset type: ${asset.type}`);
         return asset.content;
     }
 
