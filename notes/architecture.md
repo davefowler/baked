@@ -23,6 +23,12 @@ creates the following structure
    - /css
    - /templates
  - /dist # the output folder of the files that will be served after running the build command
+   - /images # processed images that aren't loaded directly into the database
+   - /absurd # files for the client side pwa 
+     - /sw.js # the service worker file
+     - /offline.html # the offline page
+     - /absurd.db # the sqlite database
+   - *.html # pre-rendered website pages
  - /package.json
  - /site.yaml # config variables for the site
 
@@ -114,14 +120,29 @@ There are 3 objects passed to the templates on render:
    - slug
    - published_date
  - absurd # a helper object with some useful functions
-   - getAsset(slug) # fetch an asset from the database as a component
+   - getAsset(type, name) # fetch an asset from the database as a component
    - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
    - getPage(slug) # fetch a page from the database
    - getLatestPages(limit=10, offset=0) # fetch the latest pages from the database
    - getPrevPage(currentPage) # fetch the previous page from the database
    - getNextPage(currentPage) # fetch the next page from the database
+   - renderPage(page, site, absurd) # render a page with the given site and absurd objects
    - search(query, limit=10) # search the database for pages that match the query
    - query(sql, params) # run a sql query on the database and return the results
+
+## Rendering a template
+
+When pre-rendering on the server side, or client side in the browser, when a page is requested it is loaded from the database, and fetches its template and renders it like so 
+
+```js
+absurd.renderPage = (page, site, absurd) => {
+    const template = absurd.getAsset('template', page.template);
+    const renderedTemplate = template(site, page, absurd);
+    return renderedTemplate;
+};
+```
+
+the getAsset call returns the component for the template, which is a function that takes the site, page, and absurd objects and returns the rendered html.  This works the same on the server side and client.
 
 ### Fetching assets and other pages in templates
 
