@@ -2,7 +2,7 @@ import { expect, test, describe, beforeEach, afterEach } from "bun:test";
 import { promises as fs } from 'fs';
 import path from 'path';
 import { Database } from 'bun:sqlite';
-import { loadPagesFromDir, loadAssetsFromDir } from '../loading';
+import { loadPagesFromDir, loadAssetsFromDir } from '../absurd/loading';
 import type { Page, Asset } from "../types";
 
 describe("Loading Functions", () => {

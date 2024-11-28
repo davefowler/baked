@@ -120,6 +120,7 @@ There are 3 objects passed to the templates on render:
    - slug
    - published_date
  - absurd # a helper object with some useful functions
+   - init(db) # initialize the absurd object with the given database (client or server side sqlite db)
    - getAsset(type, name) # fetch an asset from the database as a component
    - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
    - getPage(slug) # fetch a page from the database

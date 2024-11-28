@@ -6,7 +6,8 @@ import yaml from 'yaml';
 import { Database } from 'bun:sqlite';
 import type { Page } from './types.ts';
 import matter from 'gray-matter';
-import { TemplateEngine } from './templates/engine';
+
+
 async function createSiteStructure(siteName: string) {
     const siteDir = path.join(process.cwd(), siteName);
     const templateDir = path.join(import.meta.dir, 'examples', 'defaultsite');
@@ -147,7 +148,7 @@ program
         `);
         
         // Import and use loading functions
-        const { loadPagesFromDir, loadAssetsFromDir } = await import('./loading');
+        const { loadPagesFromDir, loadAssetsFromDir } = await import('./absurd/loading.ts');
         
         const siteDir = process.cwd();
         const distPath = path.join(siteDir, 'dist');

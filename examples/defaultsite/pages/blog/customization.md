@@ -2,6 +2,7 @@
 title: Customizing Your Site
 date: 2024-01-03
 template: blog
+author: <your name>
 tags: [tutorial, customization]
 excerpt: Learn how to customize your AbsurdSite with templates and styles.
 ---

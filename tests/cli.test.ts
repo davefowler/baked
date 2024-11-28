@@ -4,7 +4,8 @@ import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
 import { Database } from 'bun:sqlite';
-import { loadPagesFromDir, loadAssetsFromDir } from '../loading';
+import { loadPagesFromDir, loadAssetsFromDir } from '../absurd/loading';
+import type { Asset, Page } from "../types";
 
 describe("CLI Commands", () => {
     const TEST_ROOT = path.join(os.tmpdir(), 'absurdsite-tests');
@@ -190,7 +191,7 @@ tags: [test, blog]
         await loadPagesFromDir('pages', db);
         
         // Verify the page was loaded correctly
-        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/test-post');
+        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/test-post') as Page;
         expect(page).toBeDefined();
         expect(page.template).toBe('blog');
         expect(page.published_date).toBe('2024-01-01');
@@ -223,15 +224,16 @@ tags: [test, blog]
         `);
         
         // Run loadAssetsFromDir
-        await loadAssetsFromDir('assets', db);
+        const distPath = path.join(testDir, 'dist');
+        await loadAssetsFromDir('assets', db, distPath);
         
         // Verify assets were loaded correctly
-        const template = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.html');
+        const template = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.html') as Asset;
         expect(template).toBeDefined();
         expect(template.content).toBe(templateContent);
         expect(template.type).toBe('templates');
         
-        const css = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.css');
+        const css = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.css') as Asset;
         expect(css).toBeDefined();
         expect(css.content).toBe(cssContent);
         expect(css.type).toBe('css');

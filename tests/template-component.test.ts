@@ -2,6 +2,7 @@ import { expect, test, describe, beforeEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import * as cheerio from 'cheerio';
 import path from 'path';
+import { absurd } from 'absurd';
 
 describe("Template Component", () => {
     let db: Database;
@@ -18,20 +19,6 @@ describe("Template Component", () => {
                 type TEXT NOT NULL
             );
         `);
-
-        // Create absurd helper object
-        absurd = {
-            getAsset(name: string, type: string = null) {
-                const path = type ? `${type}/${name}` : name;
-                const asset = db.prepare('SELECT content, type FROM assets WHERE path = ?').get(path);
-                if (!asset) return null;
-
-                // Get the component handler for this type
-                const componentPath = path.join(process.cwd(), 'assets', 'components', `${asset.type}.js`);
-                const component = require(componentPath);
-                return component(asset.content);
-            }
-        };
 
         // Load the template component handler
         templateComponent = require('../assets/components/template.js');
@@ -112,12 +99,12 @@ describe("Template Component", () => {
         const template = templateComponent(`
             <article>
                 <header>
-                    <h1>${page.title}</h1>
-                    ${page.metadata?.date ? `<time>${page.metadata.date}</time>` : ''}
-                    ${page.metadata?.author ? `<author>${page.metadata.author}</author>` : ''}
+                    <h1>\${page.title}</h1>
+                    \${page.metadata?.date ? \`<time>\${page.metadata.date}</time>\` : ''}
+                    \${page.metadata?.author ? \`<author>\${page.metadata.author}</author>\` : ''}
                 </header>
-                <div class="content">${page.content}</div>
-                ${page.metadata?.tags?.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                <div class="content">\${page.content}</div>
+                \${page.metadata?.tags?.map(tag => \`<span class="tag">\${tag}</span>\`).join('')}
             </article>
         `);
 
@@ -148,7 +135,7 @@ describe("Template Component", () => {
     });
 
     test("should handle invalid template syntax gracefully", () => {
-        const template = templateComponent(`${invalid syntax}`);
+        const template = templateComponent(`\${invalid syntax}`);
 
         expect(() => {
             template.render(absurd, {}, {});
@@ -158,8 +145,8 @@ describe("Template Component", () => {
     test("should handle conditional rendering", () => {
         const template = templateComponent(`
             <div>
-                ${page.showTitle ? `<h1>${page.title}</h1>` : ''}
-                <p>${page.content}</p>
+                \${page.showTitle ? \`<h1>\${page.title}</h1>\` : ''}
+                <p>\${page.content}</p>
             </div>
         `);
 
@@ -187,9 +174,9 @@ describe("Template Component", () => {
     test("should handle array iteration", () => {
         const template = templateComponent(`
             <ul>
-                ${page.items?.map(item => `
-                    <li>${item.text}</li>
-                `).join('')}
+                \${page.items?.map(item => \`
+                    <li>\${item.text}</li>
+                \`).join('')}
             </ul>
         `);
 
@@ -200,7 +187,6 @@ describe("Template Component", () => {
                 { text: "Item 3" }
             ]
         }, {});
-
         const $ = cheerio.load(result);
         expect($('li').length).toBe(3);
         expect($('li').first().text().trim()).toBe("Item 1");
@@ -215,8 +201,8 @@ describe("Template Component", () => {
         );
 
         const template = templateComponent(`
-            ${absurd.getAsset('header.html', 'templates').render(absurd, page, site)}
-            <main>${page.content}</main>
+            \${absurd.getAsset('header.html', 'templates').render(absurd, page, site)}
+            <main>\${page.content}</main>
         `);
 
         const result = template.render(absurd, {
