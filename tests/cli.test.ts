@@ -1,5 +1,5 @@
 import { expect, test, beforeEach, afterEach, mock, describe } from "bun:test";
-import { mkdtemp, rm, readFile, mkdir } from 'fs/promises';
+import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
@@ -11,6 +11,17 @@ describe('CLI Commands', () => {
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-test-'));
+        
+        // Mock prompt responses globally
+        global.prompt = mock((message: string) => {
+            switch(message) {
+                case 'Site name:': return 'Test Site';
+                case 'Site URL:': return 'test.com';
+                case 'Site description:': return 'A test site';
+                case 'Default author name:': return 'Test Author';
+                default: return '';
+            }
+        });
     });
 
     afterEach(async () => {
@@ -121,20 +132,19 @@ describe('CLI Commands', () => {
 });
 
 // Helper functions
-async function exists(path: string): Promise<boolean> {
+const exists = async (path: string): Promise<boolean> => {
     try {
         await stat(path);
         return true;
     } catch {
         return false;
     }
-}
+};
 
-// Ensure directory exists
-async function ensureDir(dir: string) {
+const ensureDir = async (dir: string) => {
     try {
         await mkdir(dir, { recursive: true });
-    } catch (err) {
+    } catch (err: any) {
         if (err.code !== 'EEXIST') throw err;
     }
-}
+};
