@@ -53,8 +53,8 @@ describe('CLI Commands', () => {
             // Check core directories exist
             const dirs = ['pages', 'assets', 'assets/templates', 'assets/css'];
             for (const dir of dirs) {
-                const exists = await exists(join(tempDir, dir));
-                expect(exists).toBe(true);
+                const itExists = await exists(join(tempDir, dir));
+                expect(itExists).toBe(true);
             }
         });
 

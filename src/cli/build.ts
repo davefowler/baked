@@ -6,6 +6,7 @@ import { Database } from "sqlite3";
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../../baked/loading";
 import { Baker } from "../../baked/baker";
 import type { Page } from "../types";
+import { writeFile } from "fs/promises";
 
 
 const initialize = async (dist: string): Promise<Database> => {
@@ -17,17 +18,20 @@ const initialize = async (dist: string): Promise<Database> => {
     // Create a tmp directory for the build
     try {
         await rm(dist, { recursive: true, force: true });
-    } catch (error) {
+    } catch (error: unknown) {
         // Ignore error if directory doesn't exist
-        if (error.code !== 'ENOENT') {
+        if (error instanceof Error && ('code' in error) && error.code !== 'ENOENT') {
             throw new Error(`Failed to clean dist directory: ${error.message}`);
         }
     }
 
     try {
         await mkdir(dist, { recursive: true });
-    } catch (error) {
-        throw new Error(`Failed to create dist directory: ${error.message}`);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            throw new Error(`Failed to create dist directory: ${error.message}`);
+        }
+        throw new Error('Failed to create dist directory: Unknown error');
     }
 
     // Create a new sqlite database
@@ -126,8 +130,12 @@ const preRender = async (db: Database, dist: string) => {
                 }
                 
                 const rendered = await baker.renderPage(page);
-                // Here you might want to write the rendered content to a file
-                await writeFile(`${dist}/${slug}.html`, rendered);
+                // Write the rendered content to a file
+                await writeFile(`${dist}/${slug}.html`, rendered, {
+                    encoding: 'utf8',
+                    mode: 0o666, // File permissions
+                    flag: 'w'    // 'w' for write (overwrites if file exists)
+                });
                 
             } catch (error) {
                 console.error(`Failed to render page ${slug}:`, error);
