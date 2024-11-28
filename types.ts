@@ -1,5 +1,4 @@
 
-
 export type Page = {
     id: number;
     path: string;

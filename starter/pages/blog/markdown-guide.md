@@ -15,6 +15,7 @@ AbsurdSite uses Markdown for formatting posts. Here's a quick guide to get you s
 - **Bold** text: `**bold**`
 - *Italic* text: `*italic*`
 - [Links](https://example.com): `[text](url)`
+- Headings: `# Heading 1` `## Heading 2` `### Heading 3`
 
 ## Code Blocks
 
@@ -35,4 +36,18 @@ console.log('Hello, World!');
 
 ![Alt text](path/to/image.jpg)
 
-Learn more about Markdown in the [documentation](/docs/markdown).
+## HTML
+
+You can also use raw HTML in your posts if you need more control.  Just use the HTML tags you need but make sure they're on their own line.
+
+```html
+<div style="color: red;">This is a div with inline styles</div> 
+```
+
+makes
+
+<div style="color: red;">This is a div with inline styles</div>
+
+
+
+Learn more about markdown in this [Markdown Cheatsheet](https://www.markdownguide.org/cheat-sheet/)
