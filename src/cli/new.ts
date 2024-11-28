@@ -2,8 +2,10 @@ import { cp, writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 
 export default async function createSite(destination: string) {
-    // Get starter directory from environment variable or default
-    const starterDir = process.env.STARTER_DIR || './starter';
+    // Get starter directory from environment variable or default to package location
+    const starterDir = process.env.STARTER_DIR || join(
+        new URL('../../src/starter', import.meta.url).pathname
+    );
     
     // copy the starter site to the destination directory recursively
     await cp(starterDir, destination, { recursive: true });

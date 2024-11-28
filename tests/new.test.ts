@@ -1,8 +1,8 @@
-import { expect, test, beforeEach, afterEach, mock } from "bun:test";
+import { expect, test, beforeEach, afterEach, mock, describe} from "bun:test";
 import { mkdtemp, rm, readFile, mkdir, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import createSite from './new';
+import createSite from '../src/cli/new';
 
 describe('createSite', () => {
     let tempDir: string;
@@ -29,10 +29,9 @@ describe('createSite', () => {
             
         await writeFile(join(starterDir, 'pages', 'blog', 'meta.yaml'),
             'template: blog\nmimetype: text/markdown');
-
         // Mock the prompt function
-        global.prompt = mock((question: string) => {
-            switch(question) {
+        global.prompt = mock((message: string | undefined) => {
+            switch(message) {
                 case 'Site name:': return 'Test Site';
                 case 'Site URL:': return 'test.com';
                 case 'Site description:': return 'A test site';
@@ -49,7 +48,6 @@ describe('createSite', () => {
 
     test('should create a new site with correct configuration', async () => {
         // Temporarily override the starter directory path
-        const originalStarter = './starter';
         process.env.STARTER_DIR = starterDir;
         
         await createSite(tempDir);
