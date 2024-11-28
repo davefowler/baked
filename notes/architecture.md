@@ -1,4 +1,4 @@
-## Absurd Site Architecture
+## Baked Site Architecture
 
 This is a static site generator that can run fully in the browser.  It's a baked architecture - wrapping all assets, content, templates and content into a single sqlite database that's loaded into the browser and persisted with AbsurdSQL (a sqlite implementation that runs ontop of IndexedDB).  
 
@@ -10,7 +10,7 @@ The site is a PWA and can work offline.  It's designed to be a starting point fo
 When creating a new site, the basic scafolding is setup with a simple cli command:
 
 ```bash
-absurd new <site-name>
+bake new <site directory>
 ```
 
 creates the following structure
@@ -24,10 +24,10 @@ creates the following structure
    - /templates
  - /dist # the output folder of the files that will be served after running the build command
    - /images # processed images that aren't loaded directly into the database
-   - /absurd # files for the client side pwa 
+   - /baked # files for the client side pwa 
      - /sw.js # the service worker file
      - /offline.html # the offline page
-     - /absurd.db # the sqlite database
+     - /baked.db # the sqlite database
    - *.html # pre-rendered website pages
  - /package.json
  - /site.yaml # config variables for the site
@@ -81,7 +81,7 @@ type: blog
 
 ## Templates
 
-Templates are very simple in AbsurdSite.  They are just html files with javascript variables that are replaced with data from the database.  It's just plain html and javascript so it's easy to understand and modify.  The one enhancement is the addition of easy template inheritence.  If the first line of the template is {% extends '<parent template> %} it will be rendered in the ${content} variable inside of the designated <parent template>
+Templates are very simple in Baked.  They are just html files with javascript variables that are replaced with data from the database.  It's just plain html and javascript so it's easy to understand and modify.  The one enhancement is the addition of easy template inheritence.  If the first line of the template is {% extends '<parent template> %} it will be rendered in the ${content} variable inside of the designated <parent template>
 
 For example:
 
@@ -119,15 +119,15 @@ There are 3 objects passed to the templates on render:
    - template
    - slug
    - published_date
- - absurd # a helper object with some useful functions
-   - init(db) # initialize the absurd object with the given database (client or server side sqlite db)
+ - baker # a helper object with some useful functions
+   - init(db) # initialize the baker object with the given database (client or server side sqlite db)
    - getAsset(type, name) # fetch an asset from the database as a component
    - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
    - getPage(slug) # fetch a page from the database
    - getLatestPages(limit=10, offset=0) # fetch the latest pages from the database
    - getPrevPage(currentPage) # fetch the previous page from the database
    - getNextPage(currentPage) # fetch the next page from the database
-   - renderPage(page, site, absurd) # render a page with the given site and absurd objects
+   - renderPage(page) # render a page to html
    - search(query, limit=10) # search the database for pages that match the query
    - query(sql, params) # run a sql query on the database and return the results
 
@@ -136,46 +136,45 @@ There are 3 objects passed to the templates on render:
 When pre-rendering on the server side, or client side in the browser, when a page is requested it is loaded from the database, and fetches its template and renders it like so 
 
 ```js
-absurd.renderPage = (page, site, absurd) => {
-    const template = absurd.getAsset('template', page.template);
-    const renderedTemplate = template(site, page, absurd);
+baker.renderPage = (page) => {
+    const template = this.getAsset('template', page.template);
+    const renderedTemplate = template(page, this, this.site);
     return renderedTemplate;
 };
 ```
 
-the getAsset call returns the component for the template, which is a function that takes the site, page, and absurd objects and returns the rendered html.  This works the same on the server side and client.
+the getAsset call returns the component for the template, which is a function that takes the page, baker and site objects and returns the rendered html.  This works the same on the server side and client.
 
 ### Fetching assets and other pages in templates
 
-The absurd object is passed into templates and offers a number of helper functions for the most common fetches, and also a generic query function for fetching directly and flexibly with sql.  
+The baker object is passed into templates and offers a number of helper functions for the most common fetches, and also a generic query function for fetching directly and flexibly with sql.  
 
 ```html
 
-Here is a picture of my face ${absurd.getAsset('images/myface.png')}
+Here is a picture of my face ${baker.getAsset('images/myface.png')}
 
-Here is my article [About dogs](${absurd.getPage('blog/about-dogs')}.path})
+Here is my article [About dogs](${baker.getPage('blog/about-dogs').path})
 
 Latest 5 pages
 <ul>
-    ${absurd.getLatestPages(5).map(latestPage => {
+    ${baker.getLatestPages(5).map(latestPage => {
         <li>${latestPage.title}</li>
     })}
 </ul>
 
 
 Nav pages:
-${const navPages = absurd.getPrevAndNextPages(page); 
+${const navPages = baker.getPrevAndNextPages(page); 
 <a href="${navPages.prev.path}">Previous</a>
 <a href="${navPages.next.path}">Next</a>
 }
 
 
 All images about dogs:
-${absurd.query('SELECT * FROM assets WHERE type = "image" AND path LIKE "%dog%"').map(image => {
+${baker.query('SELECT * FROM assets WHERE type = "image" AND path LIKE "%dog%"').map(image => {
     <img src="${image.path}" />
 })}
 ```
-
 
 
 ## Components 
@@ -187,19 +186,19 @@ Assets and pages are all handled/rendered with the help of components.  The comp
 For SEO and the fastes possible initial page loads, each page of the site is pre-rendered into the /dist folder as a single html file.  These files can be served as static files or through a CDN for the fastest possible load times, similar to a traditional static site.
 
 
-## AbsurdSQL full page loading
+## Baked full page loading
 
-After the initial page load, each pre-rendered page will load two extra files:
+After the initial page load, each pre-rendered page will load a few extra files:
 
  - /sw.js # the service worker file
- - /absurd.db # the sqlite database
+ - /baked.db # the sqlite database
  - /offline.html # the offline page
 
-*sw.js* - this is a service worker file that enables the site to be a progressive web application.  This means that it can cache the required assets (this file, the offline.html page) so that it can work offline.  It contains the code necessary to start and run AbsurdSQL - which will persist the absurd.db file on the client.  And it will handle all the page rendering for the site.
+*sw.js* - this is a service worker file that enables the site to be a progressive web application.  This means that it can cache the required assets (this file, the offline.html page) so that it can work offline.  It contains the code necessary to start and run AbsurdSQL - which will persist the baked.db file on the client.  And it will handle all the page rendering for the site.
 
 *offline.html* - this is the page that the user will see if they are offline.  It contains a simple message and a button to refresh the page.  When clicked it will show the browser's standard offline page.
 
-*absurd.db* - this is the sqlite database that contains all the pages and assets of the site.  It is the same database that is created when running the build command.  It is named absurd.db because "absurd" is what sqlite is in another dimension.
+*baked.db* - this is the sqlite database that contains all the pages and assets of the site.  It is the same database that is created when running the build command.
 
 With the full site loaded into the client-side AbsurdSQL database, the user will have instantly responsive experience as they navigate your site.  It will require no additional requests for pages and work offline!
 

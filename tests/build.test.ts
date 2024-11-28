@@ -1,7 +1,7 @@
 import { expect, test, describe, beforeAll, afterAll } from "bun:test";
 import { promises as fs } from 'fs';
 import path from 'path';
-import { processDirectory, initializeDatabase, renderPages } from '../cli';
+import { processDirectory, initializeDatabase, renderPages } from '../cli/cli';
 
 describe("Build Process", () => {
     const testDir = path.join(process.cwd(), 'tmp', 'test-build-site');

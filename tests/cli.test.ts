@@ -4,7 +4,7 @@ import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
 import { Database } from 'bun:sqlite';
-import { loadPagesFromDir, loadAssetsFromDir } from '../absurd/loading';
+import { loadPagesFromDir, loadAssetsFromDir } from '../baked/loading';
 import type { Asset, Page } from "../types";
 
 describe("CLI Commands", () => {
