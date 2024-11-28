@@ -50,9 +50,17 @@ describe('CLI Commands', () => {
     describe('build/oven command', () => {
         beforeEach(async () => {
             // Setup test site
+            // Setup test site structure
             await createSite(tempDir);
-            await writeFile(join(tempDir, 'pages/test.md'), 
-                '---\ntitle: Test\n---\nTest content');
+            
+            // Create pages directory
+            await ensureDir(join(tempDir, 'pages'));
+            
+            // Create test content
+            await writeFile(
+                join(tempDir, 'pages', 'test.md'), 
+                '---\ntitle: Test\n---\nTest content'
+            );
         });
 
         test('builds site with default options', async () => {
@@ -98,8 +106,13 @@ describe('CLI Commands', () => {
         test('serves static files correctly', async () => {
             server = await startServer();
             
+            // Create test dist directory with content
+            await ensureDir('dist');
+            await writeFile('dist/index.html', '<html><body>Test</body></html>');
+            
             const res = await fetch('http://localhost:4242/');
             expect(res.status).toBe(200);
+            expect(await res.text()).toContain('Test');
             
             const notFound = await fetch('http://localhost:4242/notfound');
             expect(notFound.status).toBe(404);
@@ -114,5 +127,14 @@ async function exists(path: string): Promise<boolean> {
         return true;
     } catch {
         return false;
+    }
+}
+
+// Ensure directory exists
+async function ensureDir(dir: string) {
+    try {
+        await mkdir(dir, { recursive: true });
+    } catch (err) {
+        if (err.code !== 'EEXIST') throw err;
     }
 }

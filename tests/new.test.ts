@@ -1,8 +1,10 @@
-import { expect, test, beforeEach, afterEach, mock, describe} from "bun:test";
-import { mkdtemp, rm, readFile, mkdir, writeFile } from 'fs/promises';
+import { expect, test, beforeEach, afterEach, mock, describe } from "bun:test";
+import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
+import buildSite from '../src/cli/build';
+import startServer from '../src/cli/serve';
 
 describe('createSite', () => {
     let tempDir: string;
