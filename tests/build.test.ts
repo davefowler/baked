@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { rm } from "fs/promises";
+import { rm, mkdir } from "fs/promises";
 import { Database } from "sqlite3";
 import buildSite from "../src/cli/build";
 import { existsSync } from "fs";
@@ -11,12 +11,18 @@ describe("build process", () => {
         // Clean up any existing test directories
         await rm(TEST_DIST, { recursive: true, force: true });
         await rm(`${TEST_DIST}-tmp`, { recursive: true, force: true });
+        
+        // Create test fixture directories
+        await mkdir('assets', { recursive: true });
+        await mkdir('pages', { recursive: true });
     });
 
     afterEach(async () => {
         // Clean up after tests
         await rm(TEST_DIST, { recursive: true, force: true });
         await rm(`${TEST_DIST}-tmp`, { recursive: true, force: true });
+        await rm('assets', { recursive: true, force: true });
+        await rm('pages', { recursive: true, force: true });
     });
 
     test("initializes build directory correctly", async () => {
