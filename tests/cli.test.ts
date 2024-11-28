@@ -6,6 +6,24 @@ import createSite from '../src/cli/new';
 import buildSite from '../src/cli/build';
 import startServer from '../src/cli/serve';
 
+// Helper functions
+const exists = async (path: string): Promise<boolean> => {
+    try {
+        await stat(path);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+const ensureDir = async (dir: string) => {
+    try {
+        await mkdir(dir, { recursive: true });
+    } catch (err: any) {
+        if (err.code !== 'EEXIST') throw err;
+    }
+};
+
 describe('CLI Commands', () => {
     let tempDir: string;
 
@@ -75,12 +93,13 @@ describe('CLI Commands', () => {
         });
 
         test('builds site with default options', async () => {
+            process.chdir(tempDir); // Change working directory for build
             await buildSite(false); // no drafts
             
             const distDb = join(tempDir, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
             
-            const db = new Database(distDb, { create: true });
+            const db = new Database(distDb);
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?')
                           .get('test');
             db.close(); // Properly close the database connection
@@ -116,18 +135,23 @@ describe('CLI Commands', () => {
         });
 
         test('serves static files correctly', async () => {
+            // Create test dist directory with content
+            await ensureDir(join(tempDir, 'dist'));
+            await writeFile(join(tempDir, 'dist', 'index.html'), '<html><body>Test</body></html>');
+            
+            process.chdir(tempDir); // Change working directory for server
             server = await startServer();
             
-            // Create test dist directory with content
-            await ensureDir('dist');
-            await writeFile('dist/index.html', '<html><body>Test</body></html>');
-            
-            const res = await fetch('http://localhost:4242/');
-            expect(res.status).toBe(200);
-            expect(await res.text()).toContain('Test');
-            
-            const notFound = await fetch('http://localhost:4242/notfound');
-            expect(notFound.status).toBe(404);
+            try {
+                const res = await fetch('http://localhost:4242/');
+                expect(res.status).toBe(200);
+                expect(await res.text()).toContain('Test');
+                
+                const notFound = await fetch('http://localhost:4242/notfound');
+                expect(notFound.status).toBe(404);
+            } finally {
+                if (server) server.stop();
+            }
         });
     });
 });
