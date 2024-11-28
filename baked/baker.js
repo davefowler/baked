@@ -65,6 +65,11 @@ export class Baker {
         return page;
     }
 
+    renderPage(page) {
+        const template = this.getAsset(page.metadata.template, 'templates');
+        return template(page, this, this.site);
+    }
+
     getLatestPages(limit = 10, offset = 0) {
         return this.db.prepare(`
             SELECT * FROM pages

@@ -88,11 +88,12 @@ const initialize = async (dist: string): Promise<Database> => {
 
 const preRender = async (db: Database, dist: string, ) => {
     const baker = new Baker(db, false);
+    
+    const pageSlugs = await baker.query(`SELECT slug FROM pages`) as string[];
 
-    const pages = await baker.query(`SELECT * FROM pages`) as Page[];
-
-    for (const page of pages) {
-        page.metadata = JSON.parse(page.metadata || '{}');
+    // N+1 query here - but it's fast in SQLite and better for larger sites vs loading all pages into memory
+    for (const slug of pageSlugs) {
+        const page = baker.getPage(slug);
         await baker.renderPage(page);
     }
 }
@@ -100,10 +101,8 @@ const preRender = async (db: Database, dist: string, ) => {
 
 
 export default async function buildSite(includeDrafts: boolean = false) {
- 
     const thisDir = process.cwd();
     const tmpDist = path.join(thisDir, '/tmp/dist');
-
 
     const db = await initialize(tmpDist);
 
