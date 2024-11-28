@@ -9,8 +9,6 @@ describe("TemplateEngine", () => {
 
     beforeEach(() => {
         db = new Database(":memory:");
-        
-        // Create required tables
         db.exec(`
             CREATE TABLE IF NOT EXISTS assets (
                 path TEXT PRIMARY KEY,
@@ -18,34 +16,28 @@ describe("TemplateEngine", () => {
                 type TEXT NOT NULL
             );
         `);
-
-        // Insert minimum required assets for tests
-        const testAssets = [
-            {
-                path: 'base.html',
-                content: '<!DOCTYPE html><html><head><title>${data.title}</title></head><body>${data.blocks?.get("content") ?? ""}</body></html>',
-                type: 'templates'
-            },
-            {
-                path: 'test-component.js',
-                content: 'module.exports = (content) => ({ render: () => `<div>${content}</div>` });',
-                type: 'components'
-            }
-        ];
-
-        const insertStmt = db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)');
-        for (const asset of testAssets) {
-            insertStmt.run(asset.path, asset.content, asset.type);
-        }
-
         engine = new TemplateEngine(db);
+
+        // Register base component in the database
+        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
+            'base.html',
+            '<!DOCTYPE html><html><head><title>${page.title}</title></head><body>${page.blocks?.get("content") ?? ""}</body></html>',
+            'templates'
+        );
     });
 
     test("should properly handle template inheritance", () => {
-        // Register child template directly since it's specific to this test
+        // Register child template
         engine.registerTemplate("child", `{% extends "base" %}{% block content %}<h1>Hello World</h1>{% endblock %}`);
 
-        const result = engine.render("child", { title: "Test Page" });
+        const result = engine.render("child", {
+            page: { 
+                title: "Test Page",
+                blocks: new Map()
+            },
+            site: {},
+            absurd: engine
+        });
         const $ = cheerio.load(result);
 
         expect($('title').text()).toBe("Test Page");
@@ -55,18 +47,36 @@ describe("TemplateEngine", () => {
     test("should handle nested blocks", () => {
         engine.registerTemplate("nested", `{% extends "base" %}{% block content %}<article>Test Content</article>{% endblock %}`);
 
-        const result = engine.render("nested", { title: "Nested Test" });
+        const result = engine.render("nested", {
+            page: { 
+                title: "Nested Test",
+                blocks: new Map()
+            },
+            site: {},
+            absurd: engine
+        });
         const $ = cheerio.load(result);
         
         expect($('article').text()).toBe("Test Content");
     });
 
     test("should properly escape template literals", () => {
-        engine.registerTemplate("test", `<div>\${data.value}</div>`);
+        engine.registerTemplate("test", `
+            {% block content %}
+            <div>\${page.value}</div>
+            {% endblock %}
+        `);
 
-        const result = engine.render("test", { value: "Hello `world`" });
+        const result = engine.render("test", {
+            page: { 
+                value: "Hello `world`",
+                blocks: new Map()
+            },
+            site: {},
+            absurd: engine
+        });
         const $ = cheerio.load(result);
         
-        expect($('div').text()).toBe("Hello `world`");
+        expect($('div').text().trim()).toBe("Hello `world`");
     });
 });
