@@ -24,9 +24,20 @@ export class Baker {
     }
 
     getRawAsset(name, type) {
-        const path = type ? `/${type}/${name}` : name;
-        const result = this.db.prepare('SELECT content, type FROM assets WHERE path = ?').get(path);
-        return result;
+        try {
+            if (!name) {
+                throw new Error('Asset name is required');
+            }
+            const path = type ? `/${type}/${name}` : name;
+            const result = this.db.prepare('SELECT content, type FROM assets WHERE path = ?').get(path);
+            if (!result) {
+                console.warn(`Asset not found: ${path}`);
+            }
+            return result;
+        } catch (error) {
+            console.error(`Failed to get asset ${name}:`, error);
+            throw error;
+        }
     }
 
 
@@ -59,8 +70,34 @@ export class Baker {
     }
 
     renderPage(page) {
-        const template = this.getAsset(page.metadata.template, 'templates');
-        return template(page, this, this.site);
+        try {
+            if (!page) {
+                throw new Error('Cannot render null page');
+            }
+            if (!page.metadata?.template) {
+                throw new Error(`No template specified for page: ${page.slug}`);
+            }
+            
+            const template = this.getAsset(page.metadata.template, 'templates');
+            if (!template) {
+                throw new Error(`Template not found: ${page.metadata.template}`);
+            }
+            
+            return template(page, this, this.site);
+        } catch (error) {
+            console.error(`Failed to render page:`, error);
+            // Return a basic error page in production
+            return `
+                <html>
+                    <head><title>Error</title></head>
+                    <body>
+                        <h1>Error Rendering Page</h1>
+                        <p>Please try again later.</p>
+                        ${this.isClient ? '' : `<pre>${error.message}</pre>`}
+                    </body>
+                </html>
+            `;
+        }
     }
 
     getLatestPages(limit = 10, offset = 0) {

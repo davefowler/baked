@@ -86,15 +86,52 @@ const initialize = async (dist: string): Promise<Database> => {
 }
 
 
-const preRender = async (db: Database, dist: string, ) => {
-    const baker = new Baker(db, false);
-    
-    const pageSlugs = await baker.query(`SELECT slug FROM pages`) as string[];
+const preRender = async (db: Database, dist: string) => {
+    if (!db || !dist) {
+        throw new Error('Database and dist path are required for pre-rendering');
+    }
 
-    // N+1 query here - but it's fast in SQLite and better for larger sites vs loading all pages into memory
-    for (const slug of pageSlugs) {
-        const page = baker.getPage(slug);
-        await baker.renderPage(page);
+    const baker = new Baker(db, false);
+    let failures = 0;
+    
+    try {
+        const pageSlugs = await baker.query(`SELECT slug FROM pages`) as string[];
+        if (!pageSlugs?.length) {
+            console.warn('No pages found to render');
+            return;
+        }
+
+        console.log(`Pre-rendering ${pageSlugs.length} pages...`);
+        
+        // N+1 query here - but it's fast in SQLite and better for larger sites vs loading all pages into memory
+        for (const slug of pageSlugs) {
+            try {
+                const page = baker.getPage(slug);
+                if (!page) {
+                    console.error(`Failed to load page: ${slug}`);
+                    failures++;
+                    continue;
+                }
+                
+                const rendered = await baker.renderPage(page);
+                // Here you might want to write the rendered content to a file
+                await writeFile(`${dist}/${slug}.html`, rendered);
+                
+            } catch (error) {
+                console.error(`Failed to render page ${slug}:`, error);
+                failures++;
+            }
+        }
+
+        if (failures > 0) {
+            console.error(`Failed to render ${failures} pages`);
+            throw new Error(`Build completed with ${failures} failed pages`);
+        }
+
+        console.log('Pre-rendering completed successfully');
+    } catch (error) {
+        console.error('Pre-rendering failed:', error);
+        throw error;
     }
 }
 
