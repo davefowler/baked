@@ -9,14 +9,26 @@ import type { Page } from "../types";
 
 
 const initialize = async (dist: string): Promise<Database> => {
+    // Validate input
+    if (!dist) {
+        throw new Error('Distribution directory path is required');
+    }
 
     // Create a tmp directory for the build
     try {
         await rm(dist, { recursive: true, force: true });
     } catch (error) {
         // Ignore error if directory doesn't exist
+        if (error.code !== 'ENOENT') {
+            throw new Error(`Failed to clean dist directory: ${error.message}`);
+        }
     }
-    await mkdir(dist, { recursive: true });
+
+    try {
+        await mkdir(dist, { recursive: true });
+    } catch (error) {
+        throw new Error(`Failed to create dist directory: ${error.message}`);
+    }
 
     // Create a new sqlite database
     const db = new Database(`${dist}/site.db`);
