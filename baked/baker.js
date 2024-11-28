@@ -1,37 +1,25 @@
 /*
- - absurd # a helper object with some useful functions
-   - init(db) # initialize the absurd object with the given database (client or server side sqlite db)
+ - baker # a helper object with some useful functions for baking/rendering a site
+   - init(db) # initialize the baker object with the given database (client or server side sqlite db)
    - getAsset(type, name) # fetch an asset from the database as a component
    - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
    - getPage(slug) # fetch a page from the database
    - getLatestPages(limit=10, offset=0) # fetch the latest pages from the database
    - getPrevPage(currentPage) # fetch the previous page from the database
    - getNextPage(currentPage) # fetch the next page from the database
-   - renderPage(page, site, absurd) # render a page with the given site and absurd objects
+   - renderPage(page) # render a page with the given site and baker objects
    - search(query, limit=10) # search the database for pages that match the query
    - query(sql, params) # run a sql query on the database and return the results
 */
 
 import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
 
-export class Absurd {
-    constructor() {
-        this.db = null;
-        this.isClient = null;
-        this.site = {};
-    }
-
-    async init(db, isClient = true) {
-        this.isClient = isClient;
+export class Baker {
+    constructor(db, isClient) {
         this.db = db;
-
-        if (isClient) {
-            // Initialize IndexedDB backend only in browser environment
-            initBackend();
-        }
-
+        this.isClient = isClient;
         this.site = this.getAsset('site.yaml', 'application/yaml');
-
+        console.log('Baker started with site:', this.site);
     }
 
     getRawAsset(name, type) {
@@ -79,8 +67,7 @@ export class Absurd {
 
     getLatestPages(limit = 10, offset = 0) {
         return this.db.prepare(`
-            SELECT * FROM pages 
-            WHERE published_date IS NOT NULL 
+            SELECT * FROM pages
             ORDER BY published_date DESC 
             LIMIT ? OFFSET ?
         `).all(limit, offset);

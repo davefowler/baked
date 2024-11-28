@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import { Database } from 'bun:sqlite';
-import type { Page } from '../types.ts';
+import type { Page } from '../types';
 import matter from 'gray-matter';
 
 /* CLI options
@@ -17,10 +17,12 @@ bake build
    will build the site to dist/
         - loads site.yaml, pages/*, assets/* into database
         - pre-renders each page to dist/
+    --drafts will build in draft pages
+
 
 bake serve <site port = 4242>
    will start the development server on the specified port (default 4242)
- 
+
 bake help
    shows this help
 
@@ -54,10 +56,11 @@ program
 program
     .command('build')
     .alias('oven')
+    .option('--drafts', 'Build draft pages')
     .description('Bake the site - so it\'s ready to be served!')
-    .action(async () => {
+    .action(async (options) => {
         console.log('Let\'s get cooking...');
-        import('./build.ts').then(module => module.default());
+        import('./build.ts').then(module => module.default(options.drafts));
     });
 
 program

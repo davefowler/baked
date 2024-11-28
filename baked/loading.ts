@@ -1,22 +1,22 @@
-import { Database } from 'bun:sqlite';
+import { Database } from "sqlite3";
 import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import matter from 'gray-matter';
 
-// File processor type definition
-type FileProcessor = (filepath: string, content: string, metadata: any, distPath?: string) => Promise<{
+// Mixer - a function that takes a file and loads it properly into the database depending on its type
+type Mixer = (filepath: string, content: string, metadata: any, distPath?: string) => Promise<{
     content: string;
     metadata: any;
 }>;
 
-// Default processor just returns content and metadata unchanged
-const defaultProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
+// Default Mixer just returns content and metadata unchanged
+const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
     return { content, metadata };
 };
 
 // Process markdown files
-const markdownProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
+const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
     const frontmatter = matter(content);
     const combinedMetadata = { ...metadata, ...frontmatter.data };
     return {
@@ -27,7 +27,7 @@ const markdownProcessor: FileProcessor = async (filepath, content, metadata, dis
 };
 
 // Process image files
-const imageProcessor: FileProcessor = async (filepath, content, metadata, distPath) => {
+const imageMixer: Mixer = async (filepath, content, metadata, distPath) => {
     const defaultDistPath = path.join(process.cwd(), 'dist');
     const targetDistPath = distPath || defaultDistPath;
     // Create images directory if it doesn't exist
@@ -46,16 +46,16 @@ const imageProcessor: FileProcessor = async (filepath, content, metadata, distPa
     };
 };
 
-// Map directories to processors
-const processors: Record<string, FileProcessor> = {
-    'images': imageProcessor,
-    'components': defaultProcessor,
-    'templates': defaultProcessor,
-    'css': defaultProcessor,
-    'pages': markdownProcessor
+// Map directories to Mixers
+const mixers: Record<string, Mixer> = {
+    'images': imageMixer,
+    'components': defaultMixer,
+    'templates': defaultMixer,
+    'css': defaultMixer,
+    'pages': markdownMixer
 };
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}) {
+export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
     let metadata = { ...parentMetadata };
@@ -71,17 +71,19 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
         const fullPath = path.join(dir, entry.name);
         
         if (entry.isDirectory()) {
-            await loadPagesFromDir(fullPath, db, metadata);
+            await loadPagesFromDir(fullPath, db, metadata, includeDrafts);
         } else if (entry.name !== 'meta.yaml') {
-            // Get the directory name to determine the processor
+            // Get the directory name to determine the Mixer
             const dirName = path.basename(path.dirname(fullPath));
-            const processor = processors[dirName] || defaultProcessor;
+            const mixer = mixers[dirName] || defaultMixer;
             
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
                 const { content: processedContent, metadata: finalMetadata } = 
-                    await processor(fullPath, content, metadata);
-                
+                    await mixer(fullPath, content, metadata);
+
+                if (!includeDrafts && metadata.isDraft) continue; // don't even load draft pages if not specified by user with --drafts
+
                 const slug = path.relative(dir, fullPath)
                     .replace(path.extname(fullPath), '');
                 
@@ -135,4 +137,13 @@ export async function loadAssetsFromDir(dir: string, db: Database, distPath: str
             }
         }
     }
+}
+
+export async function loadSiteMetadata(dir: string, db: Database) {
+    const sitePath = path.join(dir, 'site.yaml');
+    const siteContent = await fs.readFile(sitePath, 'utf8');
+    const siteMetadata = yaml.parse(siteContent);
+    db.prepare(`
+        INSERT INTO site (metadata) VALUES (?)
+    `).run(JSON.stringify(siteMetadata));
 }
