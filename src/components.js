@@ -1,13 +1,33 @@
+const sanitizeHtml = (str) => {
+    return str.replace(/[&<>"']/g, (match) => {
+        const escape = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return escape[match];
+    });
+};
+
+const validatePath = (path) => {
+    // Prevent path traversal
+    if (path.includes('..') || path.startsWith('/')) {
+        throw new Error('Invalid path');
+    }
+    return path;
+};
+
 const PassThrough = (rawAsset) => {
     return () => rawAsset;
 };
 
 const Css = (rawAsset) => {
     return (page, baker, site, ...props) => {
-        return `<style>${rawAsset}</style>`;
+        return `<style>${sanitizeHtml(rawAsset)}</style>`;
     };
 };
-
 
 const Template = (rawAsset) => {
     // Safe template processing without eval
@@ -15,20 +35,24 @@ const Template = (rawAsset) => {
         // Create a sanitized context with only allowed variables
         const context = {
             page: {
-                title: page.title,
-                content: page.content,
-                metadata: page.metadata,
-                path: page.path
+                title: sanitizeHtml(page.title || ''),
+                content: sanitizeHtml(page.content || ''),
+                metadata: typeof page.metadata === 'object' ? 
+                    Object.fromEntries(
+                        Object.entries(page.metadata)
+                            .map(([k, v]) => [k, typeof v === 'string' ? sanitizeHtml(v) : v])
+                    ) : {},
+                path: validatePath(page.path || '')
             },
             baker: {
-                getAsset: baker.getAsset.bind(baker),
-                getPage: baker.getPage.bind(baker),
+                getAsset: (path) => baker.getAsset(validatePath(path)),
+                getPage: (slug) => baker.getPage(validatePath(slug)),
                 getLatestPages: baker.getLatestPages.bind(baker)
             },
             site: {
-                title: site.title,
-                description: site.description,
-                url: site.url
+                title: sanitizeHtml(site.title || ''),
+                description: sanitizeHtml(site.description || ''),
+                url: sanitizeHtml(site.url || '')
             }
         };
         
@@ -41,7 +65,11 @@ const Template = (rawAsset) => {
                         if (typeof obj === 'function') {
                             return obj();
                         }
-                        return obj?.[prop];
+                        // Prevent access to prototype chain
+                        if (!obj || !Object.prototype.hasOwnProperty.call(obj, prop)) {
+                            return '';
+                        }
+                        return obj[prop];
                     }, context);
                 return value ?? '';
             } catch (error) {

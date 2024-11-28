@@ -56,6 +56,11 @@ export class Baker {
     }
 
     getPage(slug) {
+        // Validate slug to prevent SQL injection and path traversal
+        if (typeof slug !== 'string' || slug.includes('..') || /[<>"']/.test(slug)) {
+            return null;
+        }
+
         const page = this.db.prepare(`
             SELECT p.*, m.content as metadata 
             FROM pages p 
@@ -64,9 +69,69 @@ export class Baker {
         `).get(slug);
 
         if (page) {
-            page.metadata = JSON.parse(page.metadata || '{}');
+            try {
+                page.metadata = JSON.parse(page.metadata || '{}');
+            } catch (error) {
+                console.error(`Invalid metadata JSON for page ${slug}`);
+                page.metadata = {};
+            }
         }
         return page;
+    }
+
+    savePage(page) {
+        // Validate page data
+        if (!page || typeof page !== 'object') {
+            throw new Error('Invalid page data');
+        }
+
+        // Validate required fields
+        if (!page.slug || typeof page.slug !== 'string' || 
+            !page.title || typeof page.title !== 'string' ||
+            !page.content || typeof page.content !== 'string') {
+            throw new Error('Missing required page fields');
+        }
+
+        // Prevent path traversal
+        if (page.slug.includes('..') || page.slug.startsWith('/')) {
+            throw new Error('Invalid page slug');
+        }
+
+        // Sanitize metadata
+        if (page.metadata) {
+            if (typeof page.metadata === 'object') {
+                // Recursively sanitize metadata object
+                const sanitizeObj = (obj) => {
+                    return Object.fromEntries(
+                        Object.entries(obj).map(([k, v]) => {
+                            if (typeof v === 'string') {
+                                return [k, v.replace(/[<>"']/g, '')];
+                            }
+                            if (typeof v === 'object' && v !== null) {
+                                return [k, sanitizeObj(v)];
+                            }
+                            return [k, v];
+                        })
+                    );
+                };
+                page.metadata = sanitizeObj(page.metadata);
+            } else {
+                throw new Error('Metadata must be an object');
+            }
+        }
+
+        // Store the page
+        this.db.prepare(`
+            INSERT OR REPLACE INTO pages (slug, title, content, template, metadata, published_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+            page.slug,
+            page.title,
+            page.content,
+            page.template || 'default',
+            JSON.stringify(page.metadata || {}),
+            page.published_date || null
+        );
     }
 
     renderPage(page) {
