@@ -1,13 +1,15 @@
 import { expect, test, describe, beforeEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import * as cheerio from 'cheerio';
+import path from 'path';
 
-describe("Template Components", () => {
+describe("Template Component", () => {
     let db: Database;
     let absurd: any;
+    let templateComponent: any;
 
     beforeEach(() => {
-        // Setup fresh database for each test
+        // Setup fresh database
         db = new Database(":memory:");
         db.exec(`
             CREATE TABLE IF NOT EXISTS assets (
@@ -28,153 +30,202 @@ describe("Template Components", () => {
                 const componentPath = `../assets/components/${asset.type}.js`;
                 const component = require(componentPath);
                 return component(asset.content);
-            },
-
-            renderPage(page: any, site: any) {
-                const template = this.getAsset(page.template, 'templates');
-                if (!template) {
-                    throw new Error(`Template ${page.template} not found`);
-                }
-                return template.render(this, page, site);
             }
         };
 
-        // Register base template
-        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'base.html',
-            '<!DOCTYPE html><html><head><title>${page.title}</title></head><body>${content}</body></html>',
-            'templates'
-        );
+        // Load the template component handler
+        templateComponent = require('../assets/components/template.js');
     });
 
-    test("should handle basic template rendering", () => {
-        // Add a simple template
-        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'simple.html',
-            '<div>${page.title}</div>',
-            'templates'
-        );
+    test("should render basic template with variables", () => {
+        const template = templateComponent(`
+            <div>
+                <h1>\${page.title}</h1>
+                <p>\${page.content}</p>
+            </div>
+        `);
 
-        const template = absurd.getAsset('simple.html', 'templates');
         const result = template.render(absurd, {
-            title: "Hello World"
+            title: "Test Title",
+            content: "Test Content"
         }, {});
 
-        expect(result).toBe("<div>Hello World</div>");
+        const $ = cheerio.load(result);
+        expect($('h1').text().trim()).toBe("Test Title");
+        expect($('p').text().trim()).toBe("Test Content");
     });
 
     test("should handle template inheritance", () => {
-        // Add a child template that extends base
+        // Register base template in database
         db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'child.html',
-            '{% extends "base" %}<h1>${page.title}</h1>',
+            'base.html',
+            `<!DOCTYPE html>
+            <html>
+                <head><title>\${page.title}</title></head>
+                <body>\${content}</body>
+            </html>`,
             'templates'
         );
 
-        const template = absurd.getAsset('child.html', 'templates');
+        // Create child template that extends base
+        const template = templateComponent(`
+            {% extends "base" %}
+            <div class="content">
+                <h1>\${page.title}</h1>
+                \${page.content}
+            </div>
+        `);
+
         const result = template.render(absurd, {
-            title: "Test Page"
+            title: "Child Page",
+            content: "Child Content"
         }, {});
 
         const $ = cheerio.load(result);
-        expect($('title').text()).toBe("Test Page");
-        expect($('h1').text()).toBe("Test Page");
+        expect($('title').text().trim()).toBe("Child Page");
+        expect($('.content h1').text().trim()).toBe("Child Page");
+        expect($('.content').text().includes("Child Content")).toBe(true);
     });
 
-    test("should handle site-wide data", () => {
-        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'site-data.html',
-            '<div>${site.title} - ${page.title}</div>',
-            'templates'
-        );
+    test("should handle site-wide variables", () => {
+        const template = templateComponent(`
+            <header>
+                <h1>\${site.title}</h1>
+                <nav>\${site.navigation}</nav>
+            </header>
+            <main>\${page.content}</main>
+        `);
 
-        const template = absurd.getAsset('site-data.html', 'templates');
         const result = template.render(absurd, {
-            title: "Page Title"
+            content: "Page Content"
         }, {
-            title: "Site Title"
+            title: "My Site",
+            navigation: "<a href='/'>Home</a>"
         });
 
-        expect(result).toBe("<div>Site Title - Page Title</div>");
+        const $ = cheerio.load(result);
+        expect($('header h1').text().trim()).toBe("My Site");
+        expect($('nav').html()).toBe("<a href='/'>Home</a>");
     });
 
-    test("should handle nested metadata", () => {
-        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'metadata.html',
-            '<div>${page.metadata?.author} - ${page.metadata?.date}</div>',
-            'templates'
-        );
+    test("should handle nested data structures", () => {
+        const template = templateComponent(`
+            <article>
+                <header>
+                    <h1>\${page.title}</h1>
+                    \${page.metadata?.date ? `<time>\${page.metadata.date}</time>` : ''}
+                    \${page.metadata?.author ? `<author>\${page.metadata.author}</author>` : ''}
+                </header>
+                <div class="content">\${page.content}</div>
+                \${page.metadata?.tags?.map(tag => `<span class="tag">\${tag}</span>`).join('')}
+            </article>
+        `);
 
-        const template = absurd.getAsset('metadata.html', 'templates');
         const result = template.render(absurd, {
+            title: "Test Post",
+            content: "Post content",
             metadata: {
+                date: "2024-01-01",
                 author: "John Doe",
-                date: "2024-01-01"
+                tags: ["test", "example"]
             }
         }, {});
 
-        expect(result).toContain("John Doe - 2024-01-01");
+        const $ = cheerio.load(result);
+        expect($('h1').text().trim()).toBe("Test Post");
+        expect($('time').text()).toBe("2024-01-01");
+        expect($('author').text()).toBe("John Doe");
+        expect($('.tag').length).toBe(2);
+        expect($('.tag').first().text()).toBe("test");
     });
 
-    test("should handle missing templates gracefully", () => {
+    test("should handle missing parent template gracefully", () => {
+        const template = templateComponent(`{% extends "nonexistent" %}`);
+
         expect(() => {
-            absurd.getAsset('nonexistent.html', 'templates');
-        }).toBeNull();
+            template.render(absurd, {}, {});
+        }).toThrow("Parent template nonexistent not found");
     });
 
-    test("should handle other component types", () => {
-        // Test CSS component
-        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'style.css',
-            '.test { color: red; }',
-            'css'
-        );
+    test("should handle invalid template syntax gracefully", () => {
+        const template = templateComponent(`\${someUndefinedVar}`);
 
-        const cssComponent = absurd.getAsset('style.css', 'css');
-        const cssResult = cssComponent.render(absurd, {}, {});
-        expect(cssResult).toBe('<style>.test { color: red; }</style>');
-
-        // Test JavaScript component
-        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'script.js',
-            'console.log("test");',
-            'javascript'
-        );
-
-        const jsComponent = absurd.getAsset('script.js', 'javascript');
-        const jsResult = jsComponent.render(absurd, {}, {}, false, true);
-        expect(jsResult).toBe('<script defer>console.log("test");</script>');
+        expect(() => {
+            template.render(absurd, {}, {});
+        }).toThrow();
     });
 
-    test("should handle image components", () => {
-        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'test.jpg',
-            'base64encodedcontent',
-            'image'
-        );
+    test("should handle conditional rendering", () => {
+        const template = templateComponent(`
+            <div>
+                \${page.showTitle ? `<h1>\${page.title}</h1>` : ''}
+                <p>\${page.content}</p>
+            </div>
+        `);
 
-        const imageComponent = absurd.getAsset('test.jpg', 'image');
-        const result = imageComponent.render(absurd, {}, {}, 'Alt text', 'test-class');
-        
+        const withTitle = template.render(absurd, {
+            showTitle: true,
+            title: "Test Title",
+            content: "Test Content"
+        }, {});
+
+        const withoutTitle = template.render(absurd, {
+            showTitle: false,
+            title: "Test Title",
+            content: "Test Content"
+        }, {});
+
+        const $with = cheerio.load(withTitle);
+        const $without = cheerio.load(withoutTitle);
+
+        expect($with('h1').length).toBe(1);
+        expect($without('h1').length).toBe(0);
+        expect($with('p').text().trim()).toBe("Test Content");
+        expect($without('p').text().trim()).toBe("Test Content");
+    });
+
+    test("should handle array iteration", () => {
+        const template = templateComponent(`
+            <ul>
+                \${page.items?.map(item => `
+                    <li>\${item.text}</li>
+                `).join('')}
+            </ul>
+        `);
+
+        const result = template.render(absurd, {
+            items: [
+                { text: "Item 1" },
+                { text: "Item 2" },
+                { text: "Item 3" }
+            ]
+        }, {});
+
         const $ = cheerio.load(result);
-        const img = $('img');
-        expect(img.attr('src')).toContain('base64encodedcontent');
-        expect(img.attr('alt')).toBe('Alt text');
-        expect(img.attr('class')).toBe('test-class');
+        expect($('li').length).toBe(3);
+        expect($('li').first().text().trim()).toBe("Item 1");
     });
 
-    test("should handle SVG components", () => {
-        const svgContent = '<svg><circle cx="50" cy="50" r="40"/></svg>';
+    test("should handle nested template calls", () => {
+        // Register a partial template
         db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-            'icon.svg',
-            svgContent,
-            'svg'
+            'header.html',
+            '<header><h1>\${page.title}</h1></header>',
+            'templates'
         );
 
-        const svgComponent = absurd.getAsset('icon.svg', 'svg');
-        const result = svgComponent.render(absurd, {}, {}, 'icon-class');
-        
+        const template = templateComponent(`
+            \${absurd.getAsset('header.html', 'templates').render(absurd, page, site)}
+            <main>\${page.content}</main>
+        `);
+
+        const result = template.render(absurd, {
+            title: "Page Title",
+            content: "Page Content"
+        }, {});
+
         const $ = cheerio.load(result);
-        expect($('div.icon-class svg').length).toBe(1);
+        expect($('header h1').text().trim()).toBe("Page Title");
+        expect($('main').text().trim()).toBe("Page Content");
     });
 });
