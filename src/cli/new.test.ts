@@ -1,34 +1,34 @@
 import { expect, test, beforeEach, afterEach, mock } from "bun:test";
-import { mkdtemp, rm, readFile } from 'fs/promises';
+import { mkdtemp, rm, readFile, mkdir, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import mockFs from 'mock-fs';
 import createSite from './new';
 
 describe('createSite', () => {
     let tempDir: string;
+    let starterDir: string;
 
     beforeEach(async () => {
-        // Create a temporary directory for testing
-        tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-'));
+        // Create temporary directories
+        tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
+        starterDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-starter-'));
         
-        // Mock the file system
-        mockFs({
-            './starter': {
-                'site.yaml': 'title: <your site title>\nurl: <your site url>',
-                'pages': {
-                    'manifest.json': JSON.stringify({
-                        name: "BakedSite",
-                        short_name: "Baked",
-                        description: "Baked is a static site generator for the modern web."
-                    }),
-                    'blog': {
-                        'meta.yaml': 'template: blog\nmimetype: text/markdown'
-                    }
-                }
-            },
-            [tempDir]: {}
-        });
+        // Create starter directory structure
+        await mkdir(join(starterDir, 'pages', 'blog'), { recursive: true });
+        
+        // Create test files
+        await writeFile(join(starterDir, 'site.yaml'), 
+            'title: <your site title>\nurl: <your site url>');
+        
+        await writeFile(join(starterDir, 'pages', 'manifest.json'), 
+            JSON.stringify({
+                name: "BakedSite",
+                short_name: "Baked",
+                description: "Baked is a static site generator for the modern web."
+            }, null, 2));
+            
+        await writeFile(join(starterDir, 'pages', 'blog', 'meta.yaml'),
+            'template: blog\nmimetype: text/markdown');
 
         // Mock the prompt function
         global.prompt = mock((question: string) => {
@@ -43,26 +43,33 @@ describe('createSite', () => {
     });
 
     afterEach(async () => {
-        mockFs.restore();
         await rm(tempDir, { recursive: true, force: true });
+        await rm(starterDir, { recursive: true, force: true });
     });
 
     test('should create a new site with correct configuration', async () => {
+        // Temporarily override the starter directory path
+        const originalStarter = './starter';
+        process.env.STARTER_DIR = starterDir;
+        
         await createSite(tempDir);
+        
+        // Reset the environment
+        delete process.env.STARTER_DIR;
 
         // Verify site.yaml
-        const siteYaml = await readFile(`${tempDir}/site.yaml`, 'utf-8');
+        const siteYaml = await readFile(join(tempDir, 'site.yaml'), 'utf-8');
         expect(siteYaml).toContain('name: Test Site');
         expect(siteYaml).toContain('url: test.com');
         expect(siteYaml).toContain('description: A test site');
         expect(siteYaml).toContain('author: Test Author');
 
         // Verify blog/meta.yaml
-        const blogMeta = await readFile(`${tempDir}/pages/blog/meta.yaml`, 'utf-8');
+        const blogMeta = await readFile(join(tempDir, 'pages', 'blog', 'meta.yaml'), 'utf-8');
         expect(blogMeta).toContain('author: Test Author');
 
         // Verify manifest.json
-        const manifest = JSON.parse(await readFile(`${tempDir}/pages/manifest.json`, 'utf-8'));
+        const manifest = JSON.parse(await readFile(join(tempDir, 'pages', 'manifest.json'), 'utf-8'));
         expect(manifest.name).toBe('Test Site');
         expect(manifest.short_name).toBe('Test');
         expect(manifest.description).toBe('A test site');
