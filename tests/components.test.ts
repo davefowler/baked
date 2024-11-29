@@ -4,6 +4,13 @@ import { Components } from '../src/components';
 describe('Component System', () => {
     describe('Template Component', () => {
         test('processes template variables correctly', () => {
+            // Create mock baker
+            const mockBaker = {
+                getAsset: () => '',
+                getPage: () => null,
+                getLatestPages: () => []
+            };
+
             const template = Components.templates(`
                 <h1>${page.title}</h1>
                 <div>${page.content}</div>
@@ -11,7 +18,7 @@ describe('Component System', () => {
             
             const result = template(
                 { title: 'Test Title', content: 'Test Content' },
-                {},
+                mockBaker,
                 {}
             );
             
@@ -27,7 +34,7 @@ describe('Component System', () => {
             
             const result = template(
                 { title: 'Test' },
-                {},
+                mockBaker,
                 {}
             );
             
