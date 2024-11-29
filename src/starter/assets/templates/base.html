@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="${data.lang || 'en'}">
+<html lang="{{ page.metadata.lang|default('en') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${site.title || 'Site Title'}</title>
-    <meta name="description" content="${data.metadata?.description || ''}">
+    <title>{{ site.title|default('Site Title') }}</title>
+    <meta name="description" content="{{ page.metadata.description|default('') }}">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#000000">
-    ${engine.getAsset('/css/main.css')}
+    {{ baker.getAsset('/css/main.css')|safe }}
 
     <script type="module" src="/baked/baker.js" async></script>
     <script>
@@ -23,10 +23,14 @@
             <a href="/blog">Blog</a>
             <a href="/about">About</a>
         </nav>
-        ${data.title ? `<h1>${data.title}</h1>` : ''}
+        {% if page.title %}
+            <h1>{{ page.title }}</h1>
+        {% endif %}
     </header>
     <main>
-        ${data.content}
+        {% block content %}
+            {{ page.content|safe }}
+        {% endblock %}
     </main>
     <footer>
         <p>Generated with AbsurdSite</p>

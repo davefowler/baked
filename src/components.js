@@ -29,19 +29,33 @@ const Css = (rawAsset) => {
     };
 };
 
+import nunjucks from 'nunjucks';
+
+// Configure nunjucks
+const env = new nunjucks.Environment(null, { 
+    autoescape: true,
+    throwOnUndefined: false
+});
+
+// Add custom filters
+env.addFilter('safe', str => sanitizeHtml(str));
+env.addFilter('date', (str, format) => {
+    if (!str) return '';
+    const date = new Date(str);
+    return date.toLocaleDateString();
+});
+
 const Template = (rawAsset) => {
-    // Safe template processing without eval
-    return (page, baker, site, ...props) => {
-        // Create a sanitized context with only allowed variables
+    // Compile the template
+    const template = nunjucks.compile(rawAsset, env);
+    
+    // Return render function
+    return (page, baker, site) => {
         const context = {
             page: {
-                title: sanitizeHtml(page.title || ''),
-                content: sanitizeHtml(page.content || ''),
-                metadata: typeof page.metadata === 'object' ? 
-                    Object.fromEntries(
-                        Object.entries(page.metadata)
-                            .map(([k, v]) => [k, typeof v === 'string' ? sanitizeHtml(v) : v])
-                    ) : {},
+                title: page.title || '',
+                content: page.content || '',
+                metadata: page.metadata || {},
                 path: validatePath(page.path || '')
             },
             baker: {
@@ -49,34 +63,15 @@ const Template = (rawAsset) => {
                 getPage: (slug) => baker.getPage(validatePath(slug)),
                 getLatestPages: baker.getLatestPages.bind(baker)
             },
-            site: {
-                title: sanitizeHtml(site.title || ''),
-                description: sanitizeHtml(site.description || ''),
-                url: sanitizeHtml(site.url || '')
-            }
+            site: site || {}
         };
         
-        // Replace ${...} expressions with context values
-        return rawAsset.replace(/\$\{([^}]+)\}/g, (match, expr) => {
-            try {
-                // Only allow simple property access and method calls
-                const value = expr.split('.')
-                    .reduce((obj, prop) => {
-                        if (typeof obj === 'function') {
-                            return obj();
-                        }
-                        // Prevent access to prototype chain
-                        if (!obj || !Object.prototype.hasOwnProperty.call(obj, prop)) {
-                            return '';
-                        }
-                        return obj[prop];
-                    }, context);
-                return value ?? '';
-            } catch (error) {
-                console.warn(`Template error: ${error.message}`);
-                return '';
-            }
-        });
+        try {
+            return template.render(context);
+        } catch (error) {
+            console.error('Template render error:', error);
+            return `<pre>Template Error: ${sanitizeHtml(error.message)}</pre>`;
+        }
     };
 };
 
