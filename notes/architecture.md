@@ -81,31 +81,59 @@ type: blog
 
 ## Templates
 
-Templates are very simple in Baked.  They are just html files with javascript variables that are replaced with data from the database.  It's just plain html and javascript so it's easy to understand and modify.  The one enhancement is the addition of easy template inheritence.  If the first line of the template is {% extends '<parent template> %} it will be rendered in the ${content} variable inside of the designated <parent template>
+Templates in Baked use Nunjucks, a powerful templating language inspired by Jinja2. This provides a secure, feature-rich templating system with inheritance, macros, filters and more. Templates are HTML files with Nunjucks syntax for dynamic content.
+
+Template inheritance is handled through Nunjucks' native extend/block system. Child templates can extend parent templates and override specific blocks.
 
 For example:
 
-base.html
-
+base.html:
 ```html
 <html>
   <body>
-    <nav>Mysite.com</nav>
+    <nav>{{ site.title }}</nav>
 
     <div id="content">
-      ${content}
+      {% block content %}{% endblock %}
     </div>
+
+    <footer>
+      {% block footer %}
+        <p>© {{ site.title }}</p>
+      {% endblock %}
+    </footer>
   </body>
 </html>
 ```
 
-blog.html
-
+blog.html:
 ```html
-{% extends 'base.html' %}
-<h1>${title}</h1>
-<article>${content}</article>
+{% extends "base.html" %}
+
+{% block content %}
+  <article>
+    <h1>{{ page.title }}</h1>
+    <time>{{ page.date | date }}</time>
+    {{ page.content | safe }}
+  </article>
+{% endblock %}
 ```
+
+### Template Context
+
+Templates have access to these variables:
+- `page`: The current page object (title, content, metadata, etc)
+- `site`: Global site configuration from site.yaml
+- `baker`: Helper object for querying other pages/assets
+
+### Nunjucks Features Available
+- Template inheritance with `extends` and `block`
+- Include other templates with `include`
+- Macros for reusable components
+- Built-in filters for formatting (date, safe, etc)
+- Custom filters can be added
+- Conditional logic and loops
+- Whitespace control
 
 ### Variables available in templates
 
