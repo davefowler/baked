@@ -8,7 +8,7 @@ describe('Template System', () => {
             const template = Components.templates(`<h1>{{ page.title }}</h1>`);
             const result = template(
                 { title: 'Test Title' },
-                {},
+                mockBaker,
                 {}
             );
             expect(result).toBe('<h1>Test Title</h1>');

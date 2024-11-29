@@ -4,11 +4,15 @@ import { Components } from '../src/components';
 describe('Component System', () => {
     describe('Template Component', () => {
         test('processes template variables correctly', () => {
-            // Create mock baker
+            // Create mock baker with all required methods
             const mockBaker = {
                 getAsset: () => '',
                 getPage: () => null,
-                getLatestPages: () => []
+                getLatestPages: () => [],
+                getPrevPage: () => null,
+                getNextPage: () => null,
+                search: () => [],
+                query: () => []
             };
 
             const template = Components.templates(`
