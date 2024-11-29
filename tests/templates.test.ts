@@ -2,6 +2,31 @@ import { expect, test, describe } from "bun:test";
 import { Components } from '../src/components';
 import { Database } from "sqlite3";
 
+
+const mockBaker = {
+    getAsset: (path: string) => {
+        return () => `<h1>${path}</h1>`;
+    },
+    getPage: (path: string) => {
+        return () => `<h1>${path}</h1>`;
+    },
+    getLatestPages: () => {
+        return () => `<h1>Latest Pages</h1>`;
+    },
+    getPrevPage: () => {
+        return () => `<h1>Prev Page</h1>`;
+    },
+    getNextPage: () => {
+        return () => `<h1>Next Page</h1>`;
+    },
+    search: () => {
+        return () => `<h1>Search</h1>`;
+    },
+    query: () => {
+        return () => `<h1>Query</h1>`;
+    }
+};
+
 describe('Template System', () => {
     describe('Basic Template Features', () => {
         test('renders variables correctly', () => {
@@ -18,7 +43,7 @@ describe('Template System', () => {
             const template = Components.templates(`<h1>{{ page.nonexistent }}</h1>`);
             const result = template(
                 {},
-                {},
+                mockBaker,
                 {}
             );
             expect(result).toBe('<h1></h1>');
@@ -28,7 +53,7 @@ describe('Template System', () => {
             const template = Components.templates(`{{ page.content|safe }}`);
             const result = template(
                 { content: '<p>Test</p>' },
-                {},
+                mockBaker,
                 {}
             );
             expect(result).toBe('<p>Test</p>');
@@ -47,6 +72,7 @@ describe('Template System', () => {
             
             // Mock baker with getAsset
             const baker = {
+                ...mockBaker, 
                 getAsset: (name: string) => {
                     if (name === 'base.html') return base;
                     return null;
@@ -91,7 +117,7 @@ describe('Template System', () => {
             
             const result = template(
                 { items: ['one', 'two', 'three'] },
-                {},
+                mockBaker,
                 {}
             );
             expect(result).toContain('<li>one</li>');
@@ -105,7 +131,7 @@ describe('Template System', () => {
             const template = Components.templates(`{{ page.content }}`);
             const result = template(
                 { content: '<script>alert("xss")</script>' },
-                {},
+                mockBaker,
                 {}
             );
             expect(result).not.toContain('<script>');
@@ -116,7 +142,7 @@ describe('Template System', () => {
             const template = Components.templates(`{{ page.content|safe }}`);
             const result = template(
                 { content: '<div>Safe HTML</div>' },
-                {},
+                mockBaker,
                 {}
             );
             expect(result).toBe('<div>Safe HTML</div>');
