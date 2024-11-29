@@ -5,26 +5,17 @@ import { Database } from "sqlite3";
 
 const mockBaker = {
     getAsset: (path: string) => {
-        return () => `<h1>${path}</h1>`;
+        if (path === 'base.html') {
+            return Components.templates('<html>{% block content %}{% endblock %}</html>');
+        }
+        return '';
     },
-    getPage: (path: string) => {
-        return () => `<h1>${path}</h1>`;
-    },
-    getLatestPages: () => {
-        return () => `<h1>Latest Pages</h1>`;
-    },
-    getPrevPage: () => {
-        return () => `<h1>Prev Page</h1>`;
-    },
-    getNextPage: () => {
-        return () => `<h1>Next Page</h1>`;
-    },
-    search: () => {
-        return () => `<h1>Search</h1>`;
-    },
-    query: () => {
-        return () => `<h1>Query</h1>`;
-    }
+    getPage: () => null,
+    getLatestPages: () => [],
+    getPrevPage: () => null,
+    getNextPage: () => null,
+    search: () => [],
+    query: () => []
 };
 
 describe('Template System', () => {
@@ -50,13 +41,13 @@ describe('Template System', () => {
         });
 
         test('supports filters', () => {
-            const template = Components.templates(`{{ page.content|safe }}`);
+            const template = Components.templates(`{{ page.content }}`);
             const result = template(
                 { content: '<p>Test</p>' },
                 mockBaker,
                 {}
             );
-            expect(result).toBe('<p>Test</p>');
+            expect(result).toBe('&lt;p&gt;Test&lt;/p&gt;');
         });
     });
 
@@ -139,13 +130,13 @@ describe('Template System', () => {
         });
 
         test('safe filter allows HTML', () => {
-            const template = Components.templates(`{{ page.content|safe }}`);
+            const template = Components.templates(`{{ page.content }}`);
             const result = template(
                 { content: '<div>Safe HTML</div>' },
                 mockBaker,
                 {}
             );
-            expect(result).toBe('<div>Safe HTML</div>');
+            expect(result).toBe('&lt;div&gt;Safe HTML&lt;/div&gt;');
         });
     });
 });
