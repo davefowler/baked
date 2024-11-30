@@ -2,7 +2,7 @@ import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { Database } from 'sqlite3';
+import sqlite, { Database } from "better-sqlite3"
 import { Components } from '../src/components.js';
 import { Baker } from '../baked/baker';
 
@@ -12,7 +12,7 @@ describe('Security Tests', () => {
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-security-test-'));
-        db = new Database(':memory:');
+        db = new sqlite(':memory:');
         
         await db.exec(`
             CREATE TABLE IF NOT EXISTS pages (
@@ -39,7 +39,7 @@ describe('Security Tests', () => {
 
     describe('Template Security', () => {
         test('sanitizes HTML in template variables', () => {
-            const template = Components.templates(`<div>${page.content}</div>`);
+            const template = Components.templates(`<div>{{ page.content }}</div>`);
             const result = template(
                 { content: '<script>alert("xss")</script>' },
                 {},
@@ -61,7 +61,7 @@ describe('Security Tests', () => {
         });
 
         test('handles undefined variables safely', () => {
-            const template = Components.templates(`${page.nonexistent.property}`);
+            const template = Components.templates(`{{page.nonexistent.property}}`);
             const result = template({}, {}, {});
             expect(result).toBe('');
         });

@@ -43,7 +43,7 @@ describe('Component System', () => {
             );
             
             expect(result).toContain('Test');
-            expect(result).toContain('${page.nonexistent}');
+            expect(result).toContain('{{ page.nonexistent }}');
         });
 
         test('sanitizes dangerous input', () => {

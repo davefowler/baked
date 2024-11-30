@@ -62,10 +62,7 @@ export class Baker {
         }
 
         const page = this.db.prepare(`
-            SELECT p.*, m.content as metadata 
-            FROM pages p 
-            LEFT JOIN metadata m ON m.page_slug = p.slug 
-            WHERE p.slug = ?
+            SELECT * FROM pages WHERE slug = ?
         `).get(slug);
 
         if (page) {
@@ -140,12 +137,12 @@ export class Baker {
                 throw new Error('Cannot render null page');
             }
             if (!page.metadata?.template) {
-                throw new Error(`No template specified for page: ${page.slug}`);
+                throw new Error(`No template specified for page: {{ page.slug }}`);
             }
             
             const template = this.getAsset(page.metadata.template, 'templates');
             if (!template) {
-                throw new Error(`Template not found: ${page.metadata.template}`);
+                throw new Error(`Template not found: {{ page.metadata.template }}`);
             }
             
             return template(page, this, this.site);

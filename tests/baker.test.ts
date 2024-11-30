@@ -86,7 +86,7 @@ describe('Baker', () => {
                 'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
             ).run(
                 '/templates/default',
-                '<h1>${page.title}</h1>${page.content}',
+                '<h1>{{ page.title }}</h1>{{ page.content }}',
                 'templates'
             );
 
