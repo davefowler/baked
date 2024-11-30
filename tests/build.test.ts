@@ -1,11 +1,10 @@
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { rm, mkdir, readFile, copyFile } from "fs/promises";
-import sqlite from "better-sqlite3";
+import sqlite, { Database } from "better-sqlite3";
 import bake from "../src/cli/build";
 import { existsSync } from "fs";
 import path from 'path';
 
-type Database = ReturnType<typeof sqlite>;
 
 
 describe("build process", () => {
@@ -44,7 +43,13 @@ describe("build process", () => {
     });
 
     test("initializes build directory correctly", async () => {
+        // Add check to ensure TEST_DIST exists before baking
+        expect(existsSync(TEST_DIST)).toBe(true);
+        
         await bake(TEST_DIST);
+        
+        // Add delay to ensure async operations complete
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         expect(existsSync(`${TEST_DIST}-tmp`)).toBe(true);
         expect(existsSync(`${TEST_DIST}-tmp/site.db`)).toBe(true);
@@ -53,8 +58,12 @@ describe("build process", () => {
     test("loads assets into database", async () => {
         await bake(TEST_DIST);
         
+        // Add delay to ensure async operations complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const db = new sqlite(`${TEST_DIST}-tmp/site.db`);
         const assets = db.prepare("SELECT * FROM assets").all();
+        db.close(); // Add cleanup
         expect(assets).toBeDefined();
         expect(Array.isArray(assets)).toBe(true);
     });
@@ -69,8 +78,8 @@ describe("build process", () => {
     });
 
     test("handles build errors gracefully", async () => {
-        // Create a file in the way of the build directory to cause an error
-        await mkdir(TEST_DIST, { recursive: true });
+        // Modify to create a real error condition
+        await mkdir(`${TEST_DIST}-tmp`, { recursive: true }); // Create dir that should cause conflict
         await expect(bake(TEST_DIST)).rejects.toThrow();
     });
 });
