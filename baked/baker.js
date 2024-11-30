@@ -19,8 +19,7 @@ export class Baker {
     constructor(db, isClient) {
         this.db = db;
         this.isClient = isClient;
-        this.site = this.getAsset('site.yaml', 'application/yaml');
-        console.log('Baker started with site:', this.site);
+        this.site = this.getAsset('site.yaml', 'json');
     }
 
     getRawAsset(name, type) {
@@ -29,9 +28,11 @@ export class Baker {
                 throw new Error('Asset name is required');
             }
             const path = type ? `/${type}/${name}` : name;
-            const result = this.db.prepare('SELECT content, type FROM assets WHERE path = ?').get(path);
+            const result = this.db.prepare('SELECT content, type FROM assets WHERE path = ? and type = ?').get(path, type);
             if (!result) {
-                console.warn(`Asset not found: ${path}`);
+                const allassets = this.db.prepare('SELECT * FROM assets').all();
+                console.warn(`Asset not found: ${path}`, allassets);
+
             }
             return result;
         } catch (error) {
