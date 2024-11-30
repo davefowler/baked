@@ -108,7 +108,7 @@ describe('CLI Commands', () => {
             
             const db = new Database(distDb);
             const page = db.prepare('SELECT * FROM pages WHERE path = ?')
-                          .get('test');
+                          .get('/pages/test.md');
             db.close(); // Properly close the database connection
             expect(page).toBeDefined();
             expect((page as {title: string}).title).toBe('Test');
@@ -121,14 +121,15 @@ describe('CLI Commands', () => {
             // Build without drafts
             await bake(TEST_DIR, false);
             let db = new Database(join(TEST_DIR, 'dist/site.db'));
+            console.log('all pages', db.prepare('SELECT * FROM pages').all());
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
-                         .get('/draft');
+                         .get('/pages/draft.md');
             expect(draft).toBeUndefined();
             // Build with drafts
             await bake(TEST_DIR, true);
             db = new Database(join(TEST_DIR, 'dist/site.db'));   
             draft = db.prepare('SELECT * FROM pages WHERE path = ?')
-                     .get('draft');
+                     .get('/pages/draft.md');
             expect(draft).toBeDefined();
         });
     });
