@@ -9,8 +9,8 @@ import { rm } from "fs/promises";
 import { mkdir } from "fs/promises";
 import { rename } from "fs/promises";
 import path from "path";
-import Database from "better-sqlite3";
-import type { Database as DatabaseType } from "better-sqlite3";
+import sqlite from "better-sqlite3";
+import type { Database } from "better-sqlite3";
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../../baked/loading";
 import { Baker } from "../../baked/baker";
 import type { Page } from "../types";
@@ -18,7 +18,7 @@ import { writeFile } from "fs/promises";
 import { readFile } from "fs/promises";
 
 /* prep for the baking process by creating the needed database and directories */
-const prep = async (dist: string): Promise<DatabaseType> => {
+const prep = async (dist: string): Promise<Database> => {
     // Validate input
     if (!dist) {
         throw new Error('Distribution directory path is required');
@@ -44,7 +44,7 @@ const prep = async (dist: string): Promise<DatabaseType> => {
     }
 
     // Create a new sqlite database
-    const db = new Database(`${dist}/site.db`);
+    const db = sqlite(`${dist}/site.db`);
     // Load and execute SQL files
     const schemaSQL = await readFile(path.join(__dirname, '../sql/schema.sql'), 'utf8');
     const ftsSQL = await readFile(path.join(__dirname, '../sql/fulltextsearch.sql'), 'utf8');
@@ -58,7 +58,7 @@ const prep = async (dist: string): Promise<DatabaseType> => {
 
 
 /* in the dishing phase, we pre-render each page, saving it to the dist directory */
-const dish = async (db: DatabaseType, dist: string) => {
+const dish = async (db: Database, dist: string) => {
     if (!db || !dist) {
         throw new Error('Database and dist path are required for pre-rendering');
     }
