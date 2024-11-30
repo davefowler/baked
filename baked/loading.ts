@@ -107,12 +107,12 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `).run(
                     pathFromRoot,
-                    slug,
+                    pathFromRoot.replace(/\.[^/.]+$/, ''), // Remove file extension for slug
                     title,
                     processedContent,
                     finalMetadata.template || 'default',
-                    JSON.stringify(finalMetadata),  // Make sure metadata is stringified
-                    publishedDate  // Use the processed date
+                    JSON.stringify(finalMetadata),
+                    publishedDate ? publishedDate : null
                 );
                 
                 console.log(`Loaded page: ${slug}`, pathFromRoot);
