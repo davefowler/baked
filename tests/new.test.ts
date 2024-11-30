@@ -3,7 +3,7 @@ import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
-import buildSite from '../src/cli/build';
+import bake from '../src/cli/build';
 import startServer from '../src/cli/serve';
 
 describe('createSite', () => {

@@ -1,23 +1,6 @@
-const sanitizeHtml = (str) => {
-    return str.replace(/[&<>"']/g, (match) => {
-        const escape = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        };
-        return escape[match];
-    });
-};
+import nunjucks from 'nunjucks';
 
-const validatePath = (path) => {
-    // Prevent path traversal
-    if (path.includes('..') || path.startsWith('/')) {
-        throw new Error('Invalid path');
-    }
-    return path;
-};
+
 
 const PassThrough = (rawAsset) => {
     return () => rawAsset;
@@ -29,7 +12,6 @@ const Css = (rawAsset) => {
     };
 };
 
-import nunjucks from 'nunjucks';
 
 // Configure nunjucks
 const env = new nunjucks.Environment(null, { 
@@ -45,12 +27,72 @@ env.addFilter('date', (str, format) => {
     return date.toLocaleDateString();
 });
 
+// Create custom loader for templates
+class BakerLoader {
+    constructor(baker) {
+        this.baker = baker;
+    }
+
+    // Nunjucks loader overwrite to extend or include templates from the baked database instead of a file system
+    getSource(name) {
+        const template = this.baker.getRawAsset(name, 'templates');
+        if (!template) {
+            throw new Error(`Template ${name} not found`);
+        }
+        return {
+            src: template,
+            path: name,
+            noCache: true
+        };
+    }
+}
+
 const Template = (rawAsset) => {
-    // Compile the template
-    const template = nunjucks.compile(rawAsset, env);
+    // Create environment with custom loader (will be set for each render)
+    let env;
+
+    const sanitizeHtml = (str) => {
+        return str.replace(/[&<>"']/g, (match) => {
+            const escape = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            };
+            return escape[match];
+        });
+    };
+    
+    const validatePath = (path) => {
+        // Prevent path traversal
+        if (path.includes('..') || path.startsWith('/')) {
+            throw new Error('Invalid path');
+        }
+        return path;
+    };
     
     // Return render function
     return (page, baker, site) => {
+        // Create new environment for each render with the current baker
+        env = new nunjucks.Environment(new BakerLoader(baker), { 
+            autoescape: true,
+            throwOnUndefined: false
+        });
+        
+        // Re-add filters to the new environment
+        env.addFilter('safe', str => sanitizeHtml(str));
+        env.addFilter('date', (str, format) => {
+            if (!str) return '';
+            const date = new Date(str);
+            return date.toLocaleDateString();
+        });
+
+        // Compile template with new environment
+        const template = nunjucks.compile(rawAsset, env);
+
+        // For security reasons we re-specify the interface to these objects
+        console.log('running template with', page, baker, site)
         const context = {
             page: {
                 title: page.title || '',
@@ -59,9 +101,15 @@ const Template = (rawAsset) => {
                 path: validatePath(page.path || '')
             },
             baker: {
-                getAsset: (path) => baker.getAsset(validatePath(path)),
-                getPage: (slug) => baker.getPage(validatePath(slug)),
-                getLatestPages: baker.getLatestPages.bind(baker)
+                getAsset: (path) => baker?.getAsset?.(validatePath(path)) ?? null,
+                getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
+                getLatestPages: (...args) => baker?.getLatestPages?.(...args) ?? [],
+                getPrevPage: (...args) => baker?.getPrevPage?.(...args) ?? null,
+                getNextPage: (...args) => baker?.getNextPage?.(...args) ?? null,
+                search: (...args) => baker?.search?.(...args) ?? [],
+                query: (sql, params) => {
+                    throw new Error('Direct SQL queries not allowed in templates');
+                }
             },
             site: site || {}
         };

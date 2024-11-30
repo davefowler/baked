@@ -3,7 +3,7 @@ import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
-import buildSite from '../src/cli/build';
+import bake from '../src/cli/build';
 import startServer from '../src/cli/serve';
 
 // Helper functions
@@ -94,7 +94,7 @@ describe('CLI Commands', () => {
 
         test('builds site with default options', async () => {
             process.chdir(tempDir); // Change working directory for build
-            await buildSite(false); // no drafts
+            await bake(false); // no drafts
             
             const distDb = join(tempDir, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
@@ -112,14 +112,14 @@ describe('CLI Commands', () => {
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
             // Build without drafts
-            await buildSite(false);
+            await bake(false);
             let db = new Database(join(tempDir, 'dist/site.db'), { create: true });
             let draft = db.prepare('SELECT * FROM pages WHERE slug = ?')
                          .get('draft');
             expect(draft).toBeUndefined();
             
             // Build with drafts
-            await buildSite(true);
+            await bake(true);
             db = new Database(join(tempDir, 'dist/site.db'));
             draft = db.prepare('SELECT * FROM pages WHERE slug = ?')
                      .get('draft');

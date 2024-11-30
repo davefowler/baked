@@ -32,7 +32,7 @@ bake versions
 Fun aliases: if you prefer cooking to coding, you'll love these 
 
 bake starter # alias for bake new
-bake oven # alias for bake build
+bake site # alias for bake build
 bake serve # Psych, it didn't need an alias its a double entendre!
 
 */
@@ -55,7 +55,7 @@ program
 
 program
     .command('build')
-    .alias('oven')
+    .alias('site')
     .option('--drafts', 'Build draft pages')
     .description('Bake the site - so it\'s ready to be served!')
     .action(async (options) => {

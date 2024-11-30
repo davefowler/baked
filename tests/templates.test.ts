@@ -3,20 +3,6 @@ import { Components } from '../src/components';
 import { Database } from "sqlite3";
 
 
-const mockBaker = {
-    getAsset: (path: string) => {
-        if (path === 'base.html') {
-            return Components.templates('<html>{% block content %}{% endblock %}</html>');
-        }
-        return '';
-    },
-    getPage: () => null,
-    getLatestPages: () => [],
-    getPrevPage: () => null,
-    getNextPage: () => null,
-    search: () => [],
-    query: () => []
-};
 
 describe('Template System', () => {
     describe('Basic Template Features', () => {
@@ -24,7 +10,7 @@ describe('Template System', () => {
             const template = Components.templates(`<h1>{{ page.title }}</h1>`);
             const result = template(
                 { title: 'Test Title' },
-                mockBaker,
+                {},
                 {}
             );
             expect(result).toBe('<h1>Test Title</h1>');
@@ -34,7 +20,7 @@ describe('Template System', () => {
             const template = Components.templates(`<h1>{{ page.nonexistent }}</h1>`);
             const result = template(
                 {},
-                mockBaker,
+                {},
                 {}
             );
             expect(result).toBe('<h1></h1>');
@@ -44,7 +30,7 @@ describe('Template System', () => {
             const template = Components.templates(`{{ page.content }}`);
             const result = template(
                 { content: '<p>Test</p>' },
-                mockBaker,
+                {},
                 {}
             );
             expect(result).toBe('&lt;p&gt;Test&lt;/p&gt;');
@@ -53,24 +39,24 @@ describe('Template System', () => {
 
     describe('Template Inheritance', () => {
         test('extends base template correctly', () => {
-            const base = Components.templates(`
+            const rawBase = `
                 <html>{% block content %}{% endblock %}</html>
-            `);
+            `;
             const child = Components.templates(`
                 {% extends "base.html" %}
                 {% block content %}Hello{% endblock %}
             `);
             
-            // Mock baker with getAsset
-            const baker = {
-                ...mockBaker, 
-                getAsset: (name: string) => {
-                    if (name === 'base.html') return base;
+            // fake baker with getRawAsset
+            const faker = {
+                getRawAsset: (name: string) => {
+                    console.log('fake baker gets request for getAsset', name, 'will return', rawBase)
+                    if (name === 'base.html') return rawBase;
                     return null;
                 }
             };
             
-            const result = child({}, baker, {});
+            const result = child({}, faker, {});
             expect(result).toContain('Hello');
             expect(result).toContain('<html>');
         });
@@ -79,18 +65,18 @@ describe('Template System', () => {
     describe('Conditional Logic', () => {
         test('if statements work correctly', () => {
             const template = Components.templates(`
-                {% if page.show %}
+                {% if page.metadata.show %}
                     <div>Shown</div>
                 {% else %}
                     <div>Hidden</div>
                 {% endif %}
             `);
             
-            const shown = template({ show: true }, {}, {});
+            const shown = template({metadata: {show: true }}, {}, {});
             expect(shown).toContain('Shown');
             expect(shown).not.toContain('Hidden');
             
-            const hidden = template({ show: false }, {}, {});
+            const hidden = template({metadata: {show: false }}, {}, {});
             expect(hidden).toContain('Hidden');
             expect(hidden).not.toContain('Shown');
         });
@@ -100,15 +86,15 @@ describe('Template System', () => {
         test('for loops work correctly', () => {
             const template = Components.templates(`
                 <ul>
-                {% for item in page.items %}
+                {% for item in page.metadata.items %}
                     <li>{{ item }}</li>
                 {% endfor %}
                 </ul>
             `);
             
             const result = template(
-                { items: ['one', 'two', 'three'] },
-                mockBaker,
+                { metadata: { items: ['one', 'two', 'three'] } },
+                {},
                 {}
             );
             expect(result).toContain('<li>one</li>');
@@ -122,7 +108,7 @@ describe('Template System', () => {
             const template = Components.templates(`{{ page.content }}`);
             const result = template(
                 { content: '<script>alert("xss")</script>' },
-                mockBaker,
+                {},
                 {}
             );
             expect(result).not.toContain('<script>');
@@ -133,7 +119,7 @@ describe('Template System', () => {
             const template = Components.templates(`{{ page.content }}`);
             const result = template(
                 { content: '<div>Safe HTML</div>' },
-                mockBaker,
+                {},
                 {}
             );
             expect(result).toBe('&lt;div&gt;Safe HTML&lt;/div&gt;');

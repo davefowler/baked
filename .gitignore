@@ -5,3 +5,4 @@
 dist/
 tmp/
 test-*-site/
+node_modules/

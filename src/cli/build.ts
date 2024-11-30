@@ -1,3 +1,10 @@
+/* Building/baking the site has two parts:
+
+1. prep - Mixing/loading the ingredients into the database
+2. dish - Pre-rendering each page
+*/
+
+
 import { rm } from "fs/promises";
 import { mkdir } from "fs/promises";
 import { rename } from "fs/promises";
@@ -8,8 +15,8 @@ import { Baker } from "../../baked/baker";
 import type { Page } from "../types";
 import { writeFile } from "fs/promises";
 
-
-const initialize = async (dist: string): Promise<Database> => {
+/* prep for the baking process by creating the needed database and directories */
+const prep = async (dist: string): Promise<Database> => {
     // Validate input
     if (!dist) {
         throw new Error('Distribution directory path is required');
@@ -102,7 +109,8 @@ const initialize = async (dist: string): Promise<Database> => {
 }
 
 
-const preRender = async (db: Database, dist: string) => {
+/* in the dishing phase, we pre-render each page, saving it to the dist directory */
+const dish = async (db: Database, dist: string) => {
     if (!db || !dist) {
         throw new Error('Database and dist path are required for pre-rendering');
     }
@@ -156,24 +164,31 @@ const preRender = async (db: Database, dist: string) => {
 }
 
 
-
-export default async function buildSite(includeDrafts: boolean = false) {
+/* bake the site!  Load the assets and pages into a database and pre-render each page */
+export default async function bake(includeDrafts: boolean = false) {
     const thisDir = process.cwd();
     const tmpDist = path.join(thisDir, '/tmp/dist');
 
-    const db = await initialize(tmpDist);
+    const db = await prep(tmpDist);
 
+    // mix in the assets
     const assetsDir = path.join(thisDir, 'assets');
     await loadAssetsFromDir(assetsDir, db, tmpDist);
 
+    // mix in the pages
     const pagesDir = path.join(thisDir, 'pages');
     await loadPagesFromDir(pagesDir, db, tmpDist, includeDrafts);
 
+    // add in just a splash of site metadata
     await loadSiteMetadata(thisDir, db);
 
-    await preRender(db, tmpDist);
+    // oven....
 
-    // move the tmp dist to the final dist
+    // dish out the pages (pre-render them)
+    await dish(db, tmpDist);
+
+    // swap the tmp dist to the final dist
+    // Todo - in the future a diff could be useful here to know which files need to be uploaded to the CDN
     const distDir = path.join(thisDir, 'dist');
     await rename(tmpDist, distDir);
     

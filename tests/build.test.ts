@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { rm, mkdir } from "fs/promises";
 import { Database } from "sqlite3";
-import buildSite from "../src/cli/build";
+import bake from "../src/cli/build";
 import { existsSync } from "fs";
 
 describe("build process", () => {
@@ -26,7 +26,7 @@ describe("build process", () => {
     });
 
     test("initializes build directory correctly", async () => {
-        await buildSite(TEST_DIST);
+        await bake(TEST_DIST);
         
         // Check that temp directory was created
         expect(existsSync(`${TEST_DIST}-tmp`)).toBe(true);
@@ -35,7 +35,7 @@ describe("build process", () => {
     });
 
     test("loads assets into database", async () => {
-        await buildSite(TEST_DIST);
+        await bake(TEST_DIST);
         
         const db = new Database(`${TEST_DIST}-tmp/site.db`);
         
@@ -52,7 +52,7 @@ describe("build process", () => {
     });
 
     test("loads pages into database", async () => {
-        await buildSite(TEST_DIST);
+        await bake(TEST_DIST);
         
         const db = new Database(`${TEST_DIST}-tmp/site.db`);
         
@@ -72,6 +72,6 @@ describe("build process", () => {
         // Create a file in the way of the build directory to cause an error
         await mkdir(TEST_DIST);
         
-        await expect(buildSite(TEST_DIST)).rejects.toThrow();
+        await expect(bake(TEST_DIST)).rejects.toThrow();
     });
 });
