@@ -13,12 +13,14 @@ type Mixer = (filepath: string, content: string, metadata: any, distPath?: strin
 
 // Default Mixer just returns content and metadata unchanged
 const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
+    console.log('default mixer', filepath, content, metadata, distPath);
     return { content, metadata };
 };
 
 // Process markdown files
 const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
     const frontmatter = matter(content);
+    console.log('md meta for', filepath, 'fm',frontmatter.data, 'given meta', metadata);
     const combinedMetadata = { ...metadata, ...frontmatter.data };
     return {
         content: frontmatter.content,
@@ -67,6 +69,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
     try {
         const metaContent = await fs.readFile(metaPath, 'utf8');
         metadata = { ...metadata, ...yaml.parse(metaContent) };
+        console.log('meta.yaml read', metadata);
     } catch (error) {
         // meta.yaml doesn't exist, continue with parent metadata
     }
@@ -88,51 +91,39 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                 const content = await fs.readFile(fullPath, 'utf8');
                 const { content: processedContent, metadata: finalMetadata } = 
                     await mixer(fullPath, content, metadata);
-
+                console.log('metadata for', entry.name, 'start', metadata, 'end', finalMetadata);
                 // don't even load draft pages if not specified by user with --drafts
                 if (!includeDrafts && finalMetadata.isDraft) continue; 
                 
                 // Use actualRootDir instead of dir for relative path calculation
-                // Normalize paths relative to root
-                const pathFromRoot = path.relative(actualRootDir, fullPath).replace(/\\/g, '/');
-                const slug = pathFromRoot.replace(/\.[^/.]+$/, ''); // Remove extension
+                const pathFromRoot = path.relative(actualRootDir, fullPath);
+                const slug = pathFromRoot.replace(path.extname(fullPath), '').replace(/\.[^/.]+$/, '');
                 const title = finalMetadata.title || path.basename(fullPath, path.extname(fullPath));
                 
-                // Ensure date is valid ISO string or null
-                let publishedDate = null;
-                if (finalMetadata.date) {
-                    try {
-                        publishedDate = new Date(finalMetadata.date).toISOString();
-                    } catch (e) {
-                        console.warn(`Invalid date for ${pathFromRoot}: ${finalMetadata.date}`);
-                    }
-                }
+                // Ensure date is converted to ISO string if it's a Date object
+                const publishedDate = finalMetadata.date ? 
+                    new Date(finalMetadata.date).toISOString() : 
+                    null;
 
-                // Log what we're about to insert for debugging
-                console.log('Inserting page:', {
-                    path: pathFromRoot,
+                console.log(`Loading page: ${slug}`, pathFromRoot, slug, title, 
+                    processedContent, 
+                    finalMetadata.template || 'default', 
+                    JSON.stringify(finalMetadata), 
+                    publishedDate ? publishedDate : null);
+    
+                db.prepare(`
+                    INSERT INTO pages (path, slug, title, content, template, metadata, published_date) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `).run(
+                    pathFromRoot,
                     slug,
                     title,
-                    template: finalMetadata.template || 'default',
-                    hasContent: !!processedContent,
-                    date: publishedDate
-                });
-
-                try {
-                    db.prepare(`
-                        INSERT INTO pages (path, slug, title, content, template, metadata, published_date) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    `).run(
-                        pathFromRoot,
-                        slug,
-                        title,
-                        processedContent || '',
-                        finalMetadata.template || 'default',
-                        JSON.stringify(finalMetadata || {}),
-                        publishedDate
-                    );
+                    processedContent,
+                    finalMetadata.template || 'default',
+                    JSON.stringify(finalMetadata),
+                    publishedDate ? publishedDate : null
+                );
                 
-                console.log(`Loaded page: ${slug}`, pathFromRoot);
             } catch (error) {
                 console.error(`Error processing ${fullPath}:`, error);
             }
