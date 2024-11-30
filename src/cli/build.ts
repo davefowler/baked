@@ -14,6 +14,7 @@ import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../../bak
 import { Baker } from "../../baked/baker";
 import type { Page } from "../types";
 import { writeFile } from "fs/promises";
+import { readFile } from "fs/promises";
 
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string): Promise<Database> => {
@@ -43,65 +44,14 @@ const prep = async (dist: string): Promise<Database> => {
 
     // Create a new sqlite database
     const db = new Database(`${dist}/site.db`);
-    // Create tables
-    db.serialize(() => {
-
-        // Assets table stores CSS, images, components etc
-        db.run(`
-            CREATE TABLE IF NOT EXISTS assets (
-                path TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                type TEXT NOT NULL
-            )
-        `);
+    
+    // Load and execute SQL files
+    db.serialize(async () => {
+        const schemaSQL = await readFile(path.join(__dirname, '../sql/schema.sql'), 'utf8');
+        const ftsSQL = await readFile(path.join(__dirname, '../sql/fulltextsearch.sql'), 'utf8');
         
-        // Pages table stores all content pages
-        db.run(`
-            CREATE TABLE IF NOT EXISTS pages (
-                slug TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                template TEXT NOT NULL DEFAULT 'default',
-                metadata TEXT,
-                published_date TEXT
-            )
-        `);
-
-        // Create Full Text Search (FTS) virtual table for search
-        db.run(`
-            CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
-                title, 
-                content,
-                metadata,
-                content='pages',
-                content_rowid='slug'
-            )
-        `);
-
-        // Create triggers to keep FTS table in sync
-        db.run(`
-            CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages BEGIN
-                INSERT INTO pages_fts(rowid, title, content, metadata)
-                VALUES (new.slug, new.title, new.content, new.metadata);
-            END
-        `);
-
-        db.run(`
-            CREATE TRIGGER IF NOT EXISTS pages_ad AFTER DELETE ON pages BEGIN
-                INSERT INTO pages_fts(pages_fts, rowid, title, content, metadata)
-                VALUES('delete', old.slug, old.title, old.content, old.metadata);
-            END
-        `);
-
-        db.run(`
-            CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages BEGIN
-                INSERT INTO pages_fts(pages_fts, rowid, title, content, metadata)
-                VALUES('delete', old.slug, old.title, old.content, old.metadata);
-                INSERT INTO pages_fts(rowid, title, content, metadata)
-                VALUES (new.slug, new.title, new.content, new.metadata);
-            END
-        `);
-
+        db.exec(schemaSQL);
+        db.exec(ftsSQL);
     });
 
     return db;

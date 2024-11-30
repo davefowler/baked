@@ -4,6 +4,8 @@ import { Baker } from "../baked/baker";
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { readFileSync } from 'fs';
+import { join as pathJoin } from 'path';
 
 describe('Baker', () => {
     let tempDir: string;
@@ -14,26 +16,13 @@ describe('Baker', () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baker-test-'));
         db = new Database(':memory:');
         
-        // Initialize test database with correct schema
-        db.exec(`
-            CREATE TABLE assets (
-                path TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                type TEXT NOT NULL
-            );
-            CREATE TABLE pages (
-                slug TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                template TEXT,
-                metadata TEXT,
-                published_date TEXT
-            );
-            
-            -- Add site.yaml for Baker initialization
-            INSERT INTO assets (path, content, type) 
-            VALUES ('/site.yaml', 'title: Test Site', 'application/yaml');
-        `);
+        // Load and execute schema
+        const schema = readFileSync(pathJoin(__dirname, '../src/sql/schema.sql'), 'utf-8');
+        db.exec(schema);
+        
+        // Add site.yaml for Baker initialization
+        db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)')
+          .run('/site.yaml', 'title: Test Site', 'application/yaml');
         
         baker = new Baker(db, true);
     });
@@ -51,9 +40,14 @@ describe('Baker', () => {
         test('getRawAsset retrieves assets correctly', async () => {
             db.prepare(
                 'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
-            ).run('/css/test.css', 'body { color: red; }', 'text/css');
+            ).run('/css/test.css', 'body { color: red; }', 'css');
 
-            const asset = baker.getRawAsset('test.css', 'css');
+            const assets = db.all('SELECT * FROM assets', [], (err, rows) => {
+                if (err) console.error('Error fetching assets:', err);
+                console.log('ASSETS:', rows);
+            });
+            console.log('again the assets', assets)
+            const asset = baker.getRawAsset('/css/test.css', 'css');
             expect(asset).toBeDefined();
             expect(asset.content).toBe('body { color: red; }');
         });
@@ -61,7 +55,7 @@ describe('Baker', () => {
         test('getAsset processes assets with components', async () => {
             db.prepare(
                 'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
-            ).run('/css/test.css', 'body { color: red; }', 'text/css');
+            ).run('/css/test.css', 'body { color: red; }', 'css');
 
             const processed = baker.getAsset('test.css', 'css' as any);
             expect(processed).toBe('body { color: red; }'); // Remove style tags expectation since Components is mocked
