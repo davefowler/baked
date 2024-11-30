@@ -1,31 +1,26 @@
-import { serve } from "bun";
+import express from 'express';
+import path from 'path';
 
 export default function startServer() {
-  const server = serve({
-    port: 4242,
-    fetch(req) {
-      const url = new URL(req.url);
-      let path = url.pathname;
-      
-      // Serve index.html for root path
-      if (path === '/') {
-        path = '/index.html';
-      }
-      
-      // Remove leading slash and join with dist directory
-      const filePath = `dist${path}`;
-      
-      try {
-        // Try to serve the file from dist directory
-        const file = Bun.file(filePath);
-        return new Response(file);
-      } catch (error) {
-        // Return 404 if file not found
-        return new Response('Not Found', { status: 404 });
-      }
-    },
+  const app = express();
+  const port = 4242;
+
+  // Serve static files from dist directory
+  app.use(express.static('dist'));
+
+  // Serve index.html for root path
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'dist', 'index.html'));
   });
 
-  console.log(`Server running at http://localhost:${server.port}`);
+  // Fallback for all other routes
+  app.use((req, res) => {
+    res.status(404).send('Not Found');
+  });
+
+  const server = app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+
   return server;
 }

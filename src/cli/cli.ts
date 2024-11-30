@@ -3,7 +3,7 @@ import { program } from 'commander';
 import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
-import { Database } from 'bun:sqlite';
+import Database from 'better-sqlite3';
 import type { Page } from '../types';
 import matter from 'gray-matter';
 
