@@ -94,7 +94,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                 
                 // Use actualRootDir instead of dir for relative path calculation
                 const pathFromRoot = path.relative(actualRootDir, fullPath);
-                const slug = pathFromRoot.replace(path.extname(fullPath), '');
+                const slug = pathFromRoot.replace(path.extname(fullPath), '').replace(/\.[^/.]+$/, '');
                 const title = finalMetadata.title || path.basename(fullPath, path.extname(fullPath));
                 
                 // Ensure date is converted to ISO string if it's a Date object
@@ -107,7 +107,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `).run(
                     pathFromRoot,
-                    pathFromRoot.replace(/\.[^/.]+$/, ''), // Remove file extension for slug
+                    slug,
                     title,
                     processedContent,
                     finalMetadata.template || 'default',
