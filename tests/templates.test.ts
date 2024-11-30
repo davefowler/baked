@@ -1,4 +1,4 @@
-import { expect, test, describe } from "bun:test";
+import { expect, test, describe } from "@jest/globals";
 import { Components } from '../src/components';
 import Database from "better-sqlite3";
 

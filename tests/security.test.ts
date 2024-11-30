@@ -1,4 +1,4 @@
-import { expect, test, beforeEach, afterEach, describe } from "bun:test";
+import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
