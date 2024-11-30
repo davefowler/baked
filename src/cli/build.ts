@@ -24,27 +24,31 @@ const prep = async (dist: string): Promise<Database> => {
         throw new Error('Distribution directory path is required');
     }
 
-    // Create a tmp directory for the build
+    const tmpDir = `${dist}-tmp`;
+
+    // Clean up any existing directories
     try {
+        await rm(tmpDir, { recursive: true, force: true });
         await rm(dist, { recursive: true, force: true });
     } catch (error: unknown) {
         // Ignore error if directory doesn't exist
         if (error instanceof Error && ('code' in error) && error.code !== 'ENOENT') {
-            throw new Error(`Failed to clean dist directory: ${error.message}`);
+            throw new Error(`Failed to clean directories: ${error.message}`);
         }
     }
 
+    // Create tmp directory
     try {
-        await mkdir(dist, { recursive: true });
+        await mkdir(tmpDir, { recursive: true });
     } catch (error: unknown) {
         if (error instanceof Error) {
-            throw new Error(`Failed to create dist directory: ${error.message}`);
+            throw new Error(`Failed to create tmp directory: ${error.message}`);
         }
-        throw new Error('Failed to create dist directory: Unknown error');
+        throw new Error('Failed to create tmp directory: Unknown error');
     }
 
     // Create a new sqlite database
-    const db = sqlite(`${dist}/site.db`);
+    const db = sqlite(`${tmpDir}/site.db`);
     // Load and execute SQL files
     const schemaSQL = await readFile(path.join(__dirname, '../sql/schema.sql'), 'utf8');
     const ftsSQL = await readFile(path.join(__dirname, '../sql/fulltextsearch.sql'), 'utf8');
@@ -114,9 +118,10 @@ const dish = async (db: Database, dist: string) => {
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
 export default async function bake(rootDir: string = process.cwd(), includeDrafts: boolean = false) {
-    const tmpDist = path.join(rootDir, '/tmp/dist');
+    const tmpDist = `${rootDir}-tmp`;
+    const finalDist = rootDir;
 
-    const db = await prep(tmpDist);
+    const db = await prep(rootDir);
 
     // mix in the assets
     const assetsDir = path.join(rootDir, 'assets');
@@ -136,8 +141,11 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
 
     // swap the tmp dist to the final dist
     // Todo - in the future a diff could be useful here to know which files need to be uploaded to the CDN
-    const distDir = path.join(rootDir, 'dist');
-    await rename(tmpDist, distDir);
+    try {
+        await rename(tmpDist, finalDist);
+    } catch (error) {
+        throw new Error(`Failed to rename tmp directory: ${error.message}`);
+    }
     
 }
 
