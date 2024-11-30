@@ -119,6 +119,15 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
     const tmpDist = path.join(rootDir, 'dist-tmp');
     const finalDist = path.join(rootDir, 'dist');
 
+    // Clean up and create tmp directory
+    try {
+        await rm(tmpDist, { recursive: true, force: true });
+        await mkdir(tmpDist, { recursive: true });
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to prepare tmp directory: ${message}`);
+    }
+
     const db = await prep(tmpDist);
 
     // mix in the assets
@@ -132,19 +141,16 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
     // add in just a splash of site metadata
     await loadSiteMetadata(rootDir, db);
 
-    // oven....
-
     // dish out the pages (pre-render them)
     await dish(db, tmpDist);
 
     // swap the tmp dist to the final dist
-    // Todo - in the future a diff could be useful here to know which files need to be uploaded to the CDN
     try {
+        await rm(finalDist, { recursive: true, force: true });
         await rename(tmpDist, finalDist);
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         throw new Error(`Failed to rename tmp directory: ${message}`);
     }
-    
 }
 
