@@ -15,10 +15,12 @@
  - [ ] confirm the build process is fast
  - [ ] make components have both loading and rendering functions
  - [ ] comprehensive testing
+ - [ ] change "types" to mimetypes
 
 
 ## Static site things
 
+- [ ] Creating new site should prompt for things in site.yaml
 - [ ] Add support for multiple authors
 - [ ] Add support for tags
 - [ ] Add support for comments

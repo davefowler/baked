@@ -1,293 +1,166 @@
-import { expect, test, describe, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
-import { promises as fs } from 'fs';
-import path from 'path';
-import os from 'os';
-import { execSync } from 'child_process';
-import { Database } from 'bun:sqlite';
-import { loadPagesFromDir, loadAssetsFromDir } from '../loading';
+import { expect, test, beforeEach, afterEach, describe, jest } from "@jest/globals";
+import { rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
+import { join } from 'path';
+import createSite from '../src/cli/new';
+import bake from '../src/cli/build';
+import startServer from '../src/cli/serve';
+import Database from 'better-sqlite3';
+import request from 'supertest';
+import { Server } from 'http';
 
-describe("CLI Commands", () => {
-    const TEST_ROOT = path.join(os.tmpdir(), 'absurdsite-tests');
-    let testDir: string;
-    let originalDir: string;
-    let projectRoot: string;
+// Helper functions
+const exists = async (path: string): Promise<boolean> => {
+    try {
+        await stat(path);
+        return true;
+    } catch {
+        return false;
+    }
+};
 
-    // Store project root for accessing example templates
-    projectRoot = path.resolve(__dirname, '..');
-    
+const ensureDir = async (dir: string) => {
+    try {
+        await mkdir(dir, { recursive: true });
+    } catch (err: any) {
+        if (err.code !== 'EEXIST') throw err;
+    }
+};
+
+describe('CLI Commands', () => {
+    const TEST_DIR = join(process.cwd(), 'tmp/cli-test');
+
+    beforeAll(async () => {
+        await rm(TEST_DIR, { recursive: true, force: true });
+    });
+
     beforeEach(async () => {
-        // Save original directory
-        originalDir = process.cwd();
-        
-        // Create unique test directory for each test
-        testDir = path.join(TEST_ROOT, `test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-        await fs.mkdir(testDir, { recursive: true });
-        
-        // Change to test directory
-        process.chdir(testDir);
-        
-        // Create test directory and initial structure
-        await fs.mkdir(testDir, { recursive: true });
-        await fs.mkdir(path.join(testDir, 'pages'), { recursive: true });
-        await fs.mkdir(path.join(testDir, 'content'), { recursive: true });
-        
-        // Use CLI script from project root
-        try {
-            const cliPath = path.join(projectRoot, 'cli.ts');
-            // Make sure CLI script is executable
-            await fs.chmod(cliPath, 0o755);
-        } catch (error) {
-            console.error('Failed to setup CLI:', error);
-            throw error;
-        }
+        await mkdir(TEST_DIR, { recursive: true });
+        // Mock prompt responses globally
+        global.prompt = jest.fn((message?: string) => {
+            switch(message) {
+                case 'Site name:': return 'Test Site';
+                case 'Site URL:': return 'test.com';
+                case 'Site description:': return 'A test site';
+                case 'Default author name:': return 'Test Author';
+                default: return '';
+            }
+        });
     });
 
     afterEach(async () => {
-        // Always restore original directory
-        process.chdir(originalDir);
-        
-        // Clean up test directory
-        try {
-            await fs.rm(testDir, { recursive: true, force: true });
-        } catch (error) {
-            console.error(`Failed to clean up test directory ${testDir}:`, error);
-        }
+        await rm(TEST_DIR, { recursive: true, force: true });
     });
 
-    // Clean up the entire test root directory after all tests
-    afterAll(async () => {
-        try {
-            await fs.rm(TEST_ROOT, { recursive: true, force: true });
-        } catch (error) {
-            console.error(`Failed to clean up test root ${TEST_ROOT}:`, error);
-        }
-    });
+    describe('new/starter command', () => {
+        test('creates correct directory structure', async () => {
+            await createSite(TEST_DIR);
+            
+            // Check core directories exist
+            const dirs = ['pages', 'assets', 'assets/templates', 'assets/css'];
+            for (const dir of dirs) {
+                const itExists = await exists(join(TEST_DIR, dir));
+                expect(itExists).toBe(true);
+            }
+        });
 
-    test("should create site directory", async () => {
-        try {
-            // Execute the CLI command
-            console.log('Executing CLI command from:', process.cwd());
-            const result = execSync(`${path.join(projectRoot, 'cli.ts')} new testsite`, {
-                stdio: 'pipe',
-                env: { ...process.env, PATH: process.env.PATH }
+        test('sets site configuration from prompts', async () => {
+            // Mock prompt responses
+            global.prompt = jest.fn((message?: string) => {
+                switch(message) {
+                    case 'Site name:': return 'Test Site';
+                    case 'Site URL:': return 'test.com';
+                    case 'Site description:': return 'A test site';
+                    case 'Default author name:': return 'Test Author';
+                    default: return '';
+                }
             });
-            console.log('CLI output:', result.toString());
+
+            await createSite(TEST_DIR);
             
-            // Verify the site directory was created
-            const exists = await fs.access(testDir)
-                .then(() => true)
-                .catch(() => false);
-            
-            if (!exists) {
-                console.error('Directory not created:', testDir);
-                const parentDir = await fs.readdir(path.dirname(testDir));
-                console.log('Parent directory contents:', parentDir);
-            }
-            
-            expect(exists).toBe(true);
-            
-            // List created files for debugging
-            const files = await fs.readdir(testDir, { recursive: true });
-            console.log('Created files:', files);
-            
-        } catch (error) {
-            console.error('CLI execution error:', error);
-            throw error;
-        }
+            const siteYaml = await readFile(join(TEST_DIR, 'site.yaml'), 'utf8');
+            expect(siteYaml).toContain('name: Test Site');
+            expect(siteYaml).toContain('url: test.com');
+        });
     });
 
-    const verifyDirectory = async (dir: string) => {
-        const exists = await fs.access(path.join(testDir, dir))
-            .then(() => true)
-            .catch(() => false);
-        if (!exists) {
-            const parentPath = path.join(testDir, path.dirname(dir));
-            try {
-                const parentContents = await fs.readdir(parentPath);
-                console.error(`Directory "${dir}" not found. Parent contents:`, parentContents);
-            } catch (error) {
-                console.error(`Cannot read parent directory for "${dir}":`, error);
-            }
-        }
-        return exists;
-    };
-
-    test("should create required directories", async () => {
-        // Create directories first
-        const requiredDirs = [
-            'pages',
-            'pages/blog',
-            'assets',
-            'assets/templates',
-            'assets/css',
-            'assets/components',
-            'assets/images',
-            'dist'
-        ];
-
-        // Create all directories first
-        for (const dir of requiredDirs) {
-            await fs.mkdir(path.join(testDir, dir), { recursive: true });
-        }
-
-        // Then verify them
-        for (const dir of requiredDirs) {
-            const exists = await verifyDirectory(dir);
-            expect(exists, `Directory "${dir}" was not created`).toBe(true);
-        }
-    });
-
-    test("should create required files", async () => {
-        const requiredFiles = [
-            'pages/index.md',
-            'pages/about.md',
-            'pages/blog/meta.yaml'
-        ];
-
-        for (const file of requiredFiles) {
-            const fileExists = await fs.access(path.join(testDir, file))
-                .then(() => true)
-                .catch(() => false);
-            expect(fileExists, `File "${file}" was not created`).toBe(true);
-        }
-    });
-
-    test("loadPagesFromDir should properly load pages with metadata", async () => {
-        // Create test pages
-        await fs.mkdir(path.join(testDir, 'pages', 'blog'), { recursive: true });
-        
-        // Create meta.yaml
-        const metaContent = `
-template: blog
-author: Test Author
-`;
-        await fs.writeFile(path.join(testDir, 'pages', 'blog', 'meta.yaml'), metaContent);
-        
-        // Create test markdown file
-        const pageContent = `---
-title: Test Post
-date: 2024-01-01
-tags: [test, blog]
----
-# Test Content
-`;
-        await fs.writeFile(path.join(testDir, 'pages', 'blog', 'test-post.md'), pageContent);
-        
-        // Initialize test database
-        const db = new Database(':memory:');
-        db.exec(`
-            CREATE TABLE pages (
-                slug TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                template TEXT NOT NULL,
-                metadata TEXT,
-                published_date TEXT
+    describe('build/oven command', () => {
+        beforeEach(async () => {
+            // Setup test site
+            // Setup test site structure
+            await createSite(TEST_DIR);
+            
+            // Create pages directory
+            await ensureDir(join(TEST_DIR, 'pages'));
+            
+            // Create test content
+            await writeFile(
+                join(TEST_DIR, 'pages', 'test.md'), 
+                '---\ntitle: Test\n---\nTest content'
             );
-        `);
-        
-        // Run loadPagesFromDir
-        await loadPagesFromDir('pages', db);
-        
-        // Verify the page was loaded correctly
-        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/test-post');
-        expect(page).toBeDefined();
-        expect(page.template).toBe('blog');
-        expect(page.published_date).toBe('2024-01-01');
-        
-        const metadata = JSON.parse(page.metadata);
-        expect(metadata.author).toBe('Test Author');
-        expect(metadata.tags).toEqual(['test', 'blog']);
+        });
+
+        test('builds site with default options', async () => {
+            process.chdir(TEST_DIR); // Change working directory for build
+            await bake(TEST_DIR, false); // no drafts
+            
+            const distDb = join(TEST_DIR, 'dist/site.db');
+            expect(await exists(distDb)).toBe(true);
+            
+            const db = new Database(distDb);
+            const page = db.prepare('SELECT * FROM pages WHERE path = ?')
+                          .get('pages/test.md');
+            db.close(); // Properly close the database connection
+            expect(page).toBeDefined();
+            expect((page as {title: string}).title).toBe('Test');
+        });
+
+        test('handles draft pages correctly', async () => {
+            await writeFile(join(TEST_DIR, 'pages/draft.md'),
+                '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
+            
+            // Build without drafts
+            await bake(TEST_DIR, false);
+            let db = new Database(join(TEST_DIR, 'dist/site.db'));
+            console.log('all pages', db.prepare('SELECT * FROM pages').all());
+            let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
+                         .get('/pages/draft.md');
+            expect(draft).toBeUndefined();
+            // Build with drafts
+            await bake(TEST_DIR, true);
+            db = new Database(join(TEST_DIR, 'dist/site.db'));   
+            draft = db.prepare('SELECT * FROM pages WHERE path = ?')
+                     .get('pages/draft.md');
+            expect(draft).toBeDefined();
+        });
     });
 
-    test("loadAssetsFromDir should properly load assets", async () => {
-        // Create test assets
-        await fs.mkdir(path.join(testDir, 'assets', 'templates'), { recursive: true });
-        await fs.mkdir(path.join(testDir, 'assets', 'css'), { recursive: true });
+    describe('serve command', () => {
+        let server: Server;
         
-        // Create test files
-        const templateContent = '<div>${content}</div>';
-        const cssContent = '.test { color: red; }';
-        
-        await fs.writeFile(path.join(testDir, 'assets', 'templates', 'test.html'), templateContent);
-        await fs.writeFile(path.join(testDir, 'assets', 'css', 'test.css'), cssContent);
-        
-        // Initialize test database
-        const db = new Database(':memory:');
-        db.exec(`
-            CREATE TABLE assets (
-                path TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                type TEXT NOT NULL
-            );
-        `);
-        
-        // Run loadAssetsFromDir
-        await loadAssetsFromDir('assets', db);
-        
-        // Verify assets were loaded correctly
-        const template = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.html');
-        expect(template).toBeDefined();
-        expect(template.content).toBe(templateContent);
-        expect(template.type).toBe('templates');
-        
-        const css = db.prepare('SELECT * FROM assets WHERE path = ?').get('test.css');
-        expect(css).toBeDefined();
-        expect(css.content).toBe(cssContent);
-        expect(css.type).toBe('css');
-    });
-
-    test("should build site successfully", async () => {
-        try {
-            // Create a new site first
-            const siteName = 'testbuild';
-            console.log('Creating new site for build test...');
-            
-            // Run new command using cli.ts directly
-            const cliPath = path.join(projectRoot, 'cli.ts');
-            execSync(`${cliPath} new ${siteName}`, {
-                stdio: 'pipe',
-                env: { ...process.env, PATH: process.env.PATH }
-            });
-
-            // Change to the new site directory
-            const siteDir = path.join(testDir, siteName);
-            process.chdir(siteDir);
-            console.log('Changed to site directory:', process.cwd());
-            
-            // Now run the build command
-            const buildOutput = execSync(`${cliPath} build`, {
-                stdio: 'pipe',
-                env: { ...process.env, PATH: process.env.PATH }
-            });
-            console.log('Build output:', buildOutput.toString());
-
-            // Check for build artifacts
-            const buildFiles = [
-                'dist/site.db',
-                'public/sw.js',
-                'public/manifest.json',
-                'public/offline.html'
-            ];
-
-            for (const file of buildFiles) {
-                const fullPath = path.join(testDir, file);
-                console.log('Checking file:', fullPath);
-                
-                const fileExists = await fs.access(fullPath)
-                    .then(() => true)
-                    .catch((err) => {
-                        console.error(`File check failed for ${fullPath}:`, err);
-                        return false;
-                    });
-                expect(fileExists).toBe(true);
+        afterEach(() => {
+            if (server?.listening) {
+                server.close();
             }
-        } catch (error) {
-            console.error('Build test error:', error);
-            throw error;
-        } finally {
-            // Return to project root
-            process.chdir(projectRoot);
-        }
+        });
+
+        test('serves static files correctly', async () => {
+            // Create test dist directory with content
+            await ensureDir(join(TEST_DIR, 'dist'));
+            await writeFile(join(TEST_DIR, 'dist', 'index.html'), '<html><body>Test</body></html>');
+            
+            process.chdir(TEST_DIR);
+            server = await startServer();
+            
+            await request(`http://localhost:4242`)  // Use the actual server URL
+                .get('/')
+                .expect(200)
+                .expect((res) => {
+                    expect(res.text).toContain('Test');
+                });
+            
+            await request(`http://localhost:4242`)
+                .get('/notfound')
+                .expect(404);
+        });
     });
 });

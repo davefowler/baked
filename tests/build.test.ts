@@ -1,102 +1,90 @@
-import { expect, test, describe, beforeAll, afterAll } from "bun:test";
-import { promises as fs } from 'fs';
+import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+import { rm, mkdir, cp, readdir } from "fs/promises";
+import sqlite, { Database } from "better-sqlite3";
+import bake from "../src/cli/build";
+import { existsSync } from "fs";
 import path from 'path';
-import { processDirectory, initializeDatabase, renderPages } from '../cli';
 
-describe("Build Process", () => {
-    const testDir = path.join(process.cwd(), 'tmp', 'test-build-site');
-    
+
+
+describe("build process", () => {
+    const TEST_DIR = path.join(process.cwd(), "tmp/test");
+    let db: Database;
+    let schema: string;
     beforeAll(async () => {
-        // Create test directory and required subdirectories
-        await fs.mkdir(testDir, { recursive: true });
-        await fs.mkdir(path.join(testDir, 'public'), { recursive: true });
-        process.chdir(testDir);
+        // Initial cleanup
+        await rm(TEST_DIR, { recursive: true, force: true });
+    });
+
+    beforeEach(async () => {
+        console.log('Creating test directories...');
         
-        // Create all required directories
-        const dirs = [
-            'public',
-            'public/styles',
-            'pages',
-            'pages/blog',
-            'assets',
-            'assets/templates',
-            'assets/css',
-            'assets/components',
-            'assets/images',
-            'dist'
-        ];
+        // Create base directories
+        await mkdir(TEST_DIR, { recursive: true });
+
+        // copy the starter site
+        const starterDir = path.join(process.cwd(), 'src/starter');
+        await cp(starterDir, TEST_DIR, { recursive: true });
         
-        for (const dir of dirs) {
-            await fs.mkdir(dir, { recursive: true });
+    });
+
+    afterEach(async () => {
+        // Clean up after tests
+        await rm(TEST_DIR, { recursive: true, force: true });
+    });
+
+    test("initializes build directory correctly", async () => {
+        // Add check to ensure TEST_DIST exists before baking
+        expect(existsSync(TEST_DIR)).toBe(true);
+        expect(existsSync(path.join(TEST_DIR, 'assets'))).toBe(true);
+        expect(existsSync(path.join(TEST_DIR, 'pages'))).toBe(true);
+        expect(existsSync(path.join(TEST_DIR, 'assets/css'))).toBe(true);
+        expect(existsSync(path.join(TEST_DIR, 'assets/templates'))).toBe(true);
+
+        await bake(TEST_DIR);
+        
+        // Add delay to ensure async operations complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        const distDir = path.join(TEST_DIR, 'dist');
+        expect(existsSync(distDir)).toBe(true);
+        expect(existsSync(path.join(distDir, 'site.db'))).toBe(true);
+    });
+
+    test("loads assets into database", async () => {
+        // Verify directories exist before proceeding
+        const assetsPath = path.join(TEST_DIR, 'assets');
+        console.log('Before bake - assets directory exists?', existsSync(assetsPath));
+        console.log('Assets directory contents:', await readdir(assetsPath));
+        
+        await bake(TEST_DIR);
+        
+        console.log('After bake - assets directory exists?', existsSync(assetsPath));
+        if (existsSync(assetsPath)) {
+            console.log('Assets directory contents after bake:', await readdir(assetsPath));
         }
         
-        // Create required CSS file
-        await fs.writeFile('public/styles/main.css', '/* Test CSS */');
+        const distDir = path.join(TEST_DIR, 'dist');
+        const dbPath = path.join(distDir, 'site.db');
+        console.log('Database path exists?', existsSync(dbPath));
         
-        global.siteDir = process.cwd();
+        const db = new sqlite(dbPath);
+        const assets = db.prepare("SELECT * FROM assets").all();
+        db.close();
+        expect(assets).toBeDefined();
+        expect(Array.isArray(assets)).toBe(true);
+    });
+
+    test("loads pages into database", async () => {
+        await bake(TEST_DIR);
+        
+        const db = new sqlite(path.join(TEST_DIR, 'dist', 'site.db'));
+        const pages = db.prepare("SELECT * FROM pages").all();
+        expect(pages).toBeDefined();
+        expect(Array.isArray(pages)).toBe(true);
     });
 
     afterAll(async () => {
-        // Clean up test directory
-        process.chdir('..');
-        await fs.rm(testDir, { recursive: true, force: true });
-    });
-
-    const verifyDirectory = async (dir: string) => {
-        try {
-            await fs.access(path.join(testDir, dir));
-            return true;
-        } catch {
-            return false;
-        }
-    };
-
-    test("should create required directories", async () => {
-        // Create test directory and required subdirectories
-        await fs.mkdir(testDir, { recursive: true });
-        
-        // Create all required directories
-        const dirs = [
-            'pages',
-            'pages/blog',
-            'assets',
-            'assets/templates',
-            'assets/css',
-            'assets/components',
-            'assets/images',
-            'dist',
-            'public'
-        ];
-        
-        for (const dir of dirs) {
-            await fs.mkdir(path.join(testDir, dir), { recursive: true });
-            const exists = await verifyDirectory(dir);
-            expect(exists, `Directory "${dir}" was not created`).toBe(true);
-        }
-
-        // Create required files
-        await fs.writeFile(path.join(testDir, 'site.yaml'), 'title: Test Site\n');
-    });
-
-    test("should create required public files", async () => {
-        // Create required public files
-        await fs.mkdir('public', { recursive: true });
-        await fs.writeFile('public/sw.js', '// Service Worker');
-        await fs.writeFile('public/manifest.json', '{}');
-        await fs.writeFile('public/offline.html', '<!DOCTYPE html><html><body>Offline</body></html>');
-        
-        // Check if public files exist
-        const publicFiles = [
-            'public/sw.js',
-            'public/manifest.json',
-            'public/offline.html'
-        ];
-        
-        for (const file of publicFiles) {
-            const exists = await fs.access(file)
-                .then(() => true)
-                .catch(() => false);
-            expect(exists).toBe(true);
-        }
+        // Final cleanup
+        await rm(TEST_DIR, { recursive: true, force: true });
     });
 });

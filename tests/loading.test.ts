@@ -1,139 +1,139 @@
-import { expect, test, describe, beforeEach, afterEach } from "bun:test";
-import { promises as fs } from 'fs';
+import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
+import { mkdtemp, rm, writeFile, mkdir, readFile } from 'fs/promises';
 import path from 'path';
-import { Database } from 'bun:sqlite';
-import { loadPagesFromDir, loadAssetsFromDir } from '../loading';
-import type { Page, Asset } from "../types";
+import { tmpdir } from 'os';
+import { join } from 'path';
+import sqlite from 'better-sqlite3';
+type Database = ReturnType<typeof sqlite>;
+import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../baked/loading';
+import { RawAsset, Page } from "../src/types";
 
-describe("Loading Functions", () => {
-    let testDir: string;
+describe('Loading System', () => {
+    let tempDir: string;
     let db: Database;
 
     beforeEach(async () => {
-        // Create test directory
-        testDir = path.join(process.cwd(), 'tmp', `test-${Date.now()}`);
-        await fs.mkdir(testDir, { recursive: true });
+        // Create temporary test directory
+        tempDir = await mkdtemp(join(tmpdir(), 'baked-test-'));
+        const schema = await readFile(path.join(process.cwd(), 'src/sql/schema.sql'), 'utf-8');
+
+        // Create test database
+        db = new sqlite(':memory:');
         
-        // Initialize test database
-        db = new Database(':memory:');
-        db.exec(`
-            CREATE TABLE pages (
-                slug TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                template TEXT NOT NULL,
-                metadata TEXT,
-                published_date TEXT
-            );
-            
-            CREATE TABLE assets (
-                path TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                type TEXT NOT NULL
-            );
-        `);
+        // Initialize database schema
+        await db.exec(schema);
     });
 
     afterEach(async () => {
-        // Clean up test directory
-        await fs.rm(testDir, { recursive: true, force: true });
+        await rm(tempDir, { recursive: true, force: true });
+        db.close();
     });
 
-    test("loadPagesFromDir handles markdown files with frontmatter", async () => {
-        // Create test markdown file
-        const mdContent = `---
-title: Test Post
+    describe('loadPagesFromDir', () => {
+        test('processes markdown files correctly', async () => {
+            const pageContent = `---
+title: Test A Page
+author: Test Author
 date: 2024-01-01
-tags: [test]
 ---
 # Test Content`;
-        
-        await fs.mkdir(path.join(testDir, 'pages'), { recursive: true });
-        await fs.writeFile(path.join(testDir, 'pages', 'test.md'), mdContent);
-        
-        await loadPagesFromDir(path.join(testDir, 'pages'), db);
-        
-        const page: Page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
-        expect(page).toBeDefined();
-        expect(page.title).toBe('Test Post');
-        expect(page.content).toContain('# Test Content');
-        
-        const metadata = JSON.parse(page.metadata);
-        expect(metadata.tags).toEqual(['test']);
-        expect(metadata.date).toBe('2024-01-01');
-    });
-
-    test("loadPagesFromDir inherits metadata from meta.yaml", async () => {
-        // Create meta.yaml
-        const metaContent = `
-template: blog
-author: Test Author
-`;
-        const mdContent = `---
-title: Test Post
----
-Content`;
-        
-        await fs.mkdir(path.join(testDir, 'pages', 'blog'), { recursive: true });
-        await fs.writeFile(path.join(testDir, 'pages', 'blog', 'meta.yaml'), metaContent);
-        await fs.writeFile(path.join(testDir, 'pages', 'blog', 'post.md'), mdContent);
-        
-        await loadPagesFromDir(path.join(testDir, 'pages'), db);
-        
-        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
-        expect(page).toBeDefined();
-        expect(page.template).toBe('blog');
-        
-        const metadata = JSON.parse(page.metadata);
-        expect(metadata.author).toBe('Test Author');
-    });
-
-    test("loadAssetsFromDir handles different asset types", async () => {
-        // Create test assets
-        const assets = {
-            'templates/test.html': '<div>${content}</div>',
-            'css/style.css': '.test { color: red; }',
-            'components/test.js': 'console.log("test");'
-        };
-        
-        for (const [filePath, content] of Object.entries(assets)) {
-            const fullPath = path.join(testDir, 'assets', filePath);
-            await fs.mkdir(path.dirname(fullPath), { recursive: true });
-            await fs.writeFile(fullPath, content);
-        }
-        const distPath = path.join(testDir, 'dist');
-        await loadAssetsFromDir(path.join(testDir, 'assets'), db, distPath);
-        
-        // Check each asset type
-        for (const [filePath, content] of Object.entries(assets)) {
-            const type = filePath.split('/')[0];
-            const name = path.basename(filePath);
             
-            const asset = db.prepare('SELECT * FROM assets WHERE path = ?').get(name) as Asset;
-            expect(asset).toBeDefined();
-            expect(asset.content).toBe(content);
-            expect(asset.type).toBe(type);
-        }
+            await mkdir(join(tempDir, 'pages'), { recursive: true });
+            await writeFile(join(tempDir, 'pages', 'test.md'), pageContent);
+            
+            await loadPagesFromDir(join(tempDir, 'pages'), db);
+            
+            const allPages = db.prepare('SELECT * FROM pages').all() as Page[];
+            const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
+            expect(page).toBeDefined();
+            expect(page.title).toBe('Test A Page');
+            expect(page.content).toContain('# Test Content');
+            expect(JSON.parse(page.metadata).author).toBe('Test Author');
+        });
+
+        test('handles meta.yaml inheritance', async () => {
+            const metaContent = `template: overwriteme
+author: Test Author`;
+            const pageContent = `---
+title: Test This Post
+template: blog
+date: 2024-01-01
+---
+Wild content here`;
+            
+            await mkdir(join(tempDir, 'pages', 'blog'), { recursive: true });
+            await writeFile(join(tempDir, 'pages', 'blog', 'meta.yaml'), metaContent);
+            await writeFile(join(tempDir, 'pages', 'blog', 'post.md'), pageContent);
+
+            await loadPagesFromDir(join(tempDir, 'pages'), db);
+            
+            const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
+            const allpages = db.prepare('SELECT * FROM pages').all() as Page[];
+            const metadata = JSON.parse(page.metadata);
+            expect(metadata.template).toBe('blog');
+            expect(metadata.author).toBe('Test Author');
+            expect(page.title).toBe('Test This Post');
+            expect(page.content).toContain('Wild content here');
+        });
+
+        test('respects draft status', async () => {
+            const draftContent = `---
+title: Draft Post
+isDraft: true
+---
+Draft content`;
+            
+            await mkdir(join(tempDir, 'pages'), { recursive: true });
+            await writeFile(join(tempDir, 'pages', 'draft.md'), draftContent);
+            
+            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
+            
+            const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('draft');
+            expect(page).toBeUndefined();
+        });
     });
 
-    test("loadPagesFromDir handles image files", async () => {
-        // Create test image file (just a small binary file for testing)
-        const imageContent = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]); // JPEG header
-        
-        await fs.mkdir(path.join(testDir, 'pages', 'images'), { recursive: true });
-        await fs.writeFile(path.join(testDir, 'pages', 'images', 'test.jpg'), imageContent);
-        
-        await loadPagesFromDir(path.join(testDir, 'pages'), db);
-        
-        // Check if image was processed and copied
-        const imageExists = await fs.access(path.join(testDir, 'dist', 'images', 'test.jpg'))
-            .then(() => true)
-            .catch(() => false);
-        expect(imageExists).toBe(true);
-        
-        // Check if page entry was created with img tag
-        const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('images/test') as Page;
-        expect(page).toBeDefined();
-        expect(page.content).toContain('<img src="/images/test.jpg"');
+    describe('loadAssetsFromDir', () => {
+        test('loads different asset types correctly', async () => {
+            const cssContent = 'body { color: red; }';
+            const templateContent = '<div>${content}</div>';
+            
+            await mkdir(join(tempDir, 'assets', 'css'), { recursive: true });
+            await mkdir(join(tempDir, 'assets', 'templates'), { recursive: true });
+            
+            await writeFile(join(tempDir, 'assets', 'css', 'style.css'), cssContent);
+            await writeFile(join(tempDir, 'assets', 'templates', 'base.html'), templateContent);
+            
+            await loadAssetsFromDir(join(tempDir, 'assets'), db, tempDir);
+            
+            const cssAsset = db.prepare('SELECT * FROM assets WHERE path = ? AND type = ?')
+                .get('style.css', 'css') as RawAsset;
+            const templateAsset = db.prepare('SELECT * FROM assets WHERE path = ? AND type = ?')
+                .get('base.html', 'templates') as RawAsset;
+                
+            expect(cssAsset).toBeDefined();
+            expect(cssAsset.content).toBe(cssContent);
+            expect(templateAsset).toBeDefined();
+            expect(templateAsset.content).toBe(templateContent);
+        });
+    });
+
+    describe('loadSiteMetadata', () => {
+        test('loads site.yaml correctly', async () => {
+            const siteContent = `title: Test Site
+description: A test site
+author: Test Author`;
+            
+            await writeFile(join(tempDir, 'site.yaml'), siteContent);
+            
+            await loadSiteMetadata(tempDir, db);
+            
+            const siteRaw = db.prepare('SELECT content FROM assets WHERE path = ? AND type = ?').get('/json/site.yaml', 'json') as RawAsset;
+            const site = JSON.parse(siteRaw.content);
+            
+            expect(site.title).toBe('Test Site');
+            expect(site.description).toBe('A test site');
+            expect(site.author).toBe('Test Author');
+        });
     });
 });
