@@ -1,10 +1,8 @@
-import { expect, test, beforeEach, afterEach, mock, describe } from "bun:test";
+import { expect, test, beforeEach, afterEach, jest, describe } from '@jest/globals';
 import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
-import bake from '../src/cli/build';
-import startServer from '../src/cli/serve';
 
 describe('createSite', () => {
     let tempDir: string;
@@ -32,7 +30,7 @@ describe('createSite', () => {
         await writeFile(join(starterDir, 'pages', 'blog', 'meta.yaml'),
             'template: blog\nmimetype: text/markdown');
         // Mock the prompt function
-        global.prompt = mock((message: string | undefined) => {
+        global.prompt = jest.fn((message: string | undefined) => {
             switch(message) {
                 case 'Site name:': return 'Test Site';
                 case 'Site URL:': return 'test.com';
@@ -77,7 +75,7 @@ describe('createSite', () => {
 
     test('should use default values when prompts are empty', async () => {
         // Override prompt mock to return empty values
-        global.prompt = mock(() => '');
+        global.prompt = jest.fn(() => '');
 
         await createSite(tempDir);
 

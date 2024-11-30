@@ -10,6 +10,7 @@ import { mkdir } from "fs/promises";
 import { rename } from "fs/promises";
 import path from "path";
 import Database from "better-sqlite3";
+import type { Database as DatabaseType } from "better-sqlite3";
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../../baked/loading";
 import { Baker } from "../../baked/baker";
 import type { Page } from "../types";
@@ -17,7 +18,7 @@ import { writeFile } from "fs/promises";
 import { readFile } from "fs/promises";
 
 /* prep for the baking process by creating the needed database and directories */
-const prep = async (dist: string): Promise<Database> => {
+const prep = async (dist: string): Promise<DatabaseType> => {
     // Validate input
     if (!dist) {
         throw new Error('Distribution directory path is required');
@@ -44,15 +45,12 @@ const prep = async (dist: string): Promise<Database> => {
 
     // Create a new sqlite database
     const db = new Database(`${dist}/site.db`);
-    
     // Load and execute SQL files
-    db.serialize(async () => {
-        const schemaSQL = await readFile(path.join(__dirname, '../sql/schema.sql'), 'utf8');
-        const ftsSQL = await readFile(path.join(__dirname, '../sql/fulltextsearch.sql'), 'utf8');
-        
-        db.exec(schemaSQL);
-        db.exec(ftsSQL);
-    });
+    const schemaSQL = await readFile(path.join(__dirname, '../sql/schema.sql'), 'utf8');
+    const ftsSQL = await readFile(path.join(__dirname, '../sql/fulltextsearch.sql'), 'utf8');
+    
+    db.exec(schemaSQL);
+    db.exec(ftsSQL);
 
     return db;
     
@@ -60,7 +58,7 @@ const prep = async (dist: string): Promise<Database> => {
 
 
 /* in the dishing phase, we pre-render each page, saving it to the dist directory */
-const dish = async (db: Database, dist: string) => {
+const dish = async (db: DatabaseType, dist: string) => {
     if (!db || !dist) {
         throw new Error('Database and dist path are required for pre-rendering');
     }
@@ -115,22 +113,21 @@ const dish = async (db: Database, dist: string) => {
 
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
-export default async function bake(includeDrafts: boolean = false) {
-    const thisDir = process.cwd();
-    const tmpDist = path.join(thisDir, '/tmp/dist');
+export default async function bake(rootDir: string = process.cwd(), includeDrafts: boolean = false) {
+    const tmpDist = path.join(rootDir, '/tmp/dist');
 
     const db = await prep(tmpDist);
 
     // mix in the assets
-    const assetsDir = path.join(thisDir, 'assets');
+    const assetsDir = path.join(rootDir, 'assets');
     await loadAssetsFromDir(assetsDir, db, tmpDist);
 
     // mix in the pages
-    const pagesDir = path.join(thisDir, 'pages');
+    const pagesDir = path.join(rootDir, 'pages');
     await loadPagesFromDir(pagesDir, db, tmpDist, includeDrafts);
 
     // add in just a splash of site metadata
-    await loadSiteMetadata(thisDir, db);
+    await loadSiteMetadata(rootDir, db);
 
     // oven....
 
@@ -139,7 +136,7 @@ export default async function bake(includeDrafts: boolean = false) {
 
     // swap the tmp dist to the final dist
     // Todo - in the future a diff could be useful here to know which files need to be uploaded to the CDN
-    const distDir = path.join(thisDir, 'dist');
+    const distDir = path.join(rootDir, 'dist');
     await rename(tmpDist, distDir);
     
 }

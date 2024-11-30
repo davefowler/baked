@@ -1,8 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { rm, mkdir } from "fs/promises";
-import { Database } from "sqlite3";
+import Database from "better-sqlite3";
 import bake from "../src/cli/build";
 import { existsSync } from "fs";
+import type { Asset, Page } from '../src/types';
 
 describe("build process", () => {
     const TEST_DIST = "test-dist";
@@ -39,14 +40,12 @@ describe("build process", () => {
         
         const db = new Database(`${TEST_DIST}-tmp/site.db`);
         
-        // Verify assets table exists and contains expected entries
-        const assets = await new Promise((resolve, reject) => {
-            db.all("SELECT * FROM assets", (err, rows) => {
+        const assets = await new Promise<Asset[]>((resolve, reject) => {
+            db.all("SELECT * FROM assets", (err: Error | null, rows: Asset[]) => {
                 if (err) reject(err);
                 resolve(rows);
             });
         });
-        
         expect(assets).toBeDefined();
         // Add more specific asset checks based on your starter content
     });
@@ -57,8 +56,8 @@ describe("build process", () => {
         const db = new Database(`${TEST_DIST}-tmp/site.db`);
         
         // Verify pages table exists and contains expected entries
-        const pages = await new Promise((resolve, reject) => {
-            db.all("SELECT * FROM pages", (err, rows) => {
+        const pages = await new Promise<Page[]>((resolve, reject) => {
+            db.get("SELECT * FROM pages", (err: Error | null, rows: Page[]) => {
                 if (err) reject(err);
                 resolve(rows);
             });

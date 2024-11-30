@@ -92,7 +92,6 @@ const Template = (rawAsset) => {
         const template = nunjucks.compile(rawAsset, env);
 
         // For security reasons we re-specify the interface to these objects
-        console.log('running template with', page, baker, site)
         const context = {
             page: {
                 title: page.title || '',

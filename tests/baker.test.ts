@@ -1,15 +1,18 @@
 import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
 import Database from "better-sqlite3";
+import type { Database as DatabaseType } from "better-sqlite3";
+
 import { Baker } from "../baked/baker";
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 import { join as pathJoin } from 'path';
+import type { Asset } from "../src/types";
 
 describe('Baker', () => {
     let tempDir: string;
-    let db: Database;
+    let db: DatabaseType;
     let baker: Baker;
 
     beforeEach(async () => {
@@ -28,11 +31,8 @@ describe('Baker', () => {
     });
 
     afterEach(async () => {
-        // Finalize all statements before closing
-        db.prepare('SELECT 1').finalize();
-        db.close((err) => {
-            if (err) console.error('Error closing db:', err);
-        });
+        // Close database connection
+        db.close();
         await rm(tempDir, { recursive: true, force: true });
     });
 
@@ -41,11 +41,8 @@ describe('Baker', () => {
             db.prepare(
                 'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
             ).run('/css/test.css', 'body { color: red; }', 'css');
-
-            const assets = db.all('SELECT * FROM assets', [], (err, rows) => {
-                if (err) console.error('Error fetching assets:', err);
-                console.log('ASSETS:', rows);
-            });
+            const assets = db.prepare('SELECT * FROM assets').all() as Asset[];
+            
             console.log('again the assets', assets)
             const asset = baker.getRawAsset('/css/test.css', 'css');
             expect(asset).toBeDefined();
@@ -133,11 +130,11 @@ describe('Baker', () => {
 
     describe('Search', () => {
         beforeEach(async () => {
-            await db.run(`
-                INSERT INTO pages VALUES
-                ('test1', 'Test One', 'Content about testing', 'default', '{}', '2024-01-01'),
-                ('test2', 'Test Two', 'More test content', 'default', '{}', '2024-01-02')
-            `);
+            const stmt = db.prepare(`
+                INSERT INTO pages (slug, title, content, template, metadata, published_date)
+                VALUES (?, ?, ?, ?, ?, ?)`);
+            stmt.run('test1', 'Test One', 'Content about testing', 'default', '{}', '2024-01-01');
+            stmt.run('test2', 'Test Two', 'More test content', 'default', '{}', '2024-01-02');
         });
 
         test('search returns relevant results', async () => {

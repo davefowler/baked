@@ -1,10 +1,13 @@
-import { expect, test, beforeEach, afterEach, jest, describe } from "@jest/globals";
+import { expect, test, beforeEach, afterEach, describe, jest } from "@jest/globals";
 import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
 import bake from '../src/cli/build';
 import startServer from '../src/cli/serve';
+import Database from 'better-sqlite3';
+import request from 'supertest';
+import { Server } from 'http';
 
 // Helper functions
 const exists = async (path: string): Promise<boolean> => {
@@ -29,9 +32,8 @@ describe('CLI Commands', () => {
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-test-'));
-        
         // Mock prompt responses globally
-        global.prompt = mock((message: string) => {
+        global.prompt = jest.fn((message?: string) => {
             switch(message) {
                 case 'Site name:': return 'Test Site';
                 case 'Site URL:': return 'test.com';
@@ -60,10 +62,12 @@ describe('CLI Commands', () => {
 
         test('sets site configuration from prompts', async () => {
             // Mock prompt responses
-            global.prompt = mock((message: string) => {
+            global.prompt = jest.fn((message?: string) => {
                 switch(message) {
                     case 'Site name:': return 'Test Site';
                     case 'Site URL:': return 'test.com';
+                    case 'Site description:': return 'A test site';
+                    case 'Default author name:': return 'Test Author';
                     default: return '';
                 }
             });
@@ -94,7 +98,7 @@ describe('CLI Commands', () => {
 
         test('builds site with default options', async () => {
             process.chdir(tempDir); // Change working directory for build
-            await bake(false); // no drafts
+            await bake(tempDir, false); // no drafts
             
             const distDb = join(tempDir, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
@@ -103,8 +107,8 @@ describe('CLI Commands', () => {
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?')
                           .get('test');
             db.close(); // Properly close the database connection
-            expect(page).toBeDefined();
-            expect(page.title).toBe('Test');
+            expect(page!).toBeDefined();
+            expect((page as {title: string}).title).toBe('Test');
         });
 
         test('handles draft pages correctly', async () => {
@@ -112,15 +116,14 @@ describe('CLI Commands', () => {
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
             // Build without drafts
-            await bake(false);
-            let db = new Database(join(tempDir, 'dist/site.db'), { create: true });
+            await bake(tempDir, false);
+            let db = new Database(join(tempDir, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE slug = ?')
                          .get('draft');
             expect(draft).toBeUndefined();
-            
             // Build with drafts
-            await bake(true);
-            db = new Database(join(tempDir, 'dist/site.db'));
+            await bake(tempDir, true);
+            db = new Database(join(tempDir, 'dist/site.db'));   
             draft = db.prepare('SELECT * FROM pages WHERE slug = ?')
                      .get('draft');
             expect(draft).toBeDefined();
@@ -128,10 +131,12 @@ describe('CLI Commands', () => {
     });
 
     describe('serve command', () => {
-        let server;
+        let server: Server;
         
         afterEach(() => {
-            if (server) server.stop();
+            if (server?.listening) {
+                server.close();
+            }
         });
 
         test('serves static files correctly', async () => {
@@ -139,37 +144,19 @@ describe('CLI Commands', () => {
             await ensureDir(join(tempDir, 'dist'));
             await writeFile(join(tempDir, 'dist', 'index.html'), '<html><body>Test</body></html>');
             
-            process.chdir(tempDir); // Change working directory for server
+            process.chdir(tempDir);
             server = await startServer();
             
-            try {
-                const res = await fetch('http://localhost:4242/');
-                expect(res.status).toBe(200);
-                expect(await res.text()).toContain('Test');
-                
-                const notFound = await fetch('http://localhost:4242/notfound');
-                expect(notFound.status).toBe(404);
-            } finally {
-                if (server) server.stop();
-            }
+            await request(`http://localhost:4242`)  // Use the actual server URL
+                .get('/')
+                .expect(200)
+                .expect((res) => {
+                    expect(res.text).toContain('Test');
+                });
+            
+            await request(`http://localhost:4242`)
+                .get('/notfound')
+                .expect(404);
         });
     });
 });
-
-// Helper functions
-const exists = async (path: string): Promise<boolean> => {
-    try {
-        await stat(path);
-        return true;
-    } catch {
-        return false;
-    }
-};
-
-const ensureDir = async (dir: string) => {
-    try {
-        await mkdir(dir, { recursive: true });
-    } catch (err: any) {
-        if (err.code !== 'EEXIST') throw err;
-    }
-};
