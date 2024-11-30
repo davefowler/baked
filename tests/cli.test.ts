@@ -1,6 +1,5 @@
 import { expect, test, beforeEach, afterEach, describe, jest } from "@jest/globals";
-import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
-import { tmpdir } from 'os';
+import { rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
 import { join } from 'path';
 import createSite from '../src/cli/new';
 import bake from '../src/cli/build';
@@ -28,10 +27,14 @@ const ensureDir = async (dir: string) => {
 };
 
 describe('CLI Commands', () => {
-    let tempDir: string;
+    const TEST_DIR = join(process.cwd(), 'tmp/cli-test');
+
+    beforeAll(async () => {
+        await rm(TEST_DIR, { recursive: true, force: true });
+    });
 
     beforeEach(async () => {
-        tempDir = await mkdtemp(join(tmpdir(), 'baked-test-'));
+        await mkdir(TEST_DIR, { recursive: true });
         // Mock prompt responses globally
         global.prompt = jest.fn((message?: string) => {
             switch(message) {
@@ -45,17 +48,17 @@ describe('CLI Commands', () => {
     });
 
     afterEach(async () => {
-        await rm(tempDir, { recursive: true, force: true });
+        await rm(TEST_DIR, { recursive: true, force: true });
     });
 
     describe('new/starter command', () => {
         test('creates correct directory structure', async () => {
-            await createSite(tempDir);
+            await createSite(TEST_DIR);
             
             // Check core directories exist
             const dirs = ['pages', 'assets', 'assets/templates', 'assets/css'];
             for (const dir of dirs) {
-                const itExists = await exists(join(tempDir, dir));
+                const itExists = await exists(join(TEST_DIR, dir));
                 expect(itExists).toBe(true);
             }
         });
@@ -72,9 +75,9 @@ describe('CLI Commands', () => {
                 }
             });
 
-            await createSite(tempDir);
+            await createSite(TEST_DIR);
             
-            const siteYaml = await readFile(join(tempDir, 'site.yaml'), 'utf8');
+            const siteYaml = await readFile(join(TEST_DIR, 'site.yaml'), 'utf8');
             expect(siteYaml).toContain('name: Test Site');
             expect(siteYaml).toContain('url: test.com');
         });
@@ -84,23 +87,23 @@ describe('CLI Commands', () => {
         beforeEach(async () => {
             // Setup test site
             // Setup test site structure
-            await createSite(tempDir);
+            await createSite(TEST_DIR);
             
             // Create pages directory
-            await ensureDir(join(tempDir, 'pages'));
+            await ensureDir(join(TEST_DIR, 'pages'));
             
             // Create test content
             await writeFile(
-                join(tempDir, 'pages', 'test.md'), 
+                join(TEST_DIR, 'pages', 'test.md'), 
                 '---\ntitle: Test\n---\nTest content'
             );
         });
 
         test('builds site with default options', async () => {
-            process.chdir(tempDir); // Change working directory for build
-            await bake(tempDir, false); // no drafts
+            process.chdir(TEST_DIR); // Change working directory for build
+            await bake(TEST_DIR, false); // no drafts
             
-            const distDb = join(tempDir, 'dist/site.db');
+            const distDb = join(TEST_DIR, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
             
             const db = new Database(distDb);
@@ -112,18 +115,18 @@ describe('CLI Commands', () => {
         });
 
         test('handles draft pages correctly', async () => {
-            await writeFile(join(tempDir, 'pages/draft.md'),
+            await writeFile(join(TEST_DIR, 'pages/draft.md'),
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
             // Build without drafts
-            await bake(tempDir, false);
-            let db = new Database(join(tempDir, 'dist/site.db'));
+            await bake(TEST_DIR, false);
+            let db = new Database(join(TEST_DIR, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE slug = ?')
                          .get('draft');
             expect(draft).toBeUndefined();
             // Build with drafts
-            await bake(tempDir, true);
-            db = new Database(join(tempDir, 'dist/site.db'));   
+            await bake(TEST_DIR, true);
+            db = new Database(join(TEST_DIR, 'dist/site.db'));   
             draft = db.prepare('SELECT * FROM pages WHERE slug = ?')
                      .get('draft');
             expect(draft).toBeDefined();
@@ -141,10 +144,10 @@ describe('CLI Commands', () => {
 
         test('serves static files correctly', async () => {
             // Create test dist directory with content
-            await ensureDir(join(tempDir, 'dist'));
-            await writeFile(join(tempDir, 'dist', 'index.html'), '<html><body>Test</body></html>');
+            await ensureDir(join(TEST_DIR, 'dist'));
+            await writeFile(join(TEST_DIR, 'dist', 'index.html'), '<html><body>Test</body></html>');
             
-            process.chdir(tempDir);
+            process.chdir(TEST_DIR);
             server = await startServer();
             
             await request(`http://localhost:4242`)  // Use the actual server URL
