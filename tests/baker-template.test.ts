@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach, afterEach } from "bun:test";
 import { Components } from '../src/components';
-import { Database } from "sqlite3";
+import Database from "better-sqlite3";
 import { Baker } from '../baked/baker';
 
 describe('Baker Template Integration', () => {

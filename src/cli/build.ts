@@ -9,7 +9,7 @@ import { rm } from "fs/promises";
 import { mkdir } from "fs/promises";
 import { rename } from "fs/promises";
 import path from "path";
-import { Database } from "sqlite3";
+import Database from "better-sqlite3";
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../../baked/loading";
 import { Baker } from "../../baked/baker";
 import type { Page } from "../types";
