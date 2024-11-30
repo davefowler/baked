@@ -204,7 +204,7 @@ export class Baker {
         `).all(`%${query}%`, `%${query}%`, limit);
     }
 
-    query(sql, params) {
-        return this.db.prepare(sql).all(params);
+    query(sql, params = []) {
+        return this.db.prepare(sql).all(...params);
     }
 }
