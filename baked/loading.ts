@@ -78,7 +78,11 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
             await loadPagesFromDir(fullPath, db, metadata, includeDrafts, actualRootDir);
         } else if (entry.name !== 'meta.yaml') {
             // Get the first directory after the root directory
-            const mixer = markdownMixer;
+            let mixer = defaultMixer;
+            if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
+                mixer = markdownMixer;
+                console.log('markdown mixer', entry.name, fullPath);
+            }
             
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
@@ -156,4 +160,5 @@ export async function loadSiteMetadata(dir: string, db: Database) {
     db.prepare(`
         INSERT INTO assets (path, content, type) VALUES (?, ?, ?)
     `).run('/json/site.yaml', JSON.stringify(siteMetadata), 'json');
+
 }
