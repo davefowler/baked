@@ -93,27 +93,44 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                 if (!includeDrafts && finalMetadata.isDraft) continue; 
                 
                 // Use actualRootDir instead of dir for relative path calculation
-                const pathFromRoot = path.relative(actualRootDir, fullPath);
-                const slug = pathFromRoot.replace(path.extname(fullPath), '').replace(/\.[^/.]+$/, '');
+                // Normalize paths relative to root
+                const pathFromRoot = path.relative(actualRootDir, fullPath).replace(/\\/g, '/');
+                const slug = pathFromRoot.replace(/\.[^/.]+$/, ''); // Remove extension
                 const title = finalMetadata.title || path.basename(fullPath, path.extname(fullPath));
                 
-                // Ensure date is converted to ISO string if it's a Date object
-                const publishedDate = finalMetadata.date ? 
-                    new Date(finalMetadata.date).toISOString() : 
-                    null;
+                // Ensure date is valid ISO string or null
+                let publishedDate = null;
+                if (finalMetadata.date) {
+                    try {
+                        publishedDate = new Date(finalMetadata.date).toISOString();
+                    } catch (e) {
+                        console.warn(`Invalid date for ${pathFromRoot}: ${finalMetadata.date}`);
+                    }
+                }
 
-                db.prepare(`
-                    INSERT INTO pages (path, slug, title, content, template, metadata, published_date) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                `).run(
-                    pathFromRoot,
+                // Log what we're about to insert for debugging
+                console.log('Inserting page:', {
+                    path: pathFromRoot,
                     slug,
                     title,
-                    processedContent,
-                    finalMetadata.template || 'default',
-                    JSON.stringify(finalMetadata),
-                    publishedDate ? publishedDate : null
-                );
+                    template: finalMetadata.template || 'default',
+                    hasContent: !!processedContent,
+                    date: publishedDate
+                });
+
+                try {
+                    db.prepare(`
+                        INSERT INTO pages (path, slug, title, content, template, metadata, published_date) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `).run(
+                        pathFromRoot,
+                        slug,
+                        title,
+                        processedContent || '',
+                        finalMetadata.template || 'default',
+                        JSON.stringify(finalMetadata || {}),
+                        publishedDate
+                    );
                 
                 console.log(`Loaded page: ${slug}`, pathFromRoot);
             } catch (error) {
