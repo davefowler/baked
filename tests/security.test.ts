@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import sqlite, { Database } from "better-sqlite3"
 import { Components } from '../src/components.js';
-import { Baker } from '../baked/baker';
+import { Baker } from '../src/baked/baker';
 
 describe('Security Tests', () => {
     let tempDir: string;

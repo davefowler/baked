@@ -4,16 +4,12 @@
 2. dish - Pre-rendering each page
 */
 
-
-import { rm } from "fs/promises";
-import { mkdir } from "fs/promises";
-import { rename } from "fs/promises";
+import { rename, cp, mkdir, rm } from "fs/promises";
 import path from "path";
 import sqlite from "better-sqlite3";
 import type { Database } from "better-sqlite3";
-import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../../baked/loading";
-import { Baker } from "../../baked/baker";
-import type { Page } from "../types";
+import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading";
+import { Baker } from "../baked/baker";
 import { writeFile } from "fs/promises";
 import { readFile } from "fs/promises";
 
@@ -24,25 +20,19 @@ const prep = async (dist: string): Promise<Database> => {
         throw new Error('Distribution directory path is required');
     }
 
-
-    // Clean up any existing directories
+    // Clean up and create directory
     try {
         await rm(dist, { recursive: true, force: true });
-    } catch (error: unknown) {
-        // Ignore error if directory doesn't exist
-        if (error instanceof Error && ('code' in error) && error.code !== 'ENOENT') {
-            throw new Error(`Failed to clean directories: ${error.message}`);
-        }
-    }
-
-    // Create directory
-    try {
         await mkdir(dist, { recursive: true });
     } catch (error: unknown) {
         if (error instanceof Error) {
-            throw new Error(`Failed to create tmp directory: ${error.message}`);
+            // Only throw if it's not a "directory doesn't exist" error during removal
+            if (!('code' in error) || error.code !== 'ENOENT' || error.message.includes('create')) {
+                throw new Error(`Failed to prepare directory: ${error.message}`);
+            }
+        } else {
+            throw new Error('Failed to prepare directory: Unknown error');
         }
-        throw new Error('Failed to create tmp directory: Unknown error');
     }
 
     // Create a new sqlite database
@@ -128,7 +118,13 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
         throw new Error(`Failed to prepare tmp directory: ${message}`);
     }
 
+    // copy the public files into the tmp dist
+    const publicDir = path.join(rootDir, 'public');
+    await cp(publicDir, tmpDist, { recursive: true });
+
+    // prep the database
     const db = await prep(tmpDist);
+    
 
     // mix in the assets
     const assetsDir = path.join(rootDir, 'assets');

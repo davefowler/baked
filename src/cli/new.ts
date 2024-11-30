@@ -1,16 +1,17 @@
-import { cp, writeFile, readFile } from 'fs/promises';
+import { existsSync } from 'fs';
+import { cp, writeFile, readFile, readdir } from 'fs/promises';
 import { join } from 'path';
 
-export default async function createSite(destination: string) {
+export default async function createSite(destination: string, starterDir?: string) {
     // Get starter directory from environment variable or use __dirname-based path
-    const starterDir = process.env.STARTER_DIR || join(
+    starterDir = starterDir || join(
         __dirname, '..', '..', 'src', 'starter'
     );
-    
     // copy the starter site to the destination directory recursively
     await cp(starterDir, destination, { recursive: true });
 
-
+    console.log('starter coppied to:', destination, await readdir(destination));
+    console.log('public dir contents', await readdir(`${destination}/public`));
     // prompt for the values
     console.log('Before we get cookin\' let\'s get some info about the site...');
     const siteName = await prompt('Site name:') || 'Baked Site';
@@ -29,8 +30,13 @@ author: ${siteAuthor}`;
     const blogMetaContent = `author: ${siteAuthor}`;
     await writeFile(`${destination}/pages/blog/meta.yaml`, blogMetaContent, 'utf-8');
 
-    // update specific fields in the pages/manifest.json file
-    const manifestPath = `${destination}/pages/manifest.json`;
+    console.log('things in ', destination, await readdir(destination));
+    // update specific fields in the manifest.json file
+    const manifestPath = `${destination}/public/manifest.json`;
+    // ensure manifest exists
+    if (!existsSync(manifestPath)) {
+        throw new Error('manifest.json not found in /public folder');
+    }
     const existingManifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
     
     const updatedManifest = {

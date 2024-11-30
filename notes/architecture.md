@@ -22,6 +22,7 @@ creates the following structure
    - /components
    - /css
    - /templates
+ - /public # files that are straight copied into the dist folder when the build command is run
  - /dist # the output folder of the files that will be served after running the build command
    - /images # processed images that aren't loaded directly into the database
    - /baked # files for the client side pwa 

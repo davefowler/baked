@@ -12,7 +12,7 @@
    - query(sql, params) # run a sql query on the database and return the results
 */
 
-import { Components } from '../src/components.js';
+import { Components } from '../components.js';
 
 export class Baker {
     constructor(db, isClient) {
