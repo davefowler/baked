@@ -144,7 +144,8 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
     try {
         await rename(tmpDist, finalDist);
     } catch (error) {
-        throw new Error(`Failed to rename tmp directory: ${error.message}`);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to rename tmp directory: ${message}`);
     }
     
 }
