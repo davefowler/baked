@@ -25,7 +25,7 @@ describe('Baker', () => {
         
         // Add site.yaml for Baker initialization
         db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)')
-          .run('/site.yaml', 'title: Test Site', 'application/yaml');
+          .run('/json/site.yaml', JSON.stringify({ title: 'Test Site' }), 'json');
         
         baker = new Baker(db, true);
     });
@@ -44,7 +44,7 @@ describe('Baker', () => {
             const assets = db.prepare('SELECT * FROM assets').all() as RawAsset[];
             
             console.log('again the assets', assets)
-            const asset = baker.getRawAsset('/css/test.css', 'css');
+            const asset = baker.getRawAsset('test.css', 'css');
             expect(asset).toBeDefined();
             expect(asset.content).toBe('body { color: red; }');
         });
@@ -54,8 +54,8 @@ describe('Baker', () => {
                 'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
             ).run('/css/test.css', 'body { color: red; }', 'css');
 
-            const processed = baker.getAsset('test.css', 'css' as any);
-            expect(processed).toBe('body { color: red; }'); // Remove style tags expectation since Components is mocked
+            const processed = baker.getAsset('test.css', 'css');
+            expect(processed).toBe('<style>body { color: red; }</style>'); // Remove style tags expectation since Components is mocked
         });
     });
 

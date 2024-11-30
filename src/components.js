@@ -1,19 +1,24 @@
 import nunjucks from 'nunjucks';
 
+const sanitizeHtml = (str) => {
+    return str.replace(/[&<>"']/g, (match) => {
+        const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return escape[match];
+    });
+};
 
 
 const PassThrough = (rawAsset) => {
-    return () => rawAsset;
+    return rawAsset;
 };
 
-const Css = (rawAsset) => {
-    return (page, baker, site, ...props) => {
-        return `<style>${sanitizeHtml(rawAsset)}</style>`;
-    };
+// TODO - should the component wrap the style class?
+const CssComponent = (rawAsset) => { 
+    return `<style>${sanitizeHtml(rawAsset)}</style>`;
 };
 
-const JSON = (rawAsset) => {
-    return () => JSON.parse(rawAsset);
+const JsonComponent = (rawAsset) => {
+    return JSON.parse(rawAsset);
 };
 
 
@@ -128,7 +133,7 @@ const Template = (rawAsset) => {
 
 export const Components = {
     'images': PassThrough,
-    'css': Css,
+    'css': CssComponent,
     'templates': Template,
-    'json': JSON
+    'json': JsonComponent
 };

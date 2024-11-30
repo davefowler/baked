@@ -30,8 +30,8 @@ describe('Baker Template Integration', () => {
 
             INSERT INTO assets (path, content, type)
             VALUES 
-                ('site.yaml', 'title: Test Site', 'json'),
-                ('test.css', 'body { color: red; }', 'css');
+                ('/json/site.yaml', '{"title": "Test Site"}', 'json'),
+                ('/css/test.css', 'body { color: red; }', 'css');
         `);
 
         baker = new Baker(db, true);
@@ -44,7 +44,7 @@ describe('Baker Template Integration', () => {
     describe('Template Baker Integration', () => {
         test('template can access baker.getAsset', () => {
             const template = Components.templates(`
-                {{ baker.getAsset('test.css') }}
+                {{ baker.getAsset('test.css', 'c) }}
             `);
             
             const result = template({}, baker, {});

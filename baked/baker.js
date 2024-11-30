@@ -42,7 +42,7 @@ export class Baker {
 
 
 
-    getAsset(name, type = null) {
+    getAsset(name, type) {
         const asset = this.getRawAsset(name, type);
         if (!asset) return null;
 

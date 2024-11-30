@@ -16,8 +16,8 @@ describe('Component System', () => {
             };
 
             const template = Components.templates(`
-                <h1>${page.title}</h1>
-                <div>${page.content}</div>
+                <h1>{{ page.title }}</h1>
+                <div>{{ page.content }}</div>
             `);
             
             const result = template(
@@ -32,13 +32,13 @@ describe('Component System', () => {
 
         test('handles missing variables gracefully', () => {
             const template = Components.templates(`
-                <h1>${page.title}</h1>
-                <div>${page.nonexistent}</div>
+                <h1>{{ page.title }}</h1>
+                <div>{{ page.nonexistent }}</div>
             `);
             
             const result = template(
                 { title: 'Test' },
-                mockBaker,
+                {},
                 {}
             );
             
@@ -48,7 +48,7 @@ describe('Component System', () => {
 
         test('sanitizes dangerous input', () => {
             const template = Components.templates(`
-                <div>${page.content}</div>
+                <div>{{ page.content }}</div>
             `);
             
             const result = template(
@@ -66,12 +66,10 @@ describe('Component System', () => {
             const css = Components.css(`
                 body { color: red; }
             `);
-            
-            const result = css({}, {}, {});
-            
-            expect(result).toContain('<style>');
-            expect(result).toContain('body { color: red; }');
-            expect(result).toContain('</style>');
+                        
+            expect(css).toContain('<style>');
+            expect(css).toContain('body { color: red; }');
+            expect(css).toContain('</style>');
         });
     });
 
