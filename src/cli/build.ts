@@ -24,11 +24,9 @@ const prep = async (dist: string): Promise<Database> => {
         throw new Error('Distribution directory path is required');
     }
 
-    const tmpDir = `${dist}-tmp`;
 
     // Clean up any existing directories
     try {
-        await rm(tmpDir, { recursive: true, force: true });
         await rm(dist, { recursive: true, force: true });
     } catch (error: unknown) {
         // Ignore error if directory doesn't exist
@@ -37,9 +35,9 @@ const prep = async (dist: string): Promise<Database> => {
         }
     }
 
-    // Create tmp directory
+    // Create directory
     try {
-        await mkdir(tmpDir, { recursive: true });
+        await mkdir(dist, { recursive: true });
     } catch (error: unknown) {
         if (error instanceof Error) {
             throw new Error(`Failed to create tmp directory: ${error.message}`);
@@ -48,7 +46,7 @@ const prep = async (dist: string): Promise<Database> => {
     }
 
     // Create a new sqlite database
-    const db = sqlite(`${tmpDir}/site.db`);
+    const db = sqlite(`${dist}/site.db`);
     // Load and execute SQL files
     const schemaSQL = await readFile(path.join(__dirname, '../sql/schema.sql'), 'utf8');
     const ftsSQL = await readFile(path.join(__dirname, '../sql/fulltextsearch.sql'), 'utf8');
@@ -118,10 +116,10 @@ const dish = async (db: Database, dist: string) => {
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
 export default async function bake(rootDir: string = process.cwd(), includeDrafts: boolean = false) {
-    const tmpDist = `${rootDir}-tmp`;
-    const finalDist = rootDir;
+    const tmpDist = path.join(rootDir, 'dist-tmp');
+    const finalDist = path.join(rootDir, 'dist');
 
-    const db = await prep(rootDir);
+    const db = await prep(tmpDist);
 
     // mix in the assets
     const assetsDir = path.join(rootDir, 'assets');
