@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Database } from 'sqlite3';
-import { Components } from '../src/components';
+import { Components } from '../src/components.js';
 import { Baker } from '../baked/baker';
 
 describe('Security Tests', () => {

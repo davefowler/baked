@@ -1,5 +1,5 @@
 import { expect, test, describe } from "@jest/globals";
-import { Components } from '../src/components';
+import { Components } from '../src/components.js';
 
 describe('Component System', () => {
     describe('Template Component', () => {

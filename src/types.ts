@@ -10,8 +10,9 @@ export type Page = {
 }
 
 
-export type Asset = {
+export type RawAsset = {
     path: string;
     content: string;
     type: string;
 }
+

@@ -1,4 +1,5 @@
-import Database from "better-sqlite3";
+import sqlite from 'better-sqlite3';
+type Database = ReturnType<typeof sqlite>;
 import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
@@ -18,6 +19,8 @@ const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
 // Process markdown files
 const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
     const frontmatter = matter(content);
+    console.log('from content', content);
+    console.log('frontmatter', frontmatter, 'data', frontmatter.data);
     const combinedMetadata = { ...metadata, ...frontmatter.data };
     return {
         content: frontmatter.content,
@@ -55,7 +58,10 @@ const mixers: Record<string, Mixer> = {
     'pages': markdownMixer
 };
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false) {
+export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
+    // Store the root directory on first call
+    const actualRootDir = rootDir || dir;
+    
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
     let metadata = { ...parentMetadata };
@@ -66,42 +72,50 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
     } catch (error) {
         // meta.yaml doesn't exist, continue with parent metadata
     }
-
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         
         if (entry.isDirectory()) {
-            await loadPagesFromDir(fullPath, db, metadata, includeDrafts);
+            // Pass the root directory through recursive calls
+            await loadPagesFromDir(fullPath, db, metadata, includeDrafts, actualRootDir);
         } else if (entry.name !== 'meta.yaml') {
-            // Get the directory name to determine the Mixer
-            const dirName = path.basename(path.dirname(fullPath));
-            const mixer = mixers[dirName] || defaultMixer;
+            // Get the first directory after the root directory
+            console.log('actualRootDir', actualRootDir, 'fullPath', fullPath);
+            const mixer = markdownMixer;
             
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
                 const { content: processedContent, metadata: finalMetadata } = 
                     await mixer(fullPath, content, metadata);
 
-                if (!includeDrafts && metadata.isDraft) continue; // don't even load draft pages if not specified by user with --drafts
-
-                const slug = path.relative(dir, fullPath)
-                    .replace(path.extname(fullPath), '');
+                console.log('exclude drafts?', !includeDrafts, 'isDraft', finalMetadata, finalMetadata.isDraft);
+                // don't even load draft pages if not specified by user with --drafts
+                if (!includeDrafts && metadata.isDraft) continue; 
                 
+                // Use actualRootDir instead of dir for relative path calculation
+                const pathFromRoot = path.relative(actualRootDir, fullPath);
+                const slug = pathFromRoot.replace(path.extname(fullPath), '');
                 const title = finalMetadata.title || path.basename(fullPath, path.extname(fullPath));
-                console.log(`Processing ${slug} with title ${title}`);
+                
+                // Ensure date is converted to ISO string if it's a Date object
+                const publishedDate = finalMetadata.date ? 
+                    new Date(finalMetadata.date).toISOString() : 
+                    null;
+
                 db.prepare(`
-                    INSERT INTO pages (slug, title, content, template, metadata, published_date) 
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO pages (path, slug, title, content, template, metadata, published_date) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 `).run(
+                    pathFromRoot,
                     slug,
                     title,
                     processedContent,
                     finalMetadata.template || 'default',
-                    JSON.stringify(finalMetadata),
-                    finalMetadata.date || null
+                    JSON.stringify(finalMetadata),  // Make sure metadata is stringified
+                    publishedDate  // Use the processed date
                 );
                 
-                console.log(`Loaded page: ${slug}`);
+                console.log(`Loaded page: ${slug}`, pathFromRoot);
             } catch (error) {
                 console.error(`Error processing ${fullPath}:`, error);
             }
@@ -144,6 +158,6 @@ export async function loadSiteMetadata(dir: string, db: Database) {
     const siteContent = await fs.readFile(sitePath, 'utf8');
     const siteMetadata = yaml.parse(siteContent);
     db.prepare(`
-        INSERT INTO site (metadata) VALUES (?)
-    `).run(JSON.stringify(siteMetadata));
+        INSERT INTO assets (path, content, type) VALUES (?, ?, ?)
+    `).run('/json/site.yaml', JSON.stringify(siteMetadata), 'json');
 }

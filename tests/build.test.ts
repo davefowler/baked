@@ -1,14 +1,23 @@
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { rm, mkdir } from "fs/promises";
+import { rm, mkdir, readFile, copyFile } from "fs/promises";
 import sqlite from "better-sqlite3";
 import bake from "../src/cli/build";
 import { existsSync } from "fs";
-import type { Asset, Page } from '../src/types';
+import path from 'path';
+
+type Database = ReturnType<typeof sqlite>;
+
 
 describe("build process", () => {
     const TEST_DIST = "test-dist";
-    
+    let db: Database;
+    let schema: string;
     beforeEach(async () => {
+        // Load schema
+        if (!schema) {
+            schema = await readFile(path.join(process.cwd(), 'src/sql/schema.sql'), 'utf-8');
+        }
+        
         // Clean up any existing test directories
         await rm(TEST_DIST, { recursive: true, force: true });
         await rm(`${TEST_DIST}-tmp`, { recursive: true, force: true });
@@ -22,6 +31,10 @@ describe("build process", () => {
         await mkdir(`${TEST_DIST}/assets/images`, { recursive: true });
         await mkdir(`${TEST_DIST}/assets/css`, { recursive: true });
         await mkdir(`${TEST_DIST}/assets/templates`, { recursive: true });
+
+        // copy starter site into test dist
+        await copyFile(path.join(process.cwd(), 'src/starter/site.yaml'), `${TEST_DIST}/site.yaml`);
+
     });
 
     afterEach(async () => {

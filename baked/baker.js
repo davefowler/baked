@@ -12,7 +12,6 @@
    - query(sql, params) # run a sql query on the database and return the results
 */
 
-import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
 import { Components } from '../src/components.js';
 
 export class Baker {

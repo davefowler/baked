@@ -8,7 +8,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 import { join as pathJoin } from 'path';
-import type { Asset } from "../src/types";
+import type { RawAsset } from "../src/types";
 
 describe('Baker', () => {
     let tempDir: string;
@@ -41,7 +41,7 @@ describe('Baker', () => {
             db.prepare(
                 'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
             ).run('/css/test.css', 'body { color: red; }', 'css');
-            const assets = db.prepare('SELECT * FROM assets').all() as Asset[];
+            const assets = db.prepare('SELECT * FROM assets').all() as RawAsset[];
             
             console.log('again the assets', assets)
             const asset = baker.getRawAsset('/css/test.css', 'css');

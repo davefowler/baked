@@ -12,6 +12,10 @@ const Css = (rawAsset) => {
     };
 };
 
+const JSON = (rawAsset) => {
+    return () => JSON.parse(rawAsset);
+};
+
 
 // Configure nunjucks
 const env = new nunjucks.Environment(null, { 
@@ -125,5 +129,6 @@ const Template = (rawAsset) => {
 export const Components = {
     'images': PassThrough,
     'css': Css,
-    'templates': Template
+    'templates': Template,
+    'json': JSON
 };

@@ -1,7 +1,5 @@
 import { expect, test, describe } from "@jest/globals";
-import { Components } from '../src/components';
-import Database from "better-sqlite3";
-
+import { Components } from '../src/components.js';
 
 
 describe('Template System', () => {

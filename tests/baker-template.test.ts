@@ -1,32 +1,27 @@
 import { expect, test, describe, beforeEach, afterEach } from "@jest/globals";
-import { Components } from '../src/components';
-import Database from "better-sqlite3";
+import { Components } from '../src/components.js';
 import { Baker } from '../baked/baker';
+import { promises as fs } from 'fs';
+import path from 'path';
+import sqlite from 'better-sqlite3';
+
+type Database = ReturnType<typeof sqlite>;
+
 
 describe('Baker Template Integration', () => {
     let db: Database;
     let baker: Baker;
+    let schema: string;
+    beforeEach(async () => {
 
-    beforeEach(() => {
-        db = new Database(':memory:');
-        
+        if (!schema) {
+            schema = await fs.readFile(path.join(process.cwd(), 'src/sql/schema.sql'), 'utf-8');
+        }
+
+        db = new sqlite(':memory:');
         // Initialize test database schema
+        db.exec(schema);
         db.exec(`
-            CREATE TABLE assets (
-                path TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                type TEXT NOT NULL
-            );
-            
-            CREATE TABLE pages (
-                slug TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                template TEXT NOT NULL DEFAULT 'default',
-                metadata TEXT,
-                published_date TEXT
-            );
-
             -- Add some test data
             INSERT INTO pages (slug, title, content, template, metadata, published_date)
             VALUES 
@@ -35,7 +30,7 @@ describe('Baker Template Integration', () => {
 
             INSERT INTO assets (path, content, type)
             VALUES 
-                ('site.yaml', 'title: Test Site', 'application/yaml'),
+                ('site.yaml', 'title: Test Site', 'json'),
                 ('test.css', 'body { color: red; }', 'css');
         `);
 
