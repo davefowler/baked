@@ -44,7 +44,6 @@ date: 2024-01-01
             await loadPagesFromDir(join(tempDir, 'pages'), db);
             
             const allPages = db.prepare('SELECT * FROM pages').all() as Page[];
-            console.log('all Pages',allPages);
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
             expect(page).toBeDefined();
             expect(page.title).toBe('Test A Page');
@@ -70,9 +69,7 @@ Wild content here`;
             
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
             const allpages = db.prepare('SELECT * FROM pages').all() as Page[];
-            console.log('allpages',allpages);
             const metadata = JSON.parse(page.metadata);
-            console.log('metadata test', metadata);
             expect(metadata.template).toBe('blog');
             expect(metadata.author).toBe('Test Author');
             expect(page.title).toBe('Test This Post');
@@ -131,7 +128,7 @@ author: Test Author`;
             
             await loadSiteMetadata(tempDir, db);
             
-            const siteRaw = db.prepare('SELECT content FROM assets WHERE path = ? AND type = ?').get('json/site.yaml', 'json') as RawAsset;
+            const siteRaw = db.prepare('SELECT content FROM assets WHERE path = ? AND type = ?').get('/json/site.yaml', 'json') as RawAsset;
             const site = JSON.parse(siteRaw.content);
             
             expect(site.title).toBe('Test Site');

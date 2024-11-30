@@ -19,8 +19,6 @@ const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
 // Process markdown files
 const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
     const frontmatter = matter(content);
-    console.log('from content', content);
-    console.log('frontmatter', frontmatter, 'data', frontmatter.data);
     const combinedMetadata = { ...metadata, ...frontmatter.data };
     return {
         content: frontmatter.content,
@@ -80,7 +78,6 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
             await loadPagesFromDir(fullPath, db, metadata, includeDrafts, actualRootDir);
         } else if (entry.name !== 'meta.yaml') {
             // Get the first directory after the root directory
-            console.log('actualRootDir', actualRootDir, 'fullPath', fullPath);
             const mixer = markdownMixer;
             
             try {
@@ -88,9 +85,8 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
                 const { content: processedContent, metadata: finalMetadata } = 
                     await mixer(fullPath, content, metadata);
 
-                console.log('exclude drafts?', !includeDrafts, 'isDraft', finalMetadata, finalMetadata.isDraft);
                 // don't even load draft pages if not specified by user with --drafts
-                if (!includeDrafts && metadata.isDraft) continue; 
+                if (!includeDrafts && finalMetadata.isDraft) continue; 
                 
                 // Use actualRootDir instead of dir for relative path calculation
                 const pathFromRoot = path.relative(actualRootDir, fullPath);
