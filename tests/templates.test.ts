@@ -50,7 +50,6 @@ describe('Template System', () => {
             // fake baker with getRawAsset
             const faker = {
                 getRawAsset: (name: string) => {
-                    console.log('fake baker gets request for getAsset', name, 'will return', rawBase)
                     if (name === 'base.html') return rawBase;
                     return null;
                 }
