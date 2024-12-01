@@ -16,7 +16,7 @@ describe('createSite', () => {
         // Create starter directory structure
         await mkdir(join(starterDir, 'pages', 'blog'), { recursive: true });
         await mkdir(join(starterDir, 'public'), { recursive: true });
-        
+
         // Create test files
         await writeFile(join(starterDir, 'site.yaml'), 
             'title: <your site title>\nurl: <your site url>');
@@ -79,10 +79,10 @@ describe('createSite', () => {
         expect(blogMeta).toContain('author: Test Author');
 
 
-        console.log('things in the temp dir', await readdir(tempDir));
+        console.log('TEMP DIR THINGS', await readdir(tempDir));
 
         // Verify manifest.json
-        const manifest = JSON.parse(await readFile(join(tempDir, 'manifest.json'), 'utf-8'));
+        const manifest = JSON.parse(await readFile(join(tempDir, 'dist', 'manifest.json'), 'utf-8'));
         expect(manifest.name).toBe('Test Site');
         expect(manifest.short_name).toBe('Test');
         expect(manifest.description).toBe('A test site');
@@ -128,8 +128,8 @@ describe('createSite with starter directory', () => {
         
         // Verify subdirectories
         expect(await readdir(join(tempDir, 'pages'))).toContain('blog');
-        expect(await readdir(join(tempDir, 'assets'))).toContain('images');
-        expect(await readdir(join(tempDir, 'assets'))).toContain('components');
+        expect(await readdir(join(tempDir, 'assets'))).toContain('css');
+        expect(await readdir(join(tempDir, 'assets'))).toContain('templates');
     });
 
 });
