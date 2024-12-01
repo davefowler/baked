@@ -6,7 +6,7 @@ import { Database } from 'better-sqlite3';
 export const defaultMixer = async (filepath: string, content: string, metadata: any) => {
     return {
         content,
-        metadata: {...metadata} // Create a new object to avoid inheriting properties
+        data: {...metadata} // Create a new object to avoid inheriting properties
     };
 };
 
@@ -25,13 +25,13 @@ export const markdownMixer = async (filepath: string, content: string, metadata:
         
         return {
             content: mainContent.trim(),
-            metadata: newMetadata
+            data: newMetadata
         };
     }
     
     return {
         content,
-        metadata: {...metadata} // Create new object to avoid inheritance
+        data: {...metadata} // Create new object to avoid inheritance
     };
 };
 
@@ -50,7 +50,7 @@ export const loadPagesFromDir = async (db: Database, pagesDir: string, meta: any
 
         // Process each page
         const stmt = db.prepare(`
-            INSERT INTO pages (path, slug, title, content, metadata, template, published_date)
+            INSERT INTO pages (path, slug, title, content, data, template, published_date)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
 

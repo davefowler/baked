@@ -67,10 +67,10 @@ export class Baker {
 
         if (page) {
             try {
-                page.metadata = JSON.parse(page.metadata || '{}');
+                page.data = JSON.parse(page.data || '{}');
             } catch (error) {
                 console.error(`Invalid metadata JSON for page ${slug}`);
-                page.metadata = {};
+                page.data = {};
             }
         }
         return page;
@@ -95,8 +95,8 @@ export class Baker {
         }
 
         // Sanitize metadata
-        if (page.metadata) {
-            if (typeof page.metadata === 'object') {
+        if (page.data) {
+            if (typeof page.data === 'object') {
                 // Recursively sanitize metadata object
                 const sanitizeObj = (obj) => {
                     return Object.fromEntries(
@@ -111,7 +111,7 @@ export class Baker {
                         })
                     );
                 };
-                page.metadata = sanitizeObj(page.metadata);
+                page.data = sanitizeObj(page.data);
             } else {
                 throw new Error('Metadata must be an object');
             }
@@ -119,14 +119,14 @@ export class Baker {
 
         // Store the page
         this.db.prepare(`
-            INSERT OR REPLACE INTO pages (slug, title, content, template, metadata, published_date)
+            INSERT OR REPLACE INTO pages (slug, title, content, template, data, published_date)
             VALUES (?, ?, ?, ?, ?, ?)
         `).run(
             page.slug,
             page.title,
             page.content,
             page.template || 'default',
-            JSON.stringify(page.metadata || {}),
+            JSON.stringify(page.data || {}),
             page.published_date || null
         );
     }
@@ -136,13 +136,13 @@ export class Baker {
             if (!page) {
                 throw new Error('Cannot render null page');
             }
-            if (!page.metadata?.template) {
+            if (!page.data?.template) {
                 throw new Error(`No template specified for page: {{ page.slug }}`);
             }
             
-            const template = this.getAsset(page.metadata.template, 'templates');
+            const template = this.getAsset(page.data.template, 'templates');
             if (!template) {
-                throw new Error(`Template not found: {{ page.metadata.template }}`);
+                throw new Error(`Template not found: {{ page.data.template }}`);
             }
             
             return template(page, this, this.site);

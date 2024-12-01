@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS pages (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     template TEXT NOT NULL DEFAULT 'default',
-    metadata TEXT,
+    data TEXT,
     published_date TEXT
 ); 

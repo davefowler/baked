@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import sqlite from 'better-sqlite3';
 type Database = ReturnType<typeof sqlite>;
-import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../baked/loading';
+import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../src/baked/loading';
 import { RawAsset, Page } from "../src/types";
 
 describe('Loading System', () => {
@@ -41,14 +41,14 @@ date: 2024-01-01
             await mkdir(join(tempDir, 'pages'), { recursive: true });
             await writeFile(join(tempDir, 'pages', 'test.md'), pageContent);
             
-            await loadPagesFromDir(join(tempDir, 'pages'), db);
+            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, tempDir, false);
             
             const allPages = db.prepare('SELECT * FROM pages').all() as Page[];
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
             expect(page).toBeDefined();
             expect(page.title).toBe('Test A Page');
             expect(page.content).toContain('# Test Content');
-            expect(JSON.parse(page.metadata).author).toBe('Test Author');
+            expect(JSON.parse(page.data).author).toBe('Test Author');
         });
 
         test('handles meta.yaml inheritance', async () => {
@@ -65,15 +65,16 @@ Wild content here`;
             await writeFile(join(tempDir, 'pages', 'blog', 'meta.yaml'), metaContent);
             await writeFile(join(tempDir, 'pages', 'blog', 'post.md'), pageContent);
 
-            await loadPagesFromDir(join(tempDir, 'pages'), db);
+            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, tempDir, false);
             
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
             const allpages = db.prepare('SELECT * FROM pages').all() as Page[];
-            const metadata = JSON.parse(page.metadata);
-            expect(metadata.template).toBe('blog');
-            expect(metadata.author).toBe('Test Author');
+            const data = JSON.parse(page.data);
+            expect(data.template).toBe('blog');
+            expect(data.author).toBe('Test Author');
             expect(page.title).toBe('Test This Post');
             expect(page.content).toContain('Wild content here');
+            expect(allpages.length).toBe(1);
         });
 
         test('respects draft status', async () => {
@@ -86,7 +87,7 @@ Draft content`;
             await mkdir(join(tempDir, 'pages'), { recursive: true });
             await writeFile(join(tempDir, 'pages', 'draft.md'), draftContent);
             
-            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
+            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, tempDir, false);
             
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('draft');
             expect(page).toBeUndefined();

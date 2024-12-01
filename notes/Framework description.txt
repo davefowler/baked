@@ -166,20 +166,20 @@ async function collectMetadata(baseDir, parentMeta = {}) {
 Phase 3: Markdown Parsing and Path Management
 async function storePagesInDatabase(db, pages) {
     for (const page of pages) {
-        const { path: filePath, metadata, content } = page;
-        const slug = metadata.slug || path.basename(filePath, '.md');
+        const { path: filePath, data, content } = page;
+        const slug = data.slug || path.basename(filePath, '.md');
 
         await db.run(\`
             INSERT INTO pages (slug, title, content, template, lang, tags, path)
             VALUES (?, ?, ?, ?, ?, ?, ?)\`,
             [
                 slug,
-                metadata.title || 'Untitled',
+                data.title || 'Untitled',
                 content,
-                metadata.template || 'default',
-                metadata.lang || 'en',
-                (metadata.tags || []).join(','),
-                metadata.path || `/${slug}.html`
+                data.template || 'default',
+                data.lang || 'en',
+                (data.tags || []).join(','),
+                data.path || `/${slug}.html`
             ]
         );
     }

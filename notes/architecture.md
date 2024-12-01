@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS pages (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     template TEXT NOT NULL,
-    metadata TEXT,
+    data TEXT,
     published_date TEXT
             );
 ```
@@ -77,6 +77,12 @@ For pages, metadata will be loaded from the frontmatter of the files that are pr
 ```yaml
 template: blog.html
 type: blog
+```
+
+the data will be available on the page object in the template as `page.data`
+
+```html
+This page is of type: {{ page.data.type }}
 ```
 
 

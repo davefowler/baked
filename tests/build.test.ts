@@ -81,6 +81,10 @@ describe("build process", () => {
     });
 
     test("loads pages into database", async () => {
+
+        const num_pages = await readdir(path.join(TEST_DIR, 'pages'));
+        console.log('num_pages', num_pages);
+
         await bake(TEST_DIR);
         
         const db = new sqlite(path.join(TEST_DIR, 'dist', 'site.db'));

@@ -5,7 +5,7 @@ export type Page = {
     title: string;
     content: string;
     template: string;
-    metadata: string;
+    data: string;
     published_date: string;
 }
 
