@@ -1,5 +1,6 @@
-import { expect, test, beforeEach, afterEach, describe, jest } from "@jest/globals";
-import { rm, readFile, mkdir, writeFile, stat, readdir } from 'fs/promises';
+import { expect, test, beforeEach, afterEach, describe, jest } from '@jest/globals';
+import { mkdtemp, rm, readFile, mkdir, writeFile, readdir } from 'fs/promises';
+import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
 import bake from '../src/cli/build';
