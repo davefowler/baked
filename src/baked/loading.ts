@@ -85,29 +85,27 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
     );
 
     const template = sanitizedData?.template ? sanitizedData.template : 'base.html';
+
+    const params = {
+        path: String(pagePath),
+        slug: String(slug),
+        title: String(title),
+        content: String(content),
+        template: String(template),
+        data: String(JSON.stringify(sanitizedData)),
+        published_date: publishedDate ? String(publishedDate) : ''
+    };
+
     try {
         const stmt = db.prepare(`
             INSERT INTO pages (path, slug, title, content, template, data, published_date) 
-            VALUES (@path, @slug, @title, @content, @template, @data, @publishedDate)
+            VALUES (@path, @slug, @title, @content, @template, @data, @published_date)
         `);
         
-        stmt.run({
-            path: String(pagePath),
-            slug: String(slug),
-            title: String(title),
-            content: String(content),
-            template: String(template),
-            data: JSON.stringify(sanitizedData),
-            publishedDate: publishedDate
-        });
+        stmt.run(params);
     } catch (error) {
         console.error('Error loading page:', error);
-        console.error('Failed data:', {
-            path: pagePath,
-            content,
-            template,
-            data: sanitizedData
-        });
+        console.error('Failed data:', params);
         throw error;
     }
 }
@@ -148,7 +146,6 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
         const mixer = getMixerByFilename(entry.name);
         const {content, data} = await mixer(fullPath, rawFileContent, metadata);
         const pagePath = path.relative(rootDir, fullPath).replace(path.extname(fullPath), '');
-
         // Load the page into the database
         if (!includeDrafts && data.isDraft) return; // drafts are not included unless --drafts is specified
         loadPage(db, pagePath, content, data);
@@ -177,7 +174,6 @@ export async function loadAssetsFromDir(dir: string, db: Database, distPath: str
                     type
                 );
                 
-                console.log(`Loaded asset: ${entry.name} as ${type}`);
             } catch (error) {
                 console.error(`Error loading asset ${fullPath}:`, error);
             }

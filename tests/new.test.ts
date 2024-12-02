@@ -30,6 +30,11 @@ describe('createSite', () => {
             
         await writeFile(join(starterDir, 'pages', 'blog', 'meta.yaml'),
             'template: blog\nmimetype: text/markdown');
+
+        // write a blog post
+        await writeFile(join(starterDir, 'pages', 'blog', 'first-post.md'),
+            '---\ntitle: My First Post\n---\n# My First Post\n\nThis is the content of my first post.');
+        
         // Mock the prompt function
         global.prompt = jest.fn((message: string | undefined) => {
             switch(message) {
@@ -86,6 +91,10 @@ describe('createSite', () => {
         expect(manifest.name).toBe('Test Site');
         expect(manifest.short_name).toBe('Test');
         expect(manifest.description).toBe('A test site');
+
+        // verify blog post
+        const blogPost = await readFile(join(tempDir, 'pages', 'blog', 'first-post.md'), 'utf-8');
+        expect(blogPost).toContain('My First Post');
     });
 
     test('should use default values when prompts are empty', async () => {

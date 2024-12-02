@@ -47,6 +47,10 @@ date: 2024-01-01
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
             expect(page).toBeDefined();
             expect(page.title).toBe('Test A Page');
+            expect(page.path).toBe('test');
+            expect(page.slug).toBe('test');
+            expect(page.published_date).toBe("2024-01-01T00:00:00.000Z");
+            expect(page.template).toBe('base.html');
             expect(page.content).toContain('# Test Content');
             expect(JSON.parse(page.data).author).toBe('Test Author');
         });
