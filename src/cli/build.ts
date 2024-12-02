@@ -7,12 +7,13 @@
 import { rename, cp, mkdir, rm } from "fs/promises";
 import path from "path";
 import Database from 'better-sqlite3';
+import type { Database as DatabaseType } from 'better-sqlite3';
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading.js";
 import { Baker } from "../baked/baker.js";
 import { writeFile, readFile } from "fs/promises";
 
 /* prep for the baking process by creating the needed database and directories */
-const prep = async (dist: string, sqlDir: string): Promise<Database> => {
+const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
     console.log('Preparing build...');
     console.log('dist:', dist);
     console.log('sqlDir:', sqlDir);

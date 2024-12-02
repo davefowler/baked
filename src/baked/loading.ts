@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import type { Database as DatabaseType } from 'better-sqlite3';
 import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
@@ -67,7 +68,7 @@ const getMixerByFilename = (filename: string): Mixer => {
     return defaultMixer;
 }
 
-export const loadPage = (db: Database, pagePath: string, content: string, data: any) => {
+export const loadPage = (db: DatabaseType, pagePath: string, content: string, data: any) => {
     const slug = pagePath.replace(path.extname(pagePath), '').replace(/\.[^/.]+$/, '');
     const title = data.title || path.basename(pagePath, path.extname(pagePath));
     const publishedDate = data.date ? 
@@ -128,7 +129,7 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
 }
 
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
+export async function loadPagesFromDir(dir: string, db: DatabaseType, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
     // Store the root directory on first call
     rootDir = rootDir || dir;
     console.log('loading pages from dir', dir, rootDir, 'parent metadata', parentMetadata);
@@ -169,7 +170,7 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
     }
 }
 
-export async function loadAssetsFromDir(dir: string, db: Database, distPath: string) {
+export async function loadAssetsFromDir(dir: string, db: DatabaseType, distPath: string) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     
     for (const entry of entries) {
@@ -198,7 +199,7 @@ export async function loadAssetsFromDir(dir: string, db: Database, distPath: str
     }
 }
 
-export async function loadSiteMetadata(dir: string, db: Database) {
+export async function loadSiteMetadata(dir: string, db: DatabaseType) {
     const sitePath = path.join(dir, 'site.yaml');
     const siteContent = await fs.readFile(sitePath, 'utf8');
     const siteMetadata = yaml.parse(siteContent);
