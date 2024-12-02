@@ -101,6 +101,7 @@ describe('CLI Commands', () => {
 
         test('builds site with default options', async () => {
             process.chdir(TEST_DIR); // Change working directory for build
+            console.log('TEST_DIR', TEST_DIR);
             await bake(TEST_DIR, false); // no drafts
             
             const distDb = join(TEST_DIR, 'dist/site.db');

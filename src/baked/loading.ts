@@ -83,18 +83,31 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
         ])
     );
 
-    db.prepare(`
-        INSERT INTO pages (path, slug, title, content, template, data, published_date) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-        pagePath, 
-        slug, 
-        title, 
-        content, 
-        sanitizedData.template || 'default', 
-        JSON.stringify(sanitizedData), 
-        publishedDate ? publishedDate : null
-    );
+    try {
+        const stmt = db.prepare(`
+            INSERT INTO pages (path, slug, title, content, template, data, published_date) 
+            VALUES (@path, @slug, @title, @content, @template, @data, @publishedDate)
+        `);
+        
+        stmt.run({
+            path: String(pagePath),
+            slug: String(slug),
+            title: String(title),
+            content: String(content),
+            template: String(sanitizedData?.template ?? 'base.html'),  // Better: String(undefined ?? 'default')
+            data: JSON.stringify(sanitizedData),
+            publishedDate: publishedDate
+        });
+    } catch (error) {
+        console.error('Error loading page:', error);
+        console.error('Failed data:', {
+            path: pagePath,
+            content,
+            template: sanitizedData.template,
+            data: sanitizedData
+        });
+        throw error;
+    }
 }
 
 
