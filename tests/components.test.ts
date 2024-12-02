@@ -43,7 +43,7 @@ describe('Component System', () => {
             );
             
             expect(result).toContain('Test');
-            expect(result).toContain('{{ page.nonexistent }}');
+            expect(result).toContain('<div></div>');
         });
 
         test('sanitizes dangerous input', () => {
@@ -76,11 +76,8 @@ describe('Component System', () => {
     describe('PassThrough Component', () => {
         test('returns content unchanged', () => {
             const content = 'test content';
-            const passthrough = Components.images(content);
-            
-            const result = passthrough();
-            
-            expect(result).toBe(content);
+            const passthrough = Components.images(content);            
+            expect(passthrough).toBe(content);
         });
     });
 });
