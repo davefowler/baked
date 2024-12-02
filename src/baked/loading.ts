@@ -93,7 +93,7 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
         content: String(content),
         template: String(template),
         data: String(JSON.stringify(sanitizedData)),
-        published_date: publishedDate ? String(publishedDate) : ''
+        published_date: String(publishedDate ? publishedDate : '')
     };
 
     try {
