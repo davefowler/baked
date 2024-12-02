@@ -1,6 +1,6 @@
 import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
-import Database from "better-sqlite3";
-import type { Database as DatabaseType } from "better-sqlite3";
+import sqlite from "better-sqlite3";
+type Database = ReturnType<typeof sqlite>;
 
 import { Baker } from "../src/baked/baker";
 import { mkdtemp, rm } from 'fs/promises';
@@ -12,12 +12,12 @@ import type { RawAsset } from "../src/types";
 
 describe('Baker', () => {
     let tempDir: string;
-    let db: DatabaseType;
+    let db: Database;
     let baker: Baker;
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baker-test-'));
-        db = new Database(':memory:');
+        db = new sqlite(':memory:');
         
         // Load and execute schema
         const schema = readFileSync(pathJoin(__dirname, '../src/sql/schema.sql'), 'utf-8');

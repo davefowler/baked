@@ -5,12 +5,9 @@ import { join } from 'path';
 import createSite from '../src/cli/new';
 import bake from '../src/cli/build';
 import startServer from '../src/cli/serve';
-import Database from 'better-sqlite3';
+import sqlite from 'better-sqlite3';
 import request from 'supertest';
 import { Server } from 'http';
-import { SpyInstance } from 'jest-mock';
-
-let mockPrompt: SpyInstance;
 
 
 // Helper functions
@@ -121,7 +118,7 @@ describe('CLI Commands', () => {
             const distDb = join(TEST_DIR, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
             
-            const db = new Database(distDb);
+            const db = new sqlite(distDb);
             const page = db.prepare('SELECT * FROM pages WHERE path = ?')
                           .get('pages/test.md');
             db.close(); // Properly close the database connection
@@ -135,7 +132,7 @@ describe('CLI Commands', () => {
             
             // Build without drafts
             await bake(TEST_DIR, SQL_DIR);
-            let db = new Database(join(TEST_DIR, 'dist/site.db'));
+            let db = new sqlite(join(TEST_DIR, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
                          .get('draft');
             expect(draft).toBeUndefined();
@@ -146,7 +143,7 @@ describe('CLI Commands', () => {
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
             await bake(TEST_DIR, SQL_DIR, true);
-            let db = new Database(join(TEST_DIR, 'dist/site.db'));
+            let db = new sqlite(join(TEST_DIR, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
                          .get('draft');
             db.close(); // Make sure to close the database
@@ -189,14 +186,11 @@ import { program } from 'commander';
 
 describe('CLI', () => {
     let tempDir: string;
-    let mockPrompt: SpyInstance<(message?: string) => string>;
     
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-cli-test-'));
         
-        // Mock the prompt function
-        // @ts-ignore
-        mockPrompt = jest.spyOn(global, 'prompt').mockImplementation((message?: string) => {
+        global.prompt = jest.fn((message?: string) => {
             switch(message) {
                 case 'Site name:': return 'Test Site';
                 case 'Site URL:': return 'test.com';
@@ -209,7 +203,6 @@ describe('CLI', () => {
 
     afterEach(async () => {
         await rm(tempDir, { recursive: true, force: true });
-        mockPrompt.mockRestore();
     });
 
     test('new command creates site with correct structure', async () => {
