@@ -6,7 +6,7 @@
 
 import { rename, cp, mkdir, rm } from "fs/promises";
 import path from "path";
-import Database from "better-sqlite3";
+import sqlite, { Database } from "better-sqlite3";
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading.js";
 import { Baker } from "../baked/baker.js";
 import { writeFile, readFile } from "fs/promises";
