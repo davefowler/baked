@@ -100,7 +100,15 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
     };
 
     console.log('existing pages are', db.prepare('SELECT * FROM pages').all());
+    console.log('schema is', db.prepare('SELECT * FROM sqlite_schema').all());
+    
     try {
+        const sql = `
+            REPLACE INTO pages (path, slug, title, content, template, data, published_date) 
+            VALUES ('${params.path}', '${params.slug}', '${params.title}', '${params.content}', '${params.template}', '${params.data}', ${params.published_date ? `'${params.published_date}'` : 'NULL'})
+        `;
+        console.log('Executing SQL:', sql);
+
         const stmt = db.prepare(`
             REPLACE INTO pages (path, slug, title, content, template, data, published_date) 
             VALUES (@path, @slug, @title, @content, @template, @data, @published_date)
