@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS pages (
     content TEXT NOT NULL,
     template TEXT NOT NULL DEFAULT 'base.html',
     data TEXT,
-    published_date TEXT DEFAULT null
+    published_date TEXT
 ); 
