@@ -66,7 +66,7 @@ const dish = async (db: DatabaseType, dist: string) => {
     let failures = 0;
     
     try {
-        const pageSlugs = await baker.query(`SELECT slug FROM pages`) as string[];
+        const pageSlugs = await baker.query(`SELECT slug FROM pages`) as Array<{slug: string}>;
         if (!pageSlugs?.length) {
             console.warn('No pages found to render');
             return;
@@ -77,7 +77,7 @@ const dish = async (db: DatabaseType, dist: string) => {
         // N+1 query here - but it's fast in SQLite and better for larger sites vs loading all pages into memory
         for (const slug of pageSlugs) {
             try {
-                const page = baker.getPage(slug);
+                const page = baker.getPage(slug.slug);
                 if (!page) {
                     console.error(`Failed to load page: ${slug}`);
                     failures++;
