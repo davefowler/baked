@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import { rm, mkdir, cp, readdir, writeFile } from "fs/promises";
-import sqlite, { Database } from "better-sqlite3";
+import Database from "better-sqlite3";
 import bake from "../src/cli/build";
 import { existsSync } from "fs";
 import path from 'path';

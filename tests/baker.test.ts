@@ -1,6 +1,5 @@
 import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
-import sqlite from "better-sqlite3";
-type Database = ReturnType<typeof sqlite>;
+import Database from "better-sqlite3";
 
 import { Baker } from "../src/baked/baker";
 import { mkdtemp, rm } from 'fs/promises';

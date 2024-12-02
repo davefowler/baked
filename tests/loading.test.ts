@@ -3,8 +3,7 @@ import { mkdtemp, rm, writeFile, mkdir, readFile } from 'fs/promises';
 import path from 'path';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import sqlite from 'better-sqlite3';
-type Database = ReturnType<typeof sqlite>;
+import Database from 'better-sqlite3';
 import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../src/baked/loading';
 import { RawAsset, Page } from "../src/types";
 
