@@ -87,13 +87,13 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
     const template = sanitizedData?.template ? sanitizedData.template : 'base.html';
 
     const params = {
-        path: String(pagePath),
-        slug: String(slug),
-        title: String(title),
-        content: String(content),
-        template: String(template),
-        data: String(JSON.stringify(sanitizedData)),
-        published_date: String(publishedDate ? publishedDate : '')
+        path: pagePath,
+        slug: slug,
+        title: title,
+        content: content,
+        template: template,
+        data: JSON.stringify(sanitizedData),
+        published_date: publishedDate || null
     };
 
     try {
