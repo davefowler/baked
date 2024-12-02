@@ -189,13 +189,13 @@ import { program } from 'commander';
 
 describe('CLI', () => {
     let tempDir: string;
-    let mockPrompt: jest.SpyInstance;
+    let mockPrompt: jest.SpyInstance<string, [message?: string]>;
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-cli-test-'));
         
         // Mock the prompt function
-        mockPrompt = jest.spyOn(global, 'prompt').mockImplementation((message: string) => {
+        mockPrompt = jest.spyOn(global, 'prompt').mockImplementation((message?: string) => {
             switch(message) {
                 case 'Site name:': return 'Test Site';
                 case 'Site URL:': return 'test.com';
