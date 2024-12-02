@@ -1,9 +1,7 @@
 import { existsSync } from 'fs';
 import { cp, writeFile, readFile, readdir } from 'fs/promises';
-import { join, dirname } from 'path';
 import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
-import { fileURLToPath } from 'url';
 
 
 // Renamed from prompt to promptUser to avoid naming conflict

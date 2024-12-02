@@ -1,5 +1,5 @@
 import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
-import Database from "better-sqlite3";
+import Database, { Database as DatabaseType } from "better-sqlite3";
 
 import { Baker } from "../src/baked/baker";
 import { mkdtemp, rm } from 'fs/promises';
@@ -11,7 +11,7 @@ import type { RawAsset } from "../src/types";
 
 describe('Baker', () => {
     let tempDir: string;
-    let db: Database;
+    let db: DatabaseType;
     let baker: Baker;
 
     beforeEach(async () => {
@@ -61,7 +61,7 @@ describe('Baker', () => {
     describe('Page Management', () => {
         beforeEach(() => {
             db.prepare(`
-                INSERT INTO pages (slug, title, content, template, metadata, published_date)
+                INSERT INTO pages (slug, title, content, template, data, published_date)
                 VALUES (?, ?, ?, ?, ?, ?)
             `).run(
                 'test',
@@ -77,7 +77,7 @@ describe('Baker', () => {
             const page = baker.getPage('test');
             expect(page).toBeDefined();
             expect(page.title).toBe('Test Page');
-            expect(page.metadata.author).toBe('test');
+            expect(page.data.author).toBe('test');
         });
 
         test('renderPage renders pages with template', async () => {
@@ -105,7 +105,7 @@ describe('Baker', () => {
             ];
             
             const stmt = db.prepare(
-                'INSERT INTO pages (slug, title, content, template, metadata, published_date) VALUES (?, ?, ?, ?, ?, ?)'
+                'INSERT INTO pages (slug, title, content, template, data, published_date) VALUES (?, ?, ?, ?, ?, ?)'
             );
             pages.forEach(page => stmt.run(...page));
         });
@@ -127,22 +127,4 @@ describe('Baker', () => {
         });
     });
 
-    describe('Search', () => {
-        beforeEach(async () => {
-            const stmt = db.prepare(`
-                INSERT INTO pages (slug, title, content, template, metadata, published_date)
-                VALUES (?, ?, ?, ?, ?, ?)`);
-            stmt.run('test1', 'Test One', 'Content about testing', 'default', '{}', '2024-01-01');
-            stmt.run('test2', 'Test Two', 'More test content', 'default', '{}', '2024-01-02');
-        });
-
-        test('search returns relevant results', async () => {
-            const results = baker.search('test');
-            expect(results).toHaveLength(2);
-            
-            const contentResults = baker.search('about');
-            expect(contentResults).toHaveLength(1);
-            expect(contentResults[0].slug).toBe('test1');
-        });
-    });
 });

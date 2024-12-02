@@ -65,6 +65,7 @@ export class Baker {
             SELECT * FROM pages WHERE slug = ?
         `).get(slug);
 
+        // Parse the data field as JSON
         if (page) {
             try {
                 page.data = JSON.parse(page.data || '{}');

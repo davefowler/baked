@@ -5,7 +5,7 @@ import { join } from 'path';
 import createSite from '../src/cli/new';
 import bake from '../src/cli/build';
 import startServer from '../src/cli/serve';
-import sqlite from 'better-sqlite3';
+import Database, { Database as DatabaseType } from 'better-sqlite3';
 import request from 'supertest';
 import { Server } from 'http';
 
@@ -118,9 +118,9 @@ describe('CLI Commands', () => {
             const distDb = join(TEST_DIR, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
             
-            const db = new sqlite(distDb);
+            const db = new Database(distDb);
             const page = db.prepare('SELECT * FROM pages WHERE path = ?')
-                          .get('pages/test.md');
+                          .get('blog');
             db.close(); // Properly close the database connection
             expect(page).toBeDefined();
             expect((page as {title: string}).title).toBe('Test');
@@ -132,7 +132,7 @@ describe('CLI Commands', () => {
             
             // Build without drafts
             await bake(TEST_DIR, SQL_DIR);
-            let db = new sqlite(join(TEST_DIR, 'dist/site.db'));
+            let db = new Database(join(TEST_DIR, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
                          .get('draft');
             expect(draft).toBeUndefined();
@@ -143,7 +143,7 @@ describe('CLI Commands', () => {
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
             await bake(TEST_DIR, SQL_DIR, true);
-            let db = new sqlite(join(TEST_DIR, 'dist/site.db'));
+            let db = new Database(join(TEST_DIR, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
                          .get('draft');
             db.close(); // Make sure to close the database

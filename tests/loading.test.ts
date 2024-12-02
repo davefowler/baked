@@ -3,13 +3,13 @@ import { mkdtemp, rm, writeFile, mkdir, readFile } from 'fs/promises';
 import path from 'path';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import Database from 'better-sqlite3';
+import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../src/baked/loading';
 import { RawAsset, Page } from "../src/types";
 
 describe('Loading System', () => {
     let tempDir: string;
-    let db: Database;
+    let db: DatabaseType;
 
     beforeEach(async () => {
         // Create temporary test directory

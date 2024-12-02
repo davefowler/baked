@@ -1,5 +1,5 @@
 import { expect, test, beforeEach, afterEach, jest, describe } from '@jest/globals';
-import { mkdtemp, rm, readFile, mkdir, writeFile, stat, readdir, chmod } from 'fs/promises';
+import { mkdtemp, rm, readFile, mkdir, writeFile, readdir } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';

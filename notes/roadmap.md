@@ -34,6 +34,7 @@
 
 ## Framework things
 
+ - [ ] full text search
  - [ ] generalize collections - like blog posts but general
  - [ ] Image assets and others can be loaded into the database optionally
  - [ ] Image processing (resizing, and setting default size and bg color before loading)

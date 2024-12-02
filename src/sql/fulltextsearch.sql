@@ -3,22 +3,22 @@ CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
     content,
     data UNINDEXED,
     content='pages',
-    content_rowid='slug'
+    content_rowid='path'
 );
 
 CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages BEGIN
     INSERT INTO pages_fts(rowid, title, content, data)
-    VALUES (new.slug, new.title, new.content, json_extract(new.data, '$'));
+    VALUES (new.path, new.title, new.content, new.data);
 END;
 
 CREATE TRIGGER IF NOT EXISTS pages_ad AFTER DELETE ON pages BEGIN
     INSERT INTO pages_fts(pages_fts, rowid, title, content, data)
-    VALUES('delete', old.slug, old.title, old.content, json_extract(old.data, '$'));
+    VALUES('delete', old.path, old.title, old.content, old.data);
 END;
 
 CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages BEGIN
     INSERT INTO pages_fts(pages_fts, rowid, title, content, data)
-    VALUES('delete', old.slug, old.title, old.content, json_extract(old.data, '$'));
+    VALUES('delete', old.path, old.title, old.content, old.data);
     INSERT INTO pages_fts(rowid, title, content, data)
-    VALUES (new.slug, new.title, new.content, json_extract(new.data, '$'));
+    VALUES (new.path, new.title, new.content, new.data);
 END; 

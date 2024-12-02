@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import { rm, mkdir, cp, readdir, writeFile } from "fs/promises";
-import Database from 'better-sqlite3';
+import Database, { Database as DatabaseType } from 'better-sqlite3';
 import bake from "../src/cli/build";
 import { existsSync } from "fs";
 import path from 'path';
@@ -10,7 +10,7 @@ import path from 'path';
 describe("build process", () => {
     const TEST_DIR = path.join(process.cwd(), "tmp/test");
     const SQL_DIR = path.join(process.cwd(), "src/sql");
-    let db: Database;
+    let db: DatabaseType;
     let schema: string;
     beforeAll(async () => {
         // Initial cleanup
@@ -88,7 +88,7 @@ describe("build process", () => {
 
         await bake(TEST_DIR, SQL_DIR);
         
-        const db = new sqlite(path.join(TEST_DIR, 'dist', 'site.db'));
+        const db = new Database(path.join(TEST_DIR, 'dist', 'site.db'));
         const pages = db.prepare("SELECT * FROM pages").all();
         expect(pages).toBeDefined();
         expect(Array.isArray(pages)).toBe(true);
