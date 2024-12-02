@@ -109,14 +109,17 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
         
+        // Ensure data is stringified JSON
+        const jsonData = typeof params.data === 'string' ? params.data : JSON.stringify(params.data);
+        
         stmt.run(
-            params.path,
-            params.slug,
-            params.title,
-            params.content,
-            params.template,
-            params.data,
-            params.published_date
+            String(params.path),
+            String(params.slug),
+            String(params.title),
+            String(params.content),
+            String(params.template),
+            jsonData,
+            params.published_date || null
         );
     } catch (error) {
         console.error('Error loading page:', error);
