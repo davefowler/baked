@@ -36,8 +36,7 @@ describe('createSite', () => {
             '---\ntitle: My First Post\n---\n# My First Post\n\nThis is the content of my first post.');
         
         // Mock the prompt function
-        // Mock the prompt function
-        mockPrompt = jest.spyOn(global, 'prompt').mockImplementation((message?: string) => {
+        global.prompt = jest.fn((message: string | undefined) => {
             switch(message) {
                 case 'Site name:': return 'Custom Site';
                 case 'Site URL:': return 'custom.com';
