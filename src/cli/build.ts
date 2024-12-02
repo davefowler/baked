@@ -14,6 +14,10 @@ import { writeFile, readFile } from "fs/promises";
 
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string, sqlDir: string): Promise<Database> => {
+    console.log('Preparing build...');
+    console.log('dist:', dist);
+    console.log('sqlDir:', sqlDir);
+    
     // Validate input
     if (!dist) {
         throw new Error('Distribution directory path is required');
@@ -35,8 +39,11 @@ const prep = async (dist: string, sqlDir: string): Promise<Database> => {
     }
 
     // Load and execute SQL files
+    console.log('Loading SQL files from:', sqlDir);
     const schemaSQL = await readFile(path.join(sqlDir, '/schema.sql'), 'utf8');
+    console.log('Schema SQL loaded');
     const ftsSQL = await readFile(path.join(sqlDir, '/fulltextsearch.sql'), 'utf8');
+    console.log('FTS SQL loaded');
 
     // Create a new sqlite database
     const db = sqlite(`${dist}/site.db`);
