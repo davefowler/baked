@@ -70,7 +70,7 @@ program
     .description('Bake the site - so it\'s ready to be served!')
     .action(async (options) => {
         console.log('Let\'s get cooking...');
-        const sqlDir = join(packageRoot, 'sql');
+        const sqlDir = join(packageRoot, 'dist/sql');
         await buildSite(process.cwd(), options.drafts, sqlDir);
     });
 
