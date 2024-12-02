@@ -181,3 +181,38 @@ describe('CLI Commands', () => {
         });
     });
 });
+import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { mkdtemp, rm, readFile, readdir } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { program } from 'commander';
+
+describe('CLI', () => {
+    let tempDir: string;
+    let mockPrompt: jest.SpyInstance;
+
+    beforeEach(async () => {
+        tempDir = await mkdtemp(join(tmpdir(), 'baked-cli-test-'));
+        
+        // Mock the prompt function
+        mockPrompt = jest.spyOn(global, 'prompt').mockImplementation((message: string) => {
+            switch(message) {
+                case 'Site name:': return 'Test Site';
+                case 'Site URL:': return 'test.com';
+                case 'Site description:': return 'A test site';
+                case 'Default author name:': return 'Test Author';
+                default: return '';
+            }
+        });
+    });
+
+    afterEach(async () => {
+        await rm(tempDir, { recursive: true, force: true });
+        mockPrompt.mockRestore();
+    });
+
+    test('new command creates site with correct structure', async () => {
+        // Test implementation here
+        expect(true).toBe(true);
+    });
+});

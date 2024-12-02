@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 import { program } from 'commander';
+jest.mock('readline', () => ({
+    createInterface: jest.fn().mockReturnValue({
+        question: jest.fn(),
+        close: jest.fn()
+    })
+}));
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
