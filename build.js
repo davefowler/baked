@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild'
+console.log('Starting build...')
 import { readFile, writeFile, cp, mkdir } from 'fs/promises'
 
 // Common config
