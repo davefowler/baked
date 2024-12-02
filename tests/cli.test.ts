@@ -1,5 +1,5 @@
 import { expect, test, beforeEach, afterEach, describe, jest } from '@jest/globals';
-import { mkdtemp, rm, readFile, mkdir, writeFile, readdir } from 'fs/promises';
+import { mkdtemp, rm, readFile, mkdir, writeFile, readdir, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
@@ -182,15 +182,11 @@ describe('CLI Commands', () => {
         });
     });
 });
-import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { mkdtemp, rm, readFile, readdir } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
 import { program } from 'commander';
 
 describe('CLI', () => {
     let tempDir: string;
-    let mockPrompt: jest.SpyInstance<string, [message?: string]>;
+    let mockPrompt: jest.SpyInstance;
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-cli-test-'));
