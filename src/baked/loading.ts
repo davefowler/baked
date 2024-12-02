@@ -86,21 +86,22 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
 
     const template = sanitizedData?.template ? sanitizedData.template : 'base.html';
 
-    const params = {
-        path: String(pagePath),
-        slug: String(slug),
-        title: String(title),
-        content: String(content),
-        template: String(template),
-        data: JSON.stringify(sanitizedData),
-        published_date: publishedDate ? String(publishedDate) : null
-    };
-
+    // Ensure path includes the .md extension for consistency
+    const fullPath = pagePath.endsWith('.md') ? pagePath : `${pagePath}.md`;
+    
     try {
         db.prepare(`
             INSERT INTO pages (path, slug, title, content, template, data, published_date) 
-            VALUES (@path, @slug, @title, @content, @template, @data, @published_date)
-        `).run(params);
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            fullPath,
+            slug,
+            title,
+            content,
+            template,
+            JSON.stringify(sanitizedData),
+            publishedDate
+        );
     } catch (error) {
         console.error('Error loading page:', error);
         console.error('Failed data:', params);

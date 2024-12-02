@@ -93,8 +93,10 @@ describe('CLI Commands', () => {
             await ensureDir(join(TEST_DIR, 'pages'));
             
             // Create test content
+            // Create test content with explicit path
+            const testPath = join(TEST_DIR, 'pages', 'test.md');
             await writeFile(
-                join(TEST_DIR, 'pages', 'test.md'), 
+                testPath,
                 '---\ntitle: Test\n---\nTest content'
             );
         });
