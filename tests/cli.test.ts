@@ -46,10 +46,10 @@ describe('CLI Commands', () => {
     beforeEach(async () => {
         global.prompt = jest.fn((message: string | undefined) => {
             switch(message) {
-                case 'Site name:': return 'CLITest Site';
-                case 'Site URL:': return 'cli-test.com';
-                case 'Site description:': return 'A test of cli site';
-                case 'Default author name:': return 'CLI Author';
+                case 'Site name:': return 'Custom Site';
+                case 'Site URL:': return 'custom.com';
+                case 'Site description:': return 'Custom description';
+                case 'Default author name:': return 'Custom Author';
                 default: return '';
             }
         });
