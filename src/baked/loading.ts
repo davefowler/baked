@@ -75,6 +75,7 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
         new Date(data.date).toISOString() : 
         null;
 
+
     // Sanitize all string values in the data object
     const sanitizedData = Object.fromEntries(
         Object.entries(data).map(([key, value]) => [
@@ -83,6 +84,7 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
         ])
     );
 
+    const template = sanitizedData?.template ? sanitizedData.template : 'base.html';
     try {
         const stmt = db.prepare(`
             INSERT INTO pages (path, slug, title, content, template, data, published_date) 
@@ -94,7 +96,7 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
             slug: String(slug),
             title: String(title),
             content: String(content),
-            template: String(sanitizedData?.template ?? 'base.html'),  // Better: String(undefined ?? 'default')
+            template: String(template),
             data: JSON.stringify(sanitizedData),
             publishedDate: publishedDate
         });
@@ -103,7 +105,7 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
         console.error('Failed data:', {
             path: pagePath,
             content,
-            template: sanitizedData.template,
+            template,
             data: sanitizedData
         });
         throw error;

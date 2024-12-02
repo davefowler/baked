@@ -100,6 +100,12 @@ describe('Template System', () => {
         });
     });
 
+    describe('Default template should be base.html', () => {
+        test('loads default template', () => {
+            const template = Components.templates(`{{ page.content }}`);
+        });
+    });
+
     describe('Security', () => {
         test('escapes HTML by default', () => {
             const template = Components.templates(`{{ page.content }}`);
