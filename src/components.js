@@ -25,7 +25,8 @@ const JsonComponent = (rawAsset) => {
 // Configure nunjucks
 const env = new nunjucks.Environment(null, { 
     autoescape: true,
-    throwOnUndefined: false
+    throwOnUndefined: false,
+    noGlobals: true
 });
 
 // Add custom filters
@@ -86,7 +87,8 @@ const Template = (rawAsset) => {
         // Create new environment for each render with the current baker
         env = new nunjucks.Environment(new BakerLoader(baker), { 
             autoescape: true,
-            throwOnUndefined: false
+            throwOnUndefined: false,
+            noGlobals: true
         });
         
         // Re-add filters to the new environment

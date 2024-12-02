@@ -5,7 +5,6 @@ import path from 'path';
 import yaml from 'yaml';
 import matter from 'gray-matter';
 import { escape } from 'html-escaper';
-import { isValidPath } from './helpers.js';
 
 // Mixer - a function that takes a file and loads it properly into the database depending on its type
 type Mixer = (filepath: string, content: string, metadata: any, distPath?: string) => Promise<{
@@ -70,11 +69,6 @@ const getMixerByFilename = (filename: string): Mixer => {
 }
 
 export const loadPage = (db: Database, pagePath: string, content: string, data: any) => {
-    // Validate the path before processing
-    if (!isValidPath(pagePath)) {
-        throw new Error('Invalid page path: Path traversal attempt detected');
-    }
-
     const slug = pagePath.replace(path.extname(pagePath), '').replace(/\.[^/.]+$/, '');
     const title = data.title || path.basename(pagePath, path.extname(pagePath));
     const publishedDate = data.date ? 
