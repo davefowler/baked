@@ -1,5 +1,5 @@
 import { expect, test, beforeEach, afterEach, jest, describe } from '@jest/globals';
-import { mkdtemp, rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
+import { mkdtemp, rm, readFile, mkdir, writeFile, stat, readdir, chmod } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
@@ -15,12 +15,13 @@ describe('createSite', () => {
         
         // Create starter directory structure
         await mkdir(join(starterDir, 'pages', 'blog'), { recursive: true });
-        
+        await mkdir(join(starterDir, 'public'), { recursive: true });
+
         // Create test files
         await writeFile(join(starterDir, 'site.yaml'), 
             'title: <your site title>\nurl: <your site url>');
         
-        await writeFile(join(starterDir, 'pages', 'manifest.json'), 
+        await writeFile(join(starterDir, 'public', 'manifest.json'), 
             JSON.stringify({
                 name: "BakedSite",
                 short_name: "Baked",
@@ -46,14 +47,25 @@ describe('createSite', () => {
         await rm(starterDir, { recursive: true, force: true });
     });
 
+    test('should handle missing directories in starter gracefully', async () => {
+        // Remove some directories to simulate incomplete starter
+        await rm(join(starterDir, 'assets'), { recursive: true, force: true });
+        
+        console.log('should =- starter dir contents', await readdir(starterDir));
+        await createSite(tempDir, starterDir);
+        
+        // Should still copy available directories
+        const dirs = await readdir(tempDir);
+        expect(dirs).toContain('pages');
+        expect(dirs).toContain('public');
+    });
+
     test('should create a new site with correct configuration', async () => {
         // Temporarily override the starter directory path
-        process.env.STARTER_DIR = starterDir;
         
-        await createSite(tempDir);
-        
-        // Reset the environment
-        delete process.env.STARTER_DIR;
+        console.log('creating site in', tempDir);
+        await createSite(tempDir, starterDir);
+        console.log('created dir contents', await readdir(tempDir));
 
         // Verify site.yaml
         const siteYaml = await readFile(join(tempDir, 'site.yaml'), 'utf-8');
@@ -66,8 +78,11 @@ describe('createSite', () => {
         const blogMeta = await readFile(join(tempDir, 'pages', 'blog', 'meta.yaml'), 'utf-8');
         expect(blogMeta).toContain('author: Test Author');
 
+
+        console.log('TEMP DIR THINGS', await readdir(tempDir));
+
         // Verify manifest.json
-        const manifest = JSON.parse(await readFile(join(tempDir, 'pages', 'manifest.json'), 'utf-8'));
+        const manifest = JSON.parse(await readFile(join(tempDir, 'dist', 'manifest.json'), 'utf-8'));
         expect(manifest.name).toBe('Test Site');
         expect(manifest.short_name).toBe('Test');
         expect(manifest.description).toBe('A test site');
@@ -77,7 +92,7 @@ describe('createSite', () => {
         // Override prompt mock to return empty values
         global.prompt = jest.fn(() => '');
 
-        await createSite(tempDir);
+        await createSite(tempDir, starterDir);
 
         // Verify default values in site.yaml
         const siteYaml = await readFile(`${tempDir}/site.yaml`, 'utf-8');
@@ -86,4 +101,35 @@ describe('createSite', () => {
         expect(siteYaml).toContain('description: A baked site');
         expect(siteYaml).toContain('author: A baker');
     });
+});
+
+
+describe('createSite with starter directory', () => {
+    let tempDir: string;
+
+    beforeEach(async () => {
+        // Create temporary directories
+        tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
+
+    });
+
+    afterEach(async () => {
+        await rm(tempDir, { recursive: true, force: true });
+    });
+
+    test('should copy starter directory structure correctly', async () => {
+        await createSite(tempDir);
+        
+        // Verify directory structure
+        const dirs = await readdir(tempDir);
+        expect(dirs).toContain('pages');
+        expect(dirs).toContain('assets');
+        expect(dirs).toContain('public');
+        
+        // Verify subdirectories
+        expect(await readdir(join(tempDir, 'pages'))).toContain('blog');
+        expect(await readdir(join(tempDir, 'assets'))).toContain('css');
+        expect(await readdir(join(tempDir, 'assets'))).toContain('templates');
+    });
+
 });

@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeEach, afterEach } from "@jest/globals";
 import { Components } from '../src/components.js';
-import { Baker } from '../baked/baker';
+import { Baker } from '../src/baked/baker';
 import { promises as fs } from 'fs';
 import path from 'path';
 import sqlite from 'better-sqlite3';

@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
-import { rm, mkdir, cp, readdir } from "fs/promises";
+import { rm, mkdir, cp, readdir, writeFile } from "fs/promises";
 import sqlite, { Database } from "better-sqlite3";
 import bake from "../src/cli/build";
 import { existsSync } from "fs";
@@ -34,10 +34,13 @@ describe("build process", () => {
     });
 
     test("initializes build directory correctly", async () => {
+
+        console.log('things in the test dir', await readdir(TEST_DIR));
         // Add check to ensure TEST_DIST exists before baking
         expect(existsSync(TEST_DIR)).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'assets'))).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'pages'))).toBe(true);
+        expect(existsSync(path.join(TEST_DIR, 'manifest.json'))).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'assets/css'))).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'assets/templates'))).toBe(true);
 
@@ -48,6 +51,9 @@ describe("build process", () => {
         const distDir = path.join(TEST_DIR, 'dist');
         expect(existsSync(distDir)).toBe(true);
         expect(existsSync(path.join(distDir, 'site.db'))).toBe(true);
+        
+        // Check that public files were copied
+        expect(existsSync(path.join(distDir, 'manifest.json'))).toBe(true);
     });
 
     test("loads assets into database", async () => {
@@ -75,12 +81,21 @@ describe("build process", () => {
     });
 
     test("loads pages into database", async () => {
+
+        const num_pages = await readdir(path.join(TEST_DIR, 'pages'));
+        console.log('num_pages', num_pages);
+
         await bake(TEST_DIR);
         
         const db = new sqlite(path.join(TEST_DIR, 'dist', 'site.db'));
         const pages = db.prepare("SELECT * FROM pages").all();
         expect(pages).toBeDefined();
         expect(Array.isArray(pages)).toBe(true);
+
+        expect(pages.length).toBe(3);
+        
+        const manifestPage = db.prepare("SELECT * FROM pages WHERE slug like '%manifest%'").get();
+        expect(manifestPage).toBeUndefined();
     });
 
     afterAll(async () => {

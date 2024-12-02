@@ -8,23 +8,22 @@ import matter from 'gray-matter';
 // Mixer - a function that takes a file and loads it properly into the database depending on its type
 type Mixer = (filepath: string, content: string, metadata: any, distPath?: string) => Promise<{
     content: string;
-    metadata: any;
+    data: any;
 }>;
 
 // Default Mixer just returns content and metadata unchanged
 const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
     console.log('default mixer', filepath, content, metadata, distPath);
-    return { content, metadata };
+    return { content, data: metadata };
 };
 
 // Process markdown files
 const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
     const frontmatter = matter(content);
-    console.log('md meta for', filepath, 'fm',frontmatter.data, 'given meta', metadata);
     const combinedMetadata = { ...metadata, ...frontmatter.data };
     return {
         content: frontmatter.content,
-        metadata: combinedMetadata,
+        data: combinedMetadata,
         title: combinedMetadata.title || path.basename(filepath, path.extname(filepath))
     };
 };
@@ -45,7 +44,7 @@ const imageMixer: Mixer = async (filepath, content, metadata, distPath) => {
     // Return img tag as content
     return {
         content: `<img src="/${newPath}" alt="${metadata.alt || filename}" />`,
-        metadata
+        data: metadata
     };
 };
 
@@ -58,9 +57,10 @@ const mixers: Record<string, Mixer> = {
     'pages': markdownMixer
 };
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
+export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, rootDir: string, includeDrafts: boolean = false) {
+
+    console.log('loading pages from dir', dir, 'parent metadata', parentMetadata);
     // Store the root directory on first call
-    const actualRootDir = rootDir || dir;
     
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
@@ -69,16 +69,16 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
     try {
         const metaContent = await fs.readFile(metaPath, 'utf8');
         metadata = { ...metadata, ...yaml.parse(metaContent) };
-        console.log('meta.yaml read', metadata);
     } catch (error) {
         // meta.yaml doesn't exist, continue with parent metadata
     }
+    console.log('LOOPING metadata', metadata);
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         
         if (entry.isDirectory()) {
             // Pass the root directory through recursive calls
-            await loadPagesFromDir(fullPath, db, metadata, includeDrafts, actualRootDir);
+            await loadPagesFromDir(fullPath, db, metadata, rootDir, includeDrafts);
         } else if (entry.name !== 'meta.yaml') {
             // Get the first directory after the root directory
             let mixer = defaultMixer;
@@ -89,38 +89,38 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
             
             try {
                 const content = await fs.readFile(fullPath, 'utf8');
-                const { content: processedContent, metadata: finalMetadata } = 
+                const { content: processedContent, data: finalData } = 
                     await mixer(fullPath, content, metadata);
-                console.log('metadata for', entry.name, 'start', metadata, 'end', finalMetadata);
                 // don't even load draft pages if not specified by user with --drafts
-                if (!includeDrafts && finalMetadata.isDraft) continue; 
+                if (!includeDrafts && finalData.isDraft) continue; 
                 
-                // Use actualRootDir instead of dir for relative path calculation
-                const pathFromRoot = path.relative(actualRootDir, fullPath);
+                const pathFromRoot = path.relative(rootDir, fullPath);
                 const slug = pathFromRoot.replace(path.extname(fullPath), '').replace(/\.[^/.]+$/, '');
-                const title = finalMetadata.title || path.basename(fullPath, path.extname(fullPath));
+                const title = finalData.title || path.basename(fullPath, path.extname(fullPath));
                 
                 // Ensure date is converted to ISO string if it's a Date object
-                const publishedDate = finalMetadata.date ? 
-                    new Date(finalMetadata.date).toISOString() : 
+                const publishedDate = finalData.date ? 
+                    new Date(finalData.date).toISOString() : 
                     null;
 
-                console.log(`Loading page: ${slug}`, pathFromRoot, slug, title, 
-                    processedContent, 
-                    finalMetadata.template || 'default', 
-                    JSON.stringify(finalMetadata), 
-                    publishedDate ? publishedDate : null);
+                // console.log(`Loading page: ${slug}`, 
+                //     '\npath:', pathFromRoot, 
+                //     '\nslug:', slug, 
+                //     '\ntitle:', title, 
+                //     '\ntemplate:', finalMetadata.template || 'default', 
+                //     '\ndata:',    JSON.stringify(finalMetadata), 
+                //     '\ndate:',publishedDate ? publishedDate : null);
     
                 db.prepare(`
-                    INSERT INTO pages (path, slug, title, content, template, metadata, published_date) 
+                    INSERT INTO pages (path, slug, title, content, template, data, published_date) 
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 `).run(
                     pathFromRoot,
                     slug,
                     title,
                     processedContent,
-                    finalMetadata.template || 'default',
-                    JSON.stringify(finalMetadata),
+                    finalData.template || 'default',
+                    JSON.stringify(finalData),
                     publishedDate ? publishedDate : null
                 );
                 

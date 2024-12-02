@@ -2,7 +2,7 @@
 
 {% block content %}
 <article>
-    ${data.metadata?.date ? `<time datetime="${data.metadata.date}">${data.metadata.date}</time>` : ''}
-    ${data.content}
+    ${page.data?.date ? `<time datetime="${page.data.date}">${page.data.date}</time>` : ''}
+    ${page.content}
 </article>
 {% endblock %}

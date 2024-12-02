@@ -22,6 +22,7 @@ creates the following structure
    - /components
    - /css
    - /templates
+ - /public # files that are straight copied into the dist folder when the build command is run
  - /dist # the output folder of the files that will be served after running the build command
    - /images # processed images that aren't loaded directly into the database
    - /baked # files for the client side pwa 
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS pages (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     template TEXT NOT NULL,
-    metadata TEXT,
+    data TEXT,
     published_date TEXT
             );
 ```
@@ -76,6 +77,12 @@ For pages, metadata will be loaded from the frontmatter of the files that are pr
 ```yaml
 template: blog.html
 type: blog
+```
+
+the data will be available on the page object in the template as `page.data`
+
+```html
+This page is of type: {{ page.data.type }}
 ```
 
 

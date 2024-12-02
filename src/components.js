@@ -105,7 +105,7 @@ const Template = (rawAsset) => {
             page: {
                 title: page.title || '',
                 content: page.content || '',
-                metadata: page.metadata || {},
+                data: page.data || {},
                 path: validatePath(page.path || '')
             },
             baker: {
