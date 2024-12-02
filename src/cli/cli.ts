@@ -71,7 +71,7 @@ program
     .action(async (options) => {
         console.log('Let\'s get cooking...');
         const sqlDir = join(packageRoot, 'dist/sql');
-        await buildSite(process.cwd(), options.drafts, sqlDir);
+        await buildSite(process.cwd(), sqlDir, options.drafts);
     });
 
 program

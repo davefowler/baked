@@ -116,7 +116,7 @@ describe('CLI Commands', () => {
 
         test('builds site with default options', async () => {
             process.chdir(TEST_DIR); // Change working directory for build
-            await bake(TEST_DIR, false, SQL_DIR); // no drafts
+            await bake(TEST_DIR, SQL_DIR); // no drafts
             
             const distDb = join(TEST_DIR, 'dist/site.db');
             expect(await exists(distDb)).toBe(true);
@@ -134,7 +134,7 @@ describe('CLI Commands', () => {
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
             // Build without drafts
-            await bake(TEST_DIR, false, SQL_DIR);
+            await bake(TEST_DIR, SQL_DIR);
             let db = new Database(join(TEST_DIR, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
                          .get('draft');
@@ -145,7 +145,7 @@ describe('CLI Commands', () => {
             await writeFile(join(TEST_DIR, 'pages/draft.md'),
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
-            await bake(TEST_DIR, true, SQL_DIR);
+            await bake(TEST_DIR, SQL_DIR, true);
             let db = new Database(join(TEST_DIR, 'dist/site.db'));
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
                          .get('draft');

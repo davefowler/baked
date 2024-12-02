@@ -9,6 +9,7 @@ import path from 'path';
 
 describe("build process", () => {
     const TEST_DIR = path.join(process.cwd(), "tmp/test");
+    const SQL_DIR = path.join(process.cwd(), "src/sql");
     let db: Database;
     let schema: string;
     beforeAll(async () => {
@@ -44,7 +45,7 @@ describe("build process", () => {
         expect(existsSync(path.join(TEST_DIR, 'assets/css'))).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'assets/templates'))).toBe(true);
 
-        await bake(TEST_DIR);
+        await bake(TEST_DIR, SQL_DIR);
         
         // Add delay to ensure async operations complete
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -62,7 +63,7 @@ describe("build process", () => {
         console.log('Before bake - assets directory exists?', existsSync(assetsPath));
         console.log('Assets directory contents:', await readdir(assetsPath));
         
-        await bake(TEST_DIR);
+        await bake(TEST_DIR, SQL_DIR);
         
         console.log('After bake - assets directory exists?', existsSync(assetsPath));
         if (existsSync(assetsPath)) {
@@ -85,7 +86,7 @@ describe("build process", () => {
         const num_pages = await readdir(path.join(TEST_DIR, 'pages'));
         console.log('num_pages', num_pages);
 
-        await bake(TEST_DIR);
+        await bake(TEST_DIR, SQL_DIR);
         
         const db = new sqlite(path.join(TEST_DIR, 'dist', 'site.db'));
         const pages = db.prepare("SELECT * FROM pages").all();

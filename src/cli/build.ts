@@ -111,7 +111,7 @@ const dish = async (db: Database, dist: string) => {
 
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
-export default async function bake(rootDir: string, includeDrafts: boolean = false, sqlDir: string) {
+export default async function bake(rootDir: string,  sqlDir: string, includeDrafts: boolean = false,) {
     const tmpDist = path.join(rootDir, 'dist-tmp');
     const finalDist = path.join(rootDir, 'dist');
 
