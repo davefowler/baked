@@ -10,7 +10,7 @@ import request from 'supertest';
 import { Server } from 'http';
 import { SpyInstance } from 'jest-mock';
 
-let mockPrompt: SpyInstance<(message?: string) => string>;
+let mockPrompt: SpyInstance;
 
 
 // Helper functions
