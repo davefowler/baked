@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild'
-import { readFile, writeFile, cp } from 'fs/promises'
+import { readFile, writeFile, cp, mkdir } from 'fs/promises'
 
 // Common config
 const commonConfig = {
@@ -38,4 +38,4 @@ await esbuild.build({
 // Copy starter templates and sql files
 await cp('src/starter', 'dist/starter', { recursive: true })
 await mkdir('dist/sql', { recursive: true })
-await cp('src/sql', 'dist/sql', { recursive: true })
+await cp('src/sql', 'dist/sql', { recursive: true, force: true })
