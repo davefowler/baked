@@ -4,6 +4,9 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
 
+const DEFAULT_STARTER_DIR = join(process.cwd(), 'src/starter');
+
+
 describe('createSite', () => {
     let tempDir: string;
     let starterDir: string;
@@ -38,10 +41,10 @@ describe('createSite', () => {
         // Mock the prompt function
         global.prompt = jest.fn((message: string | undefined) => {
             switch(message) {
-                case 'Site name:': return 'Custom Site';
-                case 'Site URL:': return 'custom.com';
-                case 'Site description:': return 'Custom description';
-                case 'Default author name:': return 'Custom Author';
+                case 'Site name:': return 'Test Site';
+                case 'Site URL:': return 'test.com';
+                case 'Site description:': return 'A test site';
+                case 'Default author name:': return 'Test Author';
                 default: return '';
             }
         });
@@ -50,7 +53,6 @@ describe('createSite', () => {
     afterEach(async () => {
         await rm(tempDir, { recursive: true, force: true });
         await rm(starterDir, { recursive: true, force: true });
-        jest.restoreAllMocks();
     });
 
     test('should handle missing directories in starter gracefully', async () => {
@@ -116,7 +118,7 @@ describe('createSite', () => {
 
 describe('createSite with starter directory', () => {
     let tempDir: string;
-    const STARTER_DIR = join(process.cwd(), 'src/starter');
+
     beforeEach(async () => {
         // Create temporary directories
         tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
@@ -128,7 +130,7 @@ describe('createSite with starter directory', () => {
     });
 
     test('should copy starter directory structure correctly', async () => {
-        await createSite(tempDir, STARTER_DIR);
+        await createSite(tempDir, DEFAULT_STARTER_DIR);
         
         // Verify directory structure
         const dirs = await readdir(tempDir);

@@ -6,41 +6,37 @@ import { stdin as input, stdout as output } from 'process';
 import { fileURLToPath } from 'url';
 
 
-// Add this helper function at the top of the file
-function createPrompts() {
+// Renamed from prompt to promptUser to avoid naming conflict
+async function promptUser(question: string): Promise<string> {
+    // Use the global prompt if it exists (for testing), otherwise use readline
+    if (typeof global.prompt === 'function') {
+        return global.prompt(question) ?? '';
+    }
+
     const rl = createInterface({ input, output });
-    
-    const prompt = (question: string) => new Promise<string>((resolve) => {
-        rl.question(question + ' ', (answer) => {
+    return new Promise<string>((resolve) => {
+        rl.question(question + ' ', (answer: string) => {
+            rl.close();
             resolve(answer);
         });
     });
-
-    return {
-        prompt,
-        close: () => rl.close()
-    };
 }
 
 
 export default async function createSite(destination: string, starterDir: string) {
-    // Look for starter files in dist/starter relative to package root
-    
     await cp(starterDir, destination, { recursive: true });
 
     console.log('starter coppied to:', destination, await readdir(destination));
     console.log('public dir contents', await readdir(`${destination}/public`));
-    // prompt for the values
+    
     console.log('Before we get cookin\' let\'s get some info about the site...');
-    // Create the prompts interface
-    const { prompt, close } = createPrompts();
     
     try {
-        // Use prompt as before
-        const siteName = await prompt('Site name:') || 'Baked Site';
-        const siteUrl = await prompt('Site URL:') || 'yoursite.com';
-        const siteDescription = await prompt('Site description:') || 'A baked site';
-        const siteAuthor = await prompt('Default author name:') || 'A baker';
+        // Use logical OR to handle empty strings as well as null/undefined
+        const siteName = (await promptUser('Site name:')) || 'Baked Site';
+        const siteUrl = (await promptUser('Site URL:')) || 'yoursite.com';
+        const siteDescription = (await promptUser('Site description:')) || 'A baked site';
+        const siteAuthor = (await promptUser('Default author name:')) || 'A baker';
 
         // Write those values to the site.yaml file
         const siteYamlContent = `name: ${siteName}
@@ -71,9 +67,8 @@ author: ${siteAuthor}`;
         
         await writeFile(manifestPath, JSON.stringify(updatedManifest, null, 2), 'utf-8');
 
-    } finally {
-        // Make sure we always close the readline interface
-        close();
+    } catch (error) {
+        console.error('Error during site creation:', error);
+        throw error;
     }
 }
-
