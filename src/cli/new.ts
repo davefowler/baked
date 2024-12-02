@@ -1,11 +1,36 @@
 import { existsSync } from 'fs';
 import { cp, writeFile, readFile, readdir } from 'fs/promises';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { createInterface } from 'readline';
+import { stdin as input, stdout as output } from 'process';
+
+// Get the equivalent of __dirname in ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Add this helper function at the top of the file
+function createPrompts() {
+    const rl = createInterface({ input, output });
+    
+    const prompt = (question: string) => new Promise<string>((resolve) => {
+        rl.question(question + ' ', (answer) => {
+            resolve(answer);
+        });
+    });
+
+    return {
+        prompt,
+        close: () => rl.close()
+    };
+}
 
 export default async function createSite(destination: string, starterDir?: string) {
-    // Get starter directory from environment variable or use __dirname-based path
+    // Get starter directory from environment variable or use dirname-based path
     starterDir = starterDir || join(
-        __dirname, '..', '..', 'src', 'starter'
+        dirname(__dirname), // go up one more level since we're in dist/cli
+        'src', 
+        'starter'
     );
     // copy the starter site to the destination directory recursively
     await cp(starterDir, destination, { recursive: true });
@@ -14,39 +39,48 @@ export default async function createSite(destination: string, starterDir?: strin
     console.log('public dir contents', await readdir(`${destination}/public`));
     // prompt for the values
     console.log('Before we get cookin\' let\'s get some info about the site...');
-    const siteName = await prompt('Site name:') || 'Baked Site';
-    const siteUrl = await prompt('Site URL:') || 'yoursite.com';
-    const siteDescription = await prompt('Site description:') || 'A baked site';
-    const siteAuthor = await prompt('Default author name:') || 'A baker';
+    // Create the prompts interface
+    const { prompt, close } = createPrompts();
+    
+    try {
+        // Use prompt as before
+        const siteName = await prompt('Site name:') || 'Baked Site';
+        const siteUrl = await prompt('Site URL:') || 'yoursite.com';
+        const siteDescription = await prompt('Site description:') || 'A baked site';
+        const siteAuthor = await prompt('Default author name:') || 'A baker';
 
-    // Write those values to the site.yaml file
-    const siteYamlContent = `name: ${siteName}
+        // Write those values to the site.yaml file
+        const siteYamlContent = `name: ${siteName}
 url: ${siteUrl}
 description: ${siteDescription}
 author: ${siteAuthor}`;
-    await writeFile(`${destination}/site.yaml`, siteYamlContent, 'utf-8');
+        await writeFile(`${destination}/site.yaml`, siteYamlContent, 'utf-8');
 
-    // write author to the pages/blog/meta.yaml file
-    const blogMetaContent = `author: ${siteAuthor}`;
-    await writeFile(`${destination}/pages/blog/meta.yaml`, blogMetaContent, 'utf-8');
+        // write author to the pages/blog/meta.yaml file
+        const blogMetaContent = `author: ${siteAuthor}`;
+        await writeFile(`${destination}/pages/blog/meta.yaml`, blogMetaContent, 'utf-8');
 
-    console.log('things in ', destination, await readdir(destination));
-    // update specific fields in the manifest.json file
-    const manifestPath = `${destination}/public/manifest.json`;
-    // ensure manifest exists
-    if (!existsSync(manifestPath)) {
-        throw new Error('manifest.json not found in /public folder');
+        console.log('things in ', destination, await readdir(destination));
+        // update specific fields in the manifest.json file
+        const manifestPath = `${destination}/public/manifest.json`;
+        // ensure manifest exists
+        if (!existsSync(manifestPath)) {
+            throw new Error('manifest.json not found in /public folder');
+        }
+        const existingManifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
+        
+        const updatedManifest = {
+            ...existingManifest,
+            name: siteName,
+            short_name: siteName.split(' ')[0], // Uses first word of site name
+            description: siteDescription
+        };
+        
+        await writeFile(manifestPath, JSON.stringify(updatedManifest, null, 2), 'utf-8');
+
+    } finally {
+        // Make sure we always close the readline interface
+        close();
     }
-    const existingManifest = JSON.parse(await readFile(manifestPath, 'utf-8'));
-    
-    const updatedManifest = {
-        ...existingManifest,
-        name: siteName,
-        short_name: siteName.split(' ')[0], // Uses first word of site name
-        description: siteDescription
-    };
-    
-    await writeFile(manifestPath, JSON.stringify(updatedManifest, null, 2), 'utf-8');
-
 }
 

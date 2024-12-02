@@ -1,4 +1,4 @@
 ---
 title: About Me
 ---
-Tell us a little about yourself!
+Tell us a little about yourself.

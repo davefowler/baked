@@ -1,11 +1,11 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 import { program } from 'commander';
-import { promises as fs } from 'fs';
-import path from 'path';
-import yaml from 'yaml';
-import Database from 'better-sqlite3';
-import type { Page } from '../types';
-import matter from 'gray-matter';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import buildSite from './build.js';
+import createSite from './new.js';
+import serveSite from './serve.js';
 
 /* CLI options
 
@@ -37,11 +37,17 @@ bake serve # Psych, it didn't need an alias its a double entendre!
 
 */
 
+// Get package.json version
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(
+    readFileSync(join(__dirname, '../../package.json'), 'utf8')
+);
 
 program
     .name('bake')
     .description('CLI for creating and managing Baked websites, a fully baked site generator')
-    .version('0.0.2');
+    .version(packageJson.version);
 
 program
     .command('new')
@@ -50,7 +56,7 @@ program
     .description('Create a new baked site')
     .action(async (destination) => {
         console.log(`Getting the ingredients for ${destination}...`);
-        import('./new.ts').then(module => module.default(destination));
+        await createSite(destination);
     });
 
 program
@@ -60,15 +66,15 @@ program
     .description('Bake the site - so it\'s ready to be served!')
     .action(async (options) => {
         console.log('Let\'s get cooking...');
-        import('./build.ts').then(module => module.default(options.drafts));
+        await buildSite(process.cwd(), options.drafts);
     });
 
 program
     .command('serve')
     .description('Start development server')
-    .action(() => {
+    .action(async () => {
         console.log('Starting development server...');
-        import('./serve.ts').then(module => module.default());
+        await serveSite();
     });
 
 program.command('help').action(() => {

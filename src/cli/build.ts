@@ -8,10 +8,17 @@ import { rename, cp, mkdir, rm } from "fs/promises";
 import path from "path";
 import sqlite from "better-sqlite3";
 import type { Database } from "better-sqlite3";
-import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading";
-import { Baker } from "../baked/baker";
+import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading.js";
+import { Baker } from "../baked/baker.js";
 import { writeFile } from "fs/promises";
 import { readFile } from "fs/promises";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import schemaSQL from '../sql/schema.sql';
+import ftsSQL from '../sql/fulltextsearch.sql';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string): Promise<Database> => {
@@ -38,9 +45,6 @@ const prep = async (dist: string): Promise<Database> => {
     // Create a new sqlite database
     const db = sqlite(`${dist}/site.db`);
     // Load and execute SQL files
-    const schemaSQL = await readFile(path.join(__dirname, '../sql/schema.sql'), 'utf8');
-    const ftsSQL = await readFile(path.join(__dirname, '../sql/fulltextsearch.sql'), 'utf8');
-    
     db.exec(schemaSQL);
     db.exec(ftsSQL);
 
@@ -105,7 +109,7 @@ const dish = async (db: Database, dist: string) => {
 
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
-export default async function bake(rootDir: string = process.cwd(), includeDrafts: boolean = false) {
+export default async function bake(rootDir: string, includeDrafts: boolean = false) {
     const tmpDist = path.join(rootDir, 'dist-tmp');
     const finalDist = path.join(rootDir, 'dist');
 
@@ -124,7 +128,6 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
 
     // prep the database
     const db = await prep(tmpDist);
-    
 
     // mix in the assets
     const assetsDir = path.join(rootDir, 'assets');
@@ -132,7 +135,7 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
 
     // mix in the pages
     const pagesDir = path.join(rootDir, 'pages');
-    await loadPagesFromDir(pagesDir, db, {}, includeDrafts, rootDir);
+    await loadPagesFromDir(pagesDir, db, {}, includeDrafts);
 
     // add in just a splash of site metadata
     await loadSiteMetadata(rootDir, db);

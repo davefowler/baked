@@ -96,22 +96,16 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
         content,
         template,
         data: JSON.stringify(sanitizedData),
-        publishedDate
+        published_date: publishedDate
     };
 
     try {
-        db.prepare(`
-            INSERT INTO pages (path, slug, title, content, template, data, published_date) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(
-            params.path,
-            params.slug,
-            params.title,
-            params.content,
-            params.template,
-            params.data,
-            params.publishedDate
-        );
+        const stmt = db.prepare(`
+            REPLACE INTO pages (path, slug, title, content, template, data, published_date) 
+            VALUES (@path, @slug, @title, @content, @template, @data, @published_date)
+        `);
+        
+        stmt.run(params);
     } catch (error) {
         console.error('Error loading page:', error);
         console.error('Failed data:', params);
@@ -121,9 +115,9 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
 
 
 export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
-    console.log('loading pages from dir', dir, rootDir, 'parent metadata', parentMetadata);
     // Store the root directory on first call
     rootDir = rootDir || dir;
+    console.log('loading pages from dir', dir, rootDir, 'parent metadata', parentMetadata);
 
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');

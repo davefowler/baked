@@ -1,5 +1,5 @@
 import { expect, test, beforeEach, afterEach, describe, jest } from "@jest/globals";
-import { rm, readFile, mkdir, writeFile, stat } from 'fs/promises';
+import { rm, readFile, mkdir, writeFile, stat, readdir } from 'fs/promises';
 import { join } from 'path';
 import createSite from '../src/cli/new';
 import bake from '../src/cli/build';
@@ -61,6 +61,14 @@ describe('CLI Commands', () => {
                 const itExists = await exists(join(TEST_DIR, dir));
                 expect(itExists).toBe(true);
             }
+
+            // check for the right files in all dirs too
+            // list out all files recursively
+            const allFiles = await readdir(TEST_DIR, { recursive: true });
+            expect(allFiles).toContain('site.yaml');
+            expect(allFiles).toContain('pages/blog/meta.yaml');
+            expect(allFiles).toContain('public/manifest.json');
+            expect(allFiles.length).toBeGreaterThan(20);
         });
 
         test('sets site configuration from prompts', async () => {
@@ -86,19 +94,13 @@ describe('CLI Commands', () => {
     describe('build/oven command', () => {
         beforeEach(async () => {
             // Setup test site
-            // Setup test site structure
+            await rm(TEST_DIR, { recursive: true, force: true });
             await createSite(TEST_DIR);
-            
-            // Create pages directory
-            await ensureDir(join(TEST_DIR, 'pages'));
-            
-            // Create test content
-            // Create test content with explicit path
-            const testPath = join(TEST_DIR, 'pages', 'test.md');
-            await writeFile(
-                testPath,
-                '---\ntitle: Test\n---\nTest content'
-            );
+        });
+
+        afterEach(async () => {
+            // clear out the site dir
+            await rm(TEST_DIR, { recursive: true, force: true });
         });
 
         test('builds site with default options', async () => {
@@ -116,24 +118,30 @@ describe('CLI Commands', () => {
             expect((page as {title: string}).title).toBe('Test');
         });
 
-        test('handles draft pages correctly', async () => {
+        test('does not load drafts by default', async () => {
             await writeFile(join(TEST_DIR, 'pages/draft.md'),
                 '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
             
             // Build without drafts
-            await bake(TEST_DIR, false);
+            await bake(TEST_DIR);
             let db = new Database(join(TEST_DIR, 'dist/site.db'));
-            console.log('all pages', db.prepare('SELECT * FROM pages').all());
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
                          .get('draft');
             expect(draft).toBeUndefined();
-            // Build with drafts
-            await bake(TEST_DIR, true);
-            db = new Database(join(TEST_DIR, 'dist/site.db'));   
-            draft = db.prepare('SELECT * FROM pages WHERE path = ?')
-                     .get('draft');
-            expect(draft).toBeDefined();
         });
+
+        test('load drafts when specified', async () => {
+            await writeFile(join(TEST_DIR, 'pages/draft.md'),
+                '---\ntitle: Draft\nisDraft: true\n---\nDraft content');
+            
+            // Build without drafts
+            await bake(TEST_DIR, true);
+            let db = new Database(join(TEST_DIR, 'dist/site.db'));
+            let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
+                         .get('draft');
+            expect(draft).toBeUndefined();
+        });
+
     });
 
     describe('serve command', () => {

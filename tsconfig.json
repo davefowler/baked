@@ -1,18 +1,22 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "module": "ESNext",
+    "module": "NodeNext",
     "lib": ["ESNext", "DOM"],
-    "target": "ESNext",
+    "target": "ES2020",
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
 
+    // Add these lines for output configuration
+    "outDir": "./dist",
+    "rootDir": "./src",
+
     // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": false,
-    "noEmit": true,
+    "noEmit": false,
 
     // Best practices
     "strict": true,
@@ -22,6 +26,10 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["node", "jest", "better-sqlite3"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

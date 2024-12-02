@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS pages (
     slug TEXT NOT NULL,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
-    template TEXT NOT NULL DEFAULT 'default',
+    template TEXT NOT NULL DEFAULT 'base.html',
     data TEXT,
-    published_date TEXT
+    published_date TEXT DEFAULT null
 ); 
