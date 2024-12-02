@@ -99,10 +99,18 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
     try {
         const stmt = db.prepare(`
             INSERT INTO pages (path, slug, title, content, template, data, published_date) 
-            VALUES (@path, @slug, @title, @content, @template, @data, @published_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
         
-        stmt.run(params);
+        stmt.run(
+            String(params.path),
+            String(params.slug),
+            String(params.title),
+            String(params.content),
+            String(params.template),
+            String(params.data),
+            params.published_date ? String(params.published_date) : null
+        );
     } catch (error) {
         console.error('Error loading page:', error);
         console.error('Failed data:', params);
