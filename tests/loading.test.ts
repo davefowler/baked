@@ -17,7 +17,7 @@ describe('Loading System', () => {
         const schema = await readFile(path.join(process.cwd(), 'src/sql/schema.sql'), 'utf-8');
 
         // Create test database
-        db = new sqlite(':memory:');
+        db = new Database(':memory:');
         
         // Initialize database schema
         await db.exec(schema);

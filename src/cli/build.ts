@@ -6,7 +6,7 @@
 
 import { rename, cp, mkdir, rm } from "fs/promises";
 import path from "path";
-import sqlite, { Database } from "better-sqlite3";
+import Database from 'better-sqlite3';
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading.js";
 import { Baker } from "../baked/baker.js";
 import { writeFile, readFile } from "fs/promises";
@@ -45,7 +45,7 @@ const prep = async (dist: string, sqlDir: string): Promise<Database> => {
     console.log('FTS SQL loaded');
 
     // Create a new sqlite database
-    const db = sqlite(`${dist}/site.db`);
+    const db = new Database(`${dist}/site.db`);
     db.exec(schemaSQL);
     db.exec(ftsSQL);
 

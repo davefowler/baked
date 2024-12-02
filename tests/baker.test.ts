@@ -16,7 +16,7 @@ describe('Baker', () => {
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baker-test-'));
-        db = new sqlite(':memory:');
+        db = new Database(':memory:');
         
         // Load and execute schema
         const schema = readFileSync(pathJoin(__dirname, '../src/sql/schema.sql'), 'utf-8');

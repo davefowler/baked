@@ -74,7 +74,7 @@ describe("build process", () => {
         const dbPath = path.join(distDir, 'site.db');
         console.log('Database path exists?', existsSync(dbPath));
         
-        const db = new sqlite(dbPath);
+        const db = new Database(dbPath);
         const assets = db.prepare("SELECT * FROM assets").all();
         db.close();
         expect(assets).toBeDefined();
