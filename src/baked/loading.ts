@@ -99,6 +99,7 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
         published_date: publishedDate
     };
 
+    console.log('existing pages are', db.prepare('SELECT * FROM pages').all());
     try {
         const stmt = db.prepare(`
             REPLACE INTO pages (path, slug, title, content, template, data, published_date) 

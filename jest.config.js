@@ -1,5 +1,5 @@
 export default {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'json', 'node'],
@@ -15,6 +15,6 @@ export default {
     }],
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(absurd-sql)/)'
+    '/node_modules/(?!(baked)/)'
   ]
 };

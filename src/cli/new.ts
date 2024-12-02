@@ -1,12 +1,12 @@
 import { existsSync } from 'fs';
 import { cp, writeFile, readFile, readdir } from 'fs/promises';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
+import { fileURLToPath } from 'url';
 
-// Get the equivalent of __dirname in ES Modules
-const __filename = fileURLToPath(import.meta.url);
+// Replace the __dirname/__filename code with:
+const __filename = new URL('', import.meta.url).pathname;
 const __dirname = dirname(__filename);
 
 // Add this helper function at the top of the file
@@ -25,14 +25,12 @@ function createPrompts() {
     };
 }
 
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');  // Go up two levels from dist/cli/new.js to reach package root
+
 export default async function createSite(destination: string, starterDir?: string) {
-    // Get starter directory from environment variable or use dirname-based path
-    starterDir = starterDir || join(
-        dirname(__dirname), // go up one more level since we're in dist/cli
-        'src', 
-        'starter'
-    );
-    // copy the starter site to the destination directory recursively
+    // Look for starter files in dist/starter relative to package root
+    starterDir = starterDir || join(packageRoot, 'dist', 'starter');
+    
     await cp(starterDir, destination, { recursive: true });
 
     console.log('starter coppied to:', destination, await readdir(destination));
