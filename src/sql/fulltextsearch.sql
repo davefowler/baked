@@ -1,7 +1,7 @@
 CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
     title, 
     content,
-    data,
+    data UNINDEXED,
     content='pages',
     content_rowid='slug'
 );
