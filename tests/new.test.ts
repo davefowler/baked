@@ -82,7 +82,7 @@ describe('createSite', () => {
         console.log('TEMP DIR THINGS', await readdir(tempDir));
 
         // Verify manifest.json
-        const manifest = JSON.parse(await readFile(join(tempDir, 'dist', 'manifest.json'), 'utf-8'));
+        const manifest = JSON.parse(await readFile(join(tempDir, 'public', 'manifest.json'), 'utf-8'));
         expect(manifest.name).toBe('Test Site');
         expect(manifest.short_name).toBe('Test');
         expect(manifest.description).toBe('A test site');
