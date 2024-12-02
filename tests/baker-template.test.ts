@@ -3,13 +3,11 @@ import { Components } from '../src/components.js';
 import { Baker } from '../src/baked/baker';
 import { promises as fs } from 'fs';
 import path from 'path';
-import sqlite from 'better-sqlite3';
-
-type Database = ReturnType<typeof sqlite>;
+import Database, { Database as DatabaseType } from 'better-sqlite3';
 
 
 describe('Baker Template Integration', () => {
-    let db: Database;
+    let db: DatabaseType;
     let baker: Baker;
     let schema: string;
     beforeEach(async () => {
@@ -18,7 +16,7 @@ describe('Baker Template Integration', () => {
             schema = await fs.readFile(path.join(process.cwd(), 'src/sql/schema.sql'), 'utf-8');
         }
 
-        db = new sqlite(':memory:');
+        db = new Database(':memory:');
         // Initialize test database schema
         db.exec(schema);
         db.exec(`

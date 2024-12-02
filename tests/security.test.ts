@@ -2,7 +2,7 @@ import { expect, test, beforeEach, afterEach, describe } from "@jest/globals";
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import sqlite, { Database } from "better-sqlite3"
+import Database, { Database as DatabaseType } from "better-sqlite3"
 import { Components } from '../src/components.js';
 import { Baker } from '../src/baked/baker';
 import { readFile } from 'fs/promises';
@@ -10,12 +10,12 @@ import { loadPage } from "../src/baked/loading.js";
 
 describe('Security Tests', () => {
     let tempDir: string;
-    let db: Database;
+    let db: DatabaseType;
     let consoleWarnSpy: jest.SpyInstance;
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-security-test-'));
-        db = new sqlite(':memory:');
+        db = new Database(':memory:');
         
         // Store the original console.warn
         const originalWarn = console.warn;
