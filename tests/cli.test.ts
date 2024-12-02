@@ -123,13 +123,13 @@ describe('CLI Commands', () => {
             let db = new Database(join(TEST_DIR, 'dist/site.db'));
             console.log('all pages', db.prepare('SELECT * FROM pages').all());
             let draft = db.prepare('SELECT * FROM pages WHERE path = ?')
-                         .get('/pages/draft.md');
+                         .get('draft');
             expect(draft).toBeUndefined();
             // Build with drafts
             await bake(TEST_DIR, true);
             db = new Database(join(TEST_DIR, 'dist/site.db'));   
             draft = db.prepare('SELECT * FROM pages WHERE path = ?')
-                     .get('pages/draft.md');
+                     .get('draft');
             expect(draft).toBeDefined();
         });
     });
