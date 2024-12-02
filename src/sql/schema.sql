@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS pages (
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     template TEXT NOT NULL DEFAULT 'base.html',
-    data TEXT,
+    data JSON,
     published_date TEXT
 ); 

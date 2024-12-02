@@ -52,7 +52,7 @@ date: 2024-01-01
             expect(page.published_date).toBe("2024-01-01T00:00:00.000Z");
             expect(page.template).toBe('base.html');
             expect(page.content).toContain('# Test Content');
-            expect(JSON.parse(page.data).author).toBe('Test Author');
+            expect(page.data.author).toBe('Test Author');
         });
 
         test('handles meta.yaml inheritance', async () => {
