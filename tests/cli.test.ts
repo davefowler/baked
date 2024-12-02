@@ -8,6 +8,9 @@ import startServer from '../src/cli/serve';
 import Database from 'better-sqlite3';
 import request from 'supertest';
 import { Server } from 'http';
+import { SpyInstance } from 'jest-mock';
+
+let mockPrompt: SpyInstance<(message?: string) => string>;
 
 
 // Helper functions
@@ -186,12 +189,13 @@ import { program } from 'commander';
 
 describe('CLI', () => {
     let tempDir: string;
-    let mockPrompt: jest.SpyInstance<string, [message?: string]>;
-
+    let mockPrompt: SpyInstance<(message?: string) => string>;
+    
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-cli-test-'));
         
         // Mock the prompt function
+        // @ts-ignore
         mockPrompt = jest.spyOn(global, 'prompt').mockImplementation((message?: string) => {
             switch(message) {
                 case 'Site name:': return 'Test Site';
