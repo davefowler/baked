@@ -76,60 +76,6 @@ export class Baker {
         return page;
     }
 
-    savePage(page) {
-        // Validate page data
-        if (!page || typeof page !== 'object') {
-            throw new Error('Invalid page data');
-        }
-
-        // Validate required fields
-        if (!page.slug || typeof page.slug !== 'string' || 
-            !page.title || typeof page.title !== 'string' ||
-            !page.content || typeof page.content !== 'string') {
-            throw new Error('Missing required page fields');
-        }
-
-        // Prevent path traversal
-        if (page.slug.includes('..') || page.slug.startsWith('/')) {
-            throw new Error('Invalid page slug');
-        }
-
-        // Sanitize metadata
-        if (page.data) {
-            if (typeof page.data === 'object') {
-                // Recursively sanitize metadata object
-                const sanitizeObj = (obj) => {
-                    return Object.fromEntries(
-                        Object.entries(obj).map(([k, v]) => {
-                            if (typeof v === 'string') {
-                                return [k, v.replace(/[<>"']/g, '')];
-                            }
-                            if (typeof v === 'object' && v !== null) {
-                                return [k, sanitizeObj(v)];
-                            }
-                            return [k, v];
-                        })
-                    );
-                };
-                page.data = sanitizeObj(page.data);
-            } else {
-                throw new Error('Metadata must be an object');
-            }
-        }
-
-        // Store the page
-        this.db.prepare(`
-            INSERT OR REPLACE INTO pages (slug, title, content, template, data, published_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
-            page.slug,
-            page.title,
-            page.content,
-            page.template || 'default',
-            JSON.stringify(page.data || {}),
-            page.published_date || null
-        );
-    }
 
     renderPage(page) {
         try {

@@ -4,6 +4,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import yaml from 'yaml';
 import matter from 'gray-matter';
+import { escape } from 'html-escaper';
+import { isValidPath } from './helpers.js';
 
 // Mixer - a function that takes a file and loads it properly into the database depending on its type
 type Mixer = (filepath: string, content: string, metadata: any, distPath?: string) => Promise<{
@@ -12,6 +14,7 @@ type Mixer = (filepath: string, content: string, metadata: any, distPath?: strin
 }>;
 
 // Default Mixer just returns content and metadata unchanged
+// TODO - right now we're allowing all file types to be loaded, but maybe we shouldn't.
 const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
     console.log('default mixer', filepath, content, metadata, distPath);
     return { content, data: metadata };
@@ -57,6 +60,50 @@ const mixers: Record<string, Mixer> = {
     'pages': markdownMixer
 };
 
+
+// For the Pages loading.  Asset mixers right now are handled by their directory
+const getMixerByFilename = (filename: string): Mixer => {
+    if (filename.endsWith('.md') || filename.endsWith('.markdown')) {
+        return markdownMixer;
+    }
+    return defaultMixer;
+}
+
+export const loadPage = (db: Database, pagePath: string, content: string, data: any) => {
+    // Validate the path before processing
+    if (!isValidPath(pagePath)) {
+        throw new Error('Invalid page path: Path traversal attempt detected');
+    }
+
+    const slug = pagePath.replace(path.extname(pagePath), '').replace(/\.[^/.]+$/, '');
+    const title = data.title || path.basename(pagePath, path.extname(pagePath));
+    const publishedDate = data.date ? 
+        new Date(data.date).toISOString() : 
+        null;
+
+    // Sanitize all string values in the data object
+    const sanitizedData = Object.fromEntries(
+        Object.entries(data).map(([key, value]) => [
+            key,
+            typeof value === 'string' ? escape(value) : value
+        ])
+    );
+
+    db.prepare(`
+        INSERT INTO pages (path, slug, title, content, template, data, published_date) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+        pagePath, 
+        slug, 
+        title, 
+        content, 
+        sanitizedData.template || 'default', 
+        JSON.stringify(sanitizedData), 
+        publishedDate ? publishedDate : null
+    );
+}
+
+
 export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
     console.log('loading pages from dir', dir, rootDir, 'parent metadata', parentMetadata);
     // Store the root directory on first call
@@ -84,58 +131,18 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
             // meta.yaml must be handled first (above) so skip here
             continue;
         }
-
-        // TODO - right now we're allowing all file types to be loaded, but maybe we shouldn't.
-
-        // Get the first directory after the root directory
-        let mixer = defaultMixer;
-        if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
-            mixer = markdownMixer;
-            console.log('markdown mixer', entry.name, fullPath);
-        }
         
-        try {
-            const content = await fs.readFile(fullPath, 'utf8');
-            const { content: processedContent, data: finalData } = 
-                await mixer(fullPath, content, metadata);
-            // don't even load draft pages if not specified by user with --drafts
-            if (!includeDrafts && finalData.isDraft) continue; 
-            
-            const pathFromRoot = path.relative(rootDir, fullPath);
-            console.log('pathFromRoot', pathFromRoot, rootDir, fullPath);
-            const slug = pathFromRoot.replace(path.extname(fullPath), '').replace(/\.[^/.]+$/, '');
-            const title = finalData.title || path.basename(fullPath, path.extname(fullPath));
-            
-            // Ensure date is converted to ISO string if it's a Date object
-            const publishedDate = finalData.date ? 
-                new Date(finalData.date).toISOString() : 
-                null;
+        // Read the file   
+        const rawFileContent = await fs.readFile(fullPath, 'utf8');
 
-            console.log(`Loading page: ${slug}`, 
-                '\npath:', pathFromRoot, 
-                '\nslug:', slug, 
-                '\ntitle:', title, 
-                '\ntemplate:', finalData.template || 'default', 
-                '\ndata:',    JSON.stringify(finalData), 
-                '\ndate:',publishedDate ? publishedDate : null);
+        // Process the file based on its type
+        const mixer = getMixerByFilename(entry.name);
+        const {content, data} = await mixer(fullPath, rawFileContent, metadata);
+        const pagePath = path.relative(rootDir, fullPath).replace(path.extname(fullPath), '');
 
-            db.prepare(`
-                INSERT INTO pages (path, slug, title, content, template, data, published_date) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `).run(
-                pathFromRoot,
-                slug,
-                title,
-                processedContent,
-                finalData.template || 'default',
-                JSON.stringify(finalData),
-                publishedDate ? publishedDate : null
-            );
-            
-        } catch (error) {
-            console.error(`Error processing ${fullPath}:`, error);
-        }
-        
+        // Load the page into the database
+        if (!includeDrafts && data.isDraft) return; // drafts are not included unless --drafts is specified
+        loadPage(db, pagePath, content, data);
     }
 }
 

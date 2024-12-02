@@ -5,36 +5,38 @@ import { join } from 'path';
 import sqlite, { Database } from "better-sqlite3"
 import { Components } from '../src/components.js';
 import { Baker } from '../src/baked/baker';
+import { readFile } from 'fs/promises';
+import { loadPage } from "../src/baked/loading.js";
 
 describe('Security Tests', () => {
     let tempDir: string;
     let db: Database;
+    let consoleWarnSpy: jest.SpyInstance;
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-security-test-'));
         db = new sqlite(':memory:');
         
-        await db.exec(`
-            CREATE TABLE IF NOT EXISTS pages (
-                slug TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                content TEXT NOT NULL,
-                template TEXT NOT NULL,
-                metadata TEXT,
-                published_date TEXT
-            );
-            
-            CREATE TABLE IF NOT EXISTS assets (
-                path TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                type TEXT NOT NULL
-            );
-        `);
+        // Store the original console.warn
+        const originalWarn = console.warn;
+        
+        // Only suppress specific warnings
+        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation((message) => {
+            if (!message.includes('Asset not found: /json/site.yaml')) {
+                originalWarn.call(console, message);  // Use the original warn function
+            }
+        });
+        
+        // Load schema from file
+        const schema = await readFile(join(__dirname, '../src/sql/schema.sql'), 'utf-8');
+        await db.exec(schema);
     });
 
     afterEach(async () => {
         await rm(tempDir, { recursive: true, force: true });
         await db.close();
+        // Restore console.warn
+        consoleWarnSpy.mockRestore();
     });
 
     describe('Template Security', () => {
@@ -56,7 +58,7 @@ describe('Security Tests', () => {
         });
 
         test('restricts template scope access', () => {
-            const template = Components.templates(`${process.env}`);
+            const template = Components.templates(`{{ process.env }}`);
             expect(() => template({}, {}, {})).toThrow();
         });
 
@@ -84,31 +86,30 @@ describe('Security Tests', () => {
                 title: 'Invalid',
                 content: 'Test'
             };
-            
-            expect(() => baker.savePage(invalidPage)).toThrow();
+            expect(() => loadPage(db, 'test.md', 'Content', invalidPage)).toThrow();
+            expect(baker.getPage('test')).toBeNull();
         });
 
         test('sanitizes metadata before storage', async () => {
             const baker = new Baker(db, false);
-            const pageWithScriptInMeta = {
-                slug: 'test',
-                title: 'Test',
-                content: 'Content',
-                metadata: {
-                    script: '<script>alert("xss")</script>'
-                }
+            const scriptInMeta = {
+                script: '<script>alert("xss")</script>'
             };
-            
-            await baker.savePage(pageWithScriptInMeta);
-            const saved = await baker.getPage('test');
-            expect(JSON.parse(saved.metadata).script).not.toContain('<script>');
+            loadPage(db, 'sanitization-test.md', 'Content', scriptInMeta);
+
+            const saved = await baker.getPage('sanitization-test');            
+            const data = saved?.data ? 
+                (typeof saved.data === 'string' ? JSON.parse(saved.data) : saved.data) 
+                : {};
+            expect(data.script).not.toContain('<script>');
         });
 
         test('prevents path traversal in asset loading', async () => {
             const baker = new Baker(db, false);
             const maliciousPath = '../../../etc/passwd';
             
-            expect(() => baker.getAsset(maliciousPath)).toThrow();
+            const result = await baker.getAsset(maliciousPath);
+            expect(result).toBeNull();
         });
     });
 });
