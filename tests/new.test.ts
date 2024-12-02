@@ -50,6 +50,7 @@ describe('createSite', () => {
     afterEach(async () => {
         await rm(tempDir, { recursive: true, force: true });
         await rm(starterDir, { recursive: true, force: true });
+        jest.restoreAllMocks();
     });
 
     test('should handle missing directories in starter gracefully', async () => {
