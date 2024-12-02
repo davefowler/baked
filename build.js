@@ -35,5 +35,6 @@ await esbuild.build({
   outfile: 'dist/cli/cli.js',
 })
 
-// Copy starter templates
+// Copy starter templates and sql files
 await cp('src/starter', 'dist/starter', { recursive: true }) 
+await cp('src/sql', 'dist/sql', { recursive: true }) 

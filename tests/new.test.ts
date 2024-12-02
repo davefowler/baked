@@ -115,7 +115,7 @@ describe('createSite', () => {
 
 describe('createSite with starter directory', () => {
     let tempDir: string;
-
+    const STARTER_DIR = join(process.cwd(), 'src/starter');
     beforeEach(async () => {
         // Create temporary directories
         tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
@@ -127,7 +127,7 @@ describe('createSite with starter directory', () => {
     });
 
     test('should copy starter directory structure correctly', async () => {
-        await createSite(tempDir);
+        await createSite(tempDir, STARTER_DIR);
         
         // Verify directory structure
         const dirs = await readdir(tempDir);

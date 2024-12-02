@@ -10,18 +10,10 @@ import sqlite from "better-sqlite3";
 import type { Database } from "better-sqlite3";
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading.js";
 import { Baker } from "../baked/baker.js";
-import { writeFile } from "fs/promises";
-import { readFile } from "fs/promises";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import schemaSQL from '../sql/schema.sql';
-import ftsSQL from '../sql/fulltextsearch.sql';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { writeFile, readFile } from "fs/promises";
 
 /* prep for the baking process by creating the needed database and directories */
-const prep = async (dist: string): Promise<Database> => {
+const prep = async (dist: string, sqlDir: string): Promise<Database> => {
     // Validate input
     if (!dist) {
         throw new Error('Distribution directory path is required');
@@ -42,9 +34,12 @@ const prep = async (dist: string): Promise<Database> => {
         }
     }
 
+    // Load and execute SQL files
+    const schemaSQL = await readFile(path.join(sqlDir, '/schema.sql'), 'utf8');
+    const ftsSQL = await readFile(path.join(sqlDir, '/fulltextsearch.sql'), 'utf8');
+
     // Create a new sqlite database
     const db = sqlite(`${dist}/site.db`);
-    // Load and execute SQL files
     db.exec(schemaSQL);
     db.exec(ftsSQL);
 
@@ -109,7 +104,7 @@ const dish = async (db: Database, dist: string) => {
 
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
-export default async function bake(rootDir: string, includeDrafts: boolean = false) {
+export default async function bake(rootDir: string, includeDrafts: boolean = false, sqlDir: string) {
     const tmpDist = path.join(rootDir, 'dist-tmp');
     const finalDist = path.join(rootDir, 'dist');
 
@@ -127,7 +122,7 @@ export default async function bake(rootDir: string, includeDrafts: boolean = fal
     await cp(publicDir, tmpDist, { recursive: true });
 
     // prep the database
-    const db = await prep(tmpDist);
+    const db = await prep(tmpDist, sqlDir);
 
     // mix in the assets
     const assetsDir = path.join(rootDir, 'assets');

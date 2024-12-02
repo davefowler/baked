@@ -5,9 +5,6 @@ import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
 import { fileURLToPath } from 'url';
 
-// Replace the __dirname/__filename code with:
-const __filename = new URL('', import.meta.url).pathname;
-const __dirname = dirname(__filename);
 
 // Add this helper function at the top of the file
 function createPrompts() {
@@ -25,11 +22,9 @@ function createPrompts() {
     };
 }
 
-const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');  // Go up two levels from dist/cli/new.js to reach package root
 
-export default async function createSite(destination: string, starterDir?: string) {
+export default async function createSite(destination: string, starterDir: string) {
     // Look for starter files in dist/starter relative to package root
-    starterDir = starterDir || join(packageRoot, 'dist', 'starter');
     
     await cp(starterDir, destination, { recursive: true });
 

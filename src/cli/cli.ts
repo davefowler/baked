@@ -40,6 +40,8 @@ bake serve # Psych, it didn't need an alias its a double entendre!
 // Get package.json version
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const packageRoot = join(__dirname, '..', '..');
+
 const packageJson = JSON.parse(
     readFileSync(join(__dirname, '../../package.json'), 'utf8')
 );
@@ -56,7 +58,9 @@ program
     .description('Create a new baked site')
     .action(async (destination) => {
         console.log(`Getting the ingredients for ${destination}...`);
-        await createSite(destination);
+        const starterDir = join(packageRoot, 'dist', 'starter');
+        console.log('starterDir', starterDir, 'packageRoot', packageRoot);
+        await createSite(destination, starterDir);
     });
 
 program
@@ -66,7 +70,8 @@ program
     .description('Bake the site - so it\'s ready to be served!')
     .action(async (options) => {
         console.log('Let\'s get cooking...');
-        await buildSite(process.cwd(), options.drafts);
+        const sqlDir = join(packageRoot, 'sql');
+        await buildSite(process.cwd(), options.drafts, sqlDir);
     });
 
 program
