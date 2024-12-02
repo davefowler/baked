@@ -1,4 +1,4 @@
-import { expect, test, beforeEach, afterEach, describe, jest } from '@jest/globals';
+import { expect, test, beforeEach, afterEach, describe, jest, SpyInstance } from '@jest/globals';
 import { mkdtemp, rm, readFile, mkdir, writeFile, readdir, stat } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -186,7 +186,7 @@ import { program } from 'commander';
 
 describe('CLI', () => {
     let tempDir: string;
-    let mockPrompt: jest.SpyInstance;
+    let mockPrompt: SpyInstance;
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-cli-test-'));
