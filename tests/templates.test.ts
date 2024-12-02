@@ -62,18 +62,18 @@ describe('Template System', () => {
     describe('Conditional Logic', () => {
         test('if statements work correctly', () => {
             const template = Components.templates(`
-                {% if page.metadata.show %}
+                {% if page.data.show %}
                     <div>Shown</div>
                 {% else %}
                     <div>Hidden</div>
                 {% endif %}
             `);
             
-            const shown = template({metadata: {show: true }}, {}, {});
+            const shown = template({data: {show: true }}, {}, {});
             expect(shown).toContain('Shown');
             expect(shown).not.toContain('Hidden');
             
-            const hidden = template({metadata: {show: false }}, {}, {});
+            const hidden = template({data: {show: false }}, {}, {});
             expect(hidden).toContain('Hidden');
             expect(hidden).not.toContain('Shown');
         });
@@ -83,14 +83,14 @@ describe('Template System', () => {
         test('for loops work correctly', () => {
             const template = Components.templates(`
                 <ul>
-                {% for item in page.metadata.items %}
+                {% for item in page.data.items %}
                     <li>{{ item }}</li>
                 {% endfor %}
                 </ul>
             `);
             
             const result = template(
-                { metadata: { items: ['one', 'two', 'three'] } },
+                { data: { items: ['one', 'two', 'three'] } },
                 {},
                 {}
             );
