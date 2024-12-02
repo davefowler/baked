@@ -6,8 +6,7 @@
 
 import { rename, cp, mkdir, rm } from "fs/promises";
 import path from "path";
-import Database from 'better-sqlite3';
-import type { Database as DatabaseType } from 'better-sqlite3';
+import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading.js";
 import { Baker } from "../baked/baker.js";
 import { writeFile, readFile } from "fs/promises";
@@ -42,13 +41,15 @@ const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
     console.log('Loading SQL files from:', sqlDir);
     const schemaSQL = await readFile(path.join(sqlDir, '/schema.sql'), 'utf8');
     console.log('Schema SQL loaded');
-    const ftsSQL = await readFile(path.join(sqlDir, '/fulltextsearch.sql'), 'utf8');
-    console.log('FTS SQL loaded');
+
+    // TODO - add full text search when schema is stable
+    // const ftsSQL = await readFile(path.join(sqlDir, '/fulltextsearch.sql'), 'utf8');
+    // console.log('FTS SQL loaded');
 
     // Create a new sqlite database
     const db = new Database(`${dist}/site.db`);
     db.exec(schemaSQL);
-    db.exec(ftsSQL);
+    // db.exec(ftsSQL);
 
     return db;
     
@@ -56,7 +57,7 @@ const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
 
 
 /* in the dishing phase, we pre-render each page, saving it to the dist directory */
-const dish = async (db: Database, dist: string) => {
+const dish = async (db: DatabaseType, dist: string) => {
     if (!db || !dist) {
         throw new Error('Database and dist path are required for pre-rendering');
     }
