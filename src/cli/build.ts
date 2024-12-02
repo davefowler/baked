@@ -132,7 +132,7 @@ export default async function bake(rootDir: string = process.cwd(), includeDraft
 
     // mix in the pages
     const pagesDir = path.join(rootDir, 'pages');
-    await loadPagesFromDir(pagesDir, db, {}, rootDir, includeDrafts);
+    await loadPagesFromDir(pagesDir, db, {}, includeDrafts, rootDir);
 
     // add in just a splash of site metadata
     await loadSiteMetadata(rootDir, db);

@@ -57,11 +57,11 @@ const mixers: Record<string, Mixer> = {
     'pages': markdownMixer
 };
 
-export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, rootDir: string, includeDrafts: boolean = false) {
-
-    console.log('loading pages from dir', dir, 'parent metadata', parentMetadata);
+export async function loadPagesFromDir(dir: string, db: Database, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
+    console.log('loading pages from dir', dir, rootDir, 'parent metadata', parentMetadata);
     // Store the root directory on first call
-    
+    rootDir = rootDir || dir;
+
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
     let metadata = { ...parentMetadata };
@@ -72,62 +72,70 @@ export async function loadPagesFromDir(dir: string, db: Database, parentMetadata
     } catch (error) {
         // meta.yaml doesn't exist, continue with parent metadata
     }
-    console.log('LOOPING metadata', metadata);
+
     for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         
         if (entry.isDirectory()) {
             // Pass the root directory through recursive calls
-            await loadPagesFromDir(fullPath, db, metadata, rootDir, includeDrafts);
-        } else if (entry.name !== 'meta.yaml') {
-            // Get the first directory after the root directory
-            let mixer = defaultMixer;
-            if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
-                mixer = markdownMixer;
-                console.log('markdown mixer', entry.name, fullPath);
-            }
-            
-            try {
-                const content = await fs.readFile(fullPath, 'utf8');
-                const { content: processedContent, data: finalData } = 
-                    await mixer(fullPath, content, metadata);
-                // don't even load draft pages if not specified by user with --drafts
-                if (!includeDrafts && finalData.isDraft) continue; 
-                
-                const pathFromRoot = path.relative(rootDir, fullPath);
-                const slug = pathFromRoot.replace(path.extname(fullPath), '').replace(/\.[^/.]+$/, '');
-                const title = finalData.title || path.basename(fullPath, path.extname(fullPath));
-                
-                // Ensure date is converted to ISO string if it's a Date object
-                const publishedDate = finalData.date ? 
-                    new Date(finalData.date).toISOString() : 
-                    null;
-
-                // console.log(`Loading page: ${slug}`, 
-                //     '\npath:', pathFromRoot, 
-                //     '\nslug:', slug, 
-                //     '\ntitle:', title, 
-                //     '\ntemplate:', finalMetadata.template || 'default', 
-                //     '\ndata:',    JSON.stringify(finalMetadata), 
-                //     '\ndate:',publishedDate ? publishedDate : null);
-    
-                db.prepare(`
-                    INSERT INTO pages (path, slug, title, content, template, data, published_date) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                `).run(
-                    pathFromRoot,
-                    slug,
-                    title,
-                    processedContent,
-                    finalData.template || 'default',
-                    JSON.stringify(finalData),
-                    publishedDate ? publishedDate : null
-                );
-                
-            } catch (error) {
-                console.error(`Error processing ${fullPath}:`, error);
-            }
+            await loadPagesFromDir(fullPath, db, metadata, includeDrafts, rootDir);
+            continue;
+        } else if (entry.name === 'meta.yaml') {
+            // meta.yaml must be handled first (above) so skip here
+            continue;
         }
+
+        // TODO - right now we're allowing all file types to be loaded, but maybe we shouldn't.
+
+        // Get the first directory after the root directory
+        let mixer = defaultMixer;
+        if (entry.name.endsWith('.md') || entry.name.endsWith('.markdown')) {
+            mixer = markdownMixer;
+            console.log('markdown mixer', entry.name, fullPath);
+        }
+        
+        try {
+            const content = await fs.readFile(fullPath, 'utf8');
+            const { content: processedContent, data: finalData } = 
+                await mixer(fullPath, content, metadata);
+            // don't even load draft pages if not specified by user with --drafts
+            if (!includeDrafts && finalData.isDraft) continue; 
+            
+            const pathFromRoot = path.relative(rootDir, fullPath);
+            console.log('pathFromRoot', pathFromRoot, rootDir, fullPath);
+            const slug = pathFromRoot.replace(path.extname(fullPath), '').replace(/\.[^/.]+$/, '');
+            const title = finalData.title || path.basename(fullPath, path.extname(fullPath));
+            
+            // Ensure date is converted to ISO string if it's a Date object
+            const publishedDate = finalData.date ? 
+                new Date(finalData.date).toISOString() : 
+                null;
+
+            console.log(`Loading page: ${slug}`, 
+                '\npath:', pathFromRoot, 
+                '\nslug:', slug, 
+                '\ntitle:', title, 
+                '\ntemplate:', finalData.template || 'default', 
+                '\ndata:',    JSON.stringify(finalData), 
+                '\ndate:',publishedDate ? publishedDate : null);
+
+            db.prepare(`
+                INSERT INTO pages (path, slug, title, content, template, data, published_date) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                pathFromRoot,
+                slug,
+                title,
+                processedContent,
+                finalData.template || 'default',
+                JSON.stringify(finalData),
+                publishedDate ? publishedDate : null
+            );
+            
+        } catch (error) {
+            console.error(`Error processing ${fullPath}:`, error);
+        }
+        
     }
 }
 

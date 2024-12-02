@@ -41,7 +41,7 @@ date: 2024-01-01
             await mkdir(join(tempDir, 'pages'), { recursive: true });
             await writeFile(join(tempDir, 'pages', 'test.md'), pageContent);
             
-            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, tempDir, false);
+            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
             
             const allPages = db.prepare('SELECT * FROM pages').all() as Page[];
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
@@ -65,10 +65,12 @@ Wild content here`;
             await writeFile(join(tempDir, 'pages', 'blog', 'meta.yaml'), metaContent);
             await writeFile(join(tempDir, 'pages', 'blog', 'post.md'), pageContent);
 
-            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, tempDir, false);
+            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
             
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
             const allpages = db.prepare('SELECT * FROM pages').all() as Page[];
+            console.log('allpages', allpages);
+            expect(page).toBeDefined();
             const data = JSON.parse(page.data);
             expect(data.template).toBe('blog');
             expect(data.author).toBe('Test Author');
@@ -87,7 +89,7 @@ Draft content`;
             await mkdir(join(tempDir, 'pages'), { recursive: true });
             await writeFile(join(tempDir, 'pages', 'draft.md'), draftContent);
             
-            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, tempDir, false);
+            await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
             
             const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('draft');
             expect(page).toBeUndefined();
