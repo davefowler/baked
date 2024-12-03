@@ -11,7 +11,6 @@ import { loadPage } from "../src/baked/loading.js";
 describe('Security Tests', () => {
     let tempDir: string;
     let db: DatabaseType;
-    let consoleWarnSpy: jest.SpyInstance;
 
     beforeEach(async () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-security-test-'));
@@ -25,8 +24,6 @@ describe('Security Tests', () => {
     afterEach(async () => {
         await rm(tempDir, { recursive: true, force: true });
         await db.close();
-        // Restore console.warn
-        consoleWarnSpy.mockRestore();
     });
 
     describe('Template Security', () => {

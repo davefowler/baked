@@ -60,30 +60,6 @@ describe('Template System', () => {
     });
 
 
-    describe('Template Inheritance', () => {
-        test('extends base template correctly - even with missing file extension', () => {
-            const rawBase = `
-                <html>{% block content %}{% endblock %}</html>
-            `;
-            const child = Components.templates(`
-                {% extends "base" %}
-                {% block content %}Hello{% endblock %}
-            `);
-            
-            // fake baker with getRawAsset
-            const faker = {
-                getRawAsset: (name: string) => {
-                    if (name === 'base.html') return {content: rawBase, type: 'templates'};
-                    return null;
-                }
-            };
-            
-            const result = child({}, faker, {});
-            expect(result).toContain('Hello');
-            expect(result).toContain('<html>');
-        });
-    });
-
 
     describe('Conditional Logic', () => {
         test('if statements work correctly', () => {

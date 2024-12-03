@@ -1,10 +1,10 @@
 import { expect, test, beforeEach, afterEach, jest, describe } from '@jest/globals';
 import { mkdtemp, rm, readFile, mkdir, writeFile, readdir } from 'fs/promises';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import createSite from '../src/cli/new';
 
-const DEFAULT_STARTER_DIR = join(process.cwd(), 'src/starter');
+const DEFAULT_STARTER_DIR = join(dirname(__dirname), 'src/starter');
 
 
 describe('createSite', () => {
