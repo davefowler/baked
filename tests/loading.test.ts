@@ -42,7 +42,6 @@ date: 2024-01-01
 
       await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
 
-      const allPages = db.prepare('SELECT * FROM pages').all() as Page[];
       const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
       const data = JSON.parse(page.data);
       expect(page).toBeDefined();
@@ -73,7 +72,6 @@ Wild content here`;
 
       const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
       const allpages = db.prepare('SELECT * FROM pages').all() as Page[];
-      console.log('allpages', allpages);
       expect(page).toBeDefined();
       const data = JSON.parse(page.data);
       expect(data.template).toBe('blog');

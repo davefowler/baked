@@ -47,7 +47,6 @@ describe('build process', () => {
     expect(existsSync(distDir)).toBe(true);
     expect(existsSync(path.join(distDir, 'site.db'))).toBe(true);
 
-    console.log('files in the dist dir', await readdir(distDir));
     // Check that public files were copied
     expect(existsSync(path.join(distDir, 'manifest.json'))).toBe(true);
   });
