@@ -41,7 +41,7 @@ describe('Baker', () => {
   describe('Asset Management', () => {
     test('getRawAsset retrieves assets correctly', async () => {
       db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-        '/css/test.css',
+        'test.css',
         'body { color: red; }',
         'css'
       );
@@ -93,7 +93,7 @@ describe('Baker', () => {
 
       // Add a template
       db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)').run(
-        'default',
+        'test-template.html',
         '<h1>{{ page.title }}</h1>{{ page.content }}',
         'templates'
       );
@@ -112,9 +112,12 @@ describe('Baker', () => {
         content: 'Test content from a new page',
         data: {
           author: 'test',
+          template: 'test-template',
         },
-        template: 'default',
       };
+
+      const alltemplatesare = db.prepare('SELECT * FROM assets WHERE type = ?').all('templates');
+      console.log('available templates', alltemplatesare);
       const rendered = await baker.renderPage(testPage);
       expect(rendered).toContain('<h1>Test from a new Page</h1>');
       expect(rendered).toContain('Test content from a new page');

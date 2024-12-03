@@ -87,7 +87,7 @@ export class Baker {
         throw new Error('Cannot render null page');
       }
       if (!page.data?.template) {
-        throw new Error(`No template specified for page: {{ page.slug }}`);
+        throw new Error(`No template specified for page: ${page.path}`);
       }
       const templateName = page.data.template.includes('.')
         ? page.data.template
