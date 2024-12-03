@@ -6,7 +6,7 @@ const ASSETS = [
   '/manifest.json',
   '/rss.xml',
   '/sitemap.xml',
-  '/robots.txt'
+  '/robots.txt',
 ];
 
 // Cache all HTML pages that are accessed
@@ -42,7 +42,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-      
+
       // Try to get the response from cache first
       const cachedResponse = await cache.match(event.request);
       if (cachedResponse) {
@@ -50,8 +50,10 @@ self.addEventListener('fetch', (event) => {
         if (event.request.headers.get('accept').includes('text/html')) {
           event.waitUntil(
             fetch(event.request)
-              .then(response => cacheHTML(event.request, response))
-              .catch(() => {/* ignore */})
+              .then((response) => cacheHTML(event.request, response))
+              .catch(() => {
+                /* ignore */
+              })
           );
         }
         return cachedResponse;
@@ -60,12 +62,12 @@ self.addEventListener('fetch', (event) => {
       // If not in cache, try to fetch it
       try {
         const response = await fetch(event.request);
-        
+
         // Cache HTML responses for offline access
         if (event.request.headers.get('accept').includes('text/html')) {
           await cacheHTML(event.request, response);
         }
-        
+
         return response;
       } catch (error) {
         // If fetch fails and we don't have a cached response, return offline page

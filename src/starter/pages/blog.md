@@ -6,7 +6,7 @@ template: base
 
 # This is my blog
 
-Need a seperate home page for your blog?  This one's just blog.md, located at /blog.  You can replace it with your own content or just use the home page if the whole site is your blog.
+Need a seperate home page for your blog? This one's just blog.md, located at /blog. You can replace it with your own content or just use the home page if the whole site is your blog.
 
 <h2>Latest posts</h2>
 <ul>
@@ -16,4 +16,3 @@ Need a seperate home page for your blog?  This one's just blog.md, located at /b
 </ul>
 
 Hmmm, what else might someone want to do on their home page?
-

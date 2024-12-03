@@ -42,51 +42,49 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const packageRoot = join(__dirname, '..', '..');
 
-const packageJson = JSON.parse(
-    readFileSync(join(__dirname, '../../package.json'), 'utf8')
-);
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8'));
 
 program
-    .name('bake')
-    .description('CLI for creating and managing Baked websites, a fully baked site generator')
-    .version(packageJson.version);
+  .name('bake')
+  .description('CLI for creating and managing Baked websites, a fully baked site generator')
+  .version(packageJson.version);
 
 program
-    .command('new')
-    .alias('starter')
-    .argument('<site destination>', 'Destination directory for the new site')
-    .description('Create a new baked site')
-    .action(async (destination) => {
-        console.log(`Getting the ingredients for ${destination}...`);
-        const starterDir = join(packageRoot, 'dist', 'starter');
-        await createSite(destination, starterDir);
-    });
+  .command('new')
+  .alias('starter')
+  .argument('<site destination>', 'Destination directory for the new site')
+  .description('Create a new baked site')
+  .action(async (destination) => {
+    console.log(`Getting the ingredients for ${destination}...`);
+    const starterDir = join(packageRoot, 'dist', 'starter');
+    await createSite(destination, starterDir);
+  });
 
 program
-    .command('build')
-    .alias('site')
-    .option('--drafts', 'Build draft pages')
-    .description('Bake the site - so it\'s ready to be served!')
-    .action(async (options) => {
-        console.log('Let\'s get cooking...');
-        const sqlDir = join(packageRoot, 'dist/sql');
-        await buildSite(process.cwd(), sqlDir, options.drafts);
-    });
+  .command('build')
+  .alias('site')
+  .option('--drafts', 'Build draft pages')
+  .description("Bake the site - so it's ready to be served!")
+  .action(async (options) => {
+    console.log("Let's get cooking...");
+    const sqlDir = join(packageRoot, 'dist/sql');
+    await buildSite(process.cwd(), sqlDir, options.drafts);
+  });
 
 program
-    .command('serve')
-    .description('Start development server')
-    .action(async () => {
-        console.log('Starting development server...');
-        await serveSite();
-    });
+  .command('serve')
+  .description('Start development server')
+  .action(async () => {
+    console.log('Starting development server...');
+    await serveSite();
+  });
 
 program.command('help').action(() => {
-    program.help();
+  program.help();
 });
 
 program.command('versions').action(() => {
-    console.log(`Baked CLI version: ${process.env.npm_package_version}`);
+  console.log(`Baked CLI version: ${process.env.npm_package_version}`);
 });
 
 program.parse();
