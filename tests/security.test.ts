@@ -17,16 +17,6 @@ describe('Security Tests', () => {
         tempDir = await mkdtemp(join(tmpdir(), 'baked-security-test-'));
         db = new Database(':memory:');
         
-        // Store the original console.warn
-        const originalWarn = console.warn;
-        
-        // Only suppress specific warnings
-        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation((message) => {
-            if (!message.includes('Asset not found: /json/site.yaml')) {
-                originalWarn.call(console, message);  // Use the original warn function
-            }
-        });
-        
         // Load schema from file
         const schema = await readFile(join(__dirname, '../src/sql/schema.sql'), 'utf-8');
         await db.exec(schema);

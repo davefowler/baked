@@ -28,7 +28,7 @@ describe('Baker Template Integration', () => {
 
             INSERT INTO assets (path, content, type)
             VALUES 
-                ('/json/site.yaml', '{"title": "Test Site"}', 'json'),
+                ('site.yaml', '{"title": "Test Site"}', 'json'),
                 ('/css/test.css', 'body { color: red; }', 'css');
         `);
 

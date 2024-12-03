@@ -45,6 +45,11 @@ class BakerLoader {
 
     // Nunjucks loader overwrite to extend or include templates from the baked database instead of a file system
     getSource(name) {
+        // add .html to the name if it has no other extension
+        if (!name.includes('.')) {
+            name += '.html';
+        }
+
         const template = this.baker.getRawAsset(name, 'templates');
         if (!template) {
             throw new Error(`Template ${name} not found`);

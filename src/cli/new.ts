@@ -24,9 +24,6 @@ async function promptUser(question: string): Promise<string> {
 export default async function createSite(destination: string, starterDir: string) {
     await cp(starterDir, destination, { recursive: true });
 
-    console.log('starter coppied to:', destination, await readdir(destination));
-    console.log('public dir contents', await readdir(`${destination}/public`));
-    
     console.log('Before we get cookin\' let\'s get some info about the site...');
     
     try {
@@ -47,7 +44,6 @@ author: ${siteAuthor}`;
         const blogMetaContent = `author: ${siteAuthor}`;
         await writeFile(`${destination}/pages/blog/meta.yaml`, blogMetaContent, 'utf-8');
 
-        console.log('things in ', destination, await readdir(destination));
         // update specific fields in the manifest.json file
         const manifestPath = `${destination}/public/manifest.json`;
         // ensure manifest exists

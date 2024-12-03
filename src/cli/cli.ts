@@ -59,7 +59,6 @@ program
     .action(async (destination) => {
         console.log(`Getting the ingredients for ${destination}...`);
         const starterDir = join(packageRoot, 'dist', 'starter');
-        console.log('starterDir', starterDir, 'packageRoot', packageRoot);
         await createSite(destination, starterDir);
     });
 

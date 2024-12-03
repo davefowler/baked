@@ -15,7 +15,6 @@ type Mixer = (filepath: string, content: string, metadata: any, distPath?: strin
 // Default Mixer just returns content and metadata unchanged
 // TODO - right now we're allowing all file types to be loaded, but maybe we shouldn't.
 const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
-    console.log('default mixer', filepath, content, metadata, distPath);
     return { content, data: metadata };
 };
 
@@ -86,11 +85,9 @@ export const loadPage = (db: DatabaseType, pagePath: string, content: string, da
 
     const template = sanitizedData?.template ? sanitizedData.template : 'base.html';
 
-    // Ensure path includes the .md extension for consistency
-    const fullPath = pagePath.endsWith('.md') ? pagePath : `${pagePath}.md`;
     
     const params = {
-        path: fullPath,
+        path: pagePath,
         slug,
         title,
         content,
@@ -99,10 +96,6 @@ export const loadPage = (db: DatabaseType, pagePath: string, content: string, da
         published_date: publishedDate
     };
 
-    console.log('existing pages are', db.prepare('SELECT * FROM pages').all());
-    console.log('schema is', db.prepare('SELECT * FROM sqlite_schema').all());
-    console.log('full SQL to run is', `INSERT INTO pages (path, slug, title, content, template, data, published_date) VALUES (${params.path}, ${params.slug}, ${params.title}, ${params.content}, ${params.template}, ${params.data}, ${params.published_date})`);
-    
     try {
         const stmt = db.prepare(`
             INSERT INTO pages (path, slug, title, content, template, data, published_date) 
@@ -132,7 +125,6 @@ export const loadPage = (db: DatabaseType, pagePath: string, content: string, da
 export async function loadPagesFromDir(dir: string, db: DatabaseType, parentMetadata: any = {}, includeDrafts: boolean = false, rootDir?: string) {
     // Store the root directory on first call
     rootDir = rootDir || dir;
-    console.log('loading pages from dir', dir, rootDir, 'parent metadata', parentMetadata);
 
     const entries = await fs.readdir(dir, { withFileTypes: true });
     const metaPath = path.join(dir, 'meta.yaml');
@@ -205,6 +197,6 @@ export async function loadSiteMetadata(dir: string, db: DatabaseType) {
     const siteMetadata = yaml.parse(siteContent);
     db.prepare(`
         INSERT INTO assets (path, content, type) VALUES (?, ?, ?)
-    `).run('/json/site.yaml', JSON.stringify(siteMetadata), 'json');
+    `).run('site.yaml', JSON.stringify(siteMetadata), 'json');
 
 }

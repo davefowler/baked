@@ -24,7 +24,7 @@ describe('Baker', () => {
         
         // Add site.yaml for Baker initialization
         db.prepare('INSERT INTO assets (path, content, type) VALUES (?, ?, ?)')
-          .run('/json/site.yaml', JSON.stringify({ title: 'Test Site' }), 'json');
+          .run('site.yaml', JSON.stringify({ title: 'Test Site' }), 'json');
         
         baker = new Baker(db, true);
     });
@@ -42,7 +42,6 @@ describe('Baker', () => {
             ).run('/css/test.css', 'body { color: red; }', 'css');
             const assets = db.prepare('SELECT * FROM assets').all() as RawAsset[];
             
-            console.log('again the assets', assets)
             const asset = baker.getRawAsset('test.css', 'css');
             expect(asset).toBeDefined();
             expect(asset.content).toBe('body { color: red; }');

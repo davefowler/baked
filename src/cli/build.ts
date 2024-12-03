@@ -14,8 +14,6 @@ import { writeFile, readFile } from "fs/promises";
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
     console.log('Preparing build...');
-    console.log('dist:', dist);
-    console.log('sqlDir:', sqlDir);
     
     // Validate input
     if (!dist) {
@@ -38,9 +36,7 @@ const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
     }
 
     // Load and execute SQL files
-    console.log('Loading SQL files from:', sqlDir);
     const schemaSQL = await readFile(path.join(sqlDir, '/schema.sql'), 'utf8');
-    console.log('Schema SQL loaded');
 
     // TODO - add full text search when schema is stable
     // const ftsSQL = await readFile(path.join(sqlDir, '/fulltextsearch.sql'), 'utf8');
@@ -70,10 +66,7 @@ const dish = async (db: DatabaseType, dist: string) => {
         if (!pageSlugs?.length) {
             console.warn('No pages found to render');
             return;
-        }
-
-        console.log(`Pre-rendering ${pageSlugs.length} pages...`);
-        
+        }        
         // N+1 query here - but it's fast in SQLite and better for larger sites vs loading all pages into memory
         for (const slug of pageSlugs) {
             try {

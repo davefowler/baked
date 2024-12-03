@@ -135,7 +135,7 @@ author: Test Author`;
             
             await loadSiteMetadata(tempDir, db);
             
-            const siteRaw = db.prepare('SELECT content FROM assets WHERE path = ? AND type = ?').get('/json/site.yaml', 'json') as RawAsset;
+            const siteRaw = db.prepare('SELECT content FROM assets WHERE path = ? AND type = ?').get('site.yaml', 'json') as RawAsset;
             const site = JSON.parse(siteRaw.content);
             
             expect(site.title).toBe('Test Site');

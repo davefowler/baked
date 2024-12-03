@@ -58,8 +58,6 @@ describe('createSite', () => {
     test('should handle missing directories in starter gracefully', async () => {
         // Remove some directories to simulate incomplete starter
         await rm(join(starterDir, 'assets'), { recursive: true, force: true });
-        
-        console.log('should =- starter dir contents', await readdir(starterDir));
         await createSite(tempDir, starterDir);
         
         // Should still copy available directories
@@ -71,9 +69,7 @@ describe('createSite', () => {
     test('should create a new site with correct configuration', async () => {
         // Temporarily override the starter directory path
         
-        console.log('creating site in', tempDir);
         await createSite(tempDir, starterDir);
-        console.log('created dir contents', await readdir(tempDir));
 
         // Verify site.yaml
         const siteYaml = await readFile(join(tempDir, 'site.yaml'), 'utf-8');
@@ -86,8 +82,6 @@ describe('createSite', () => {
         const blogMeta = await readFile(join(tempDir, 'pages', 'blog', 'meta.yaml'), 'utf-8');
         expect(blogMeta).toContain('author: Test Author');
 
-
-        console.log('TEMP DIR THINGS', await readdir(tempDir));
 
         // Verify manifest.json
         const manifest = JSON.parse(await readFile(join(tempDir, 'public', 'manifest.json'), 'utf-8'));

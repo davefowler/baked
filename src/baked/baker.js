@@ -26,11 +26,11 @@ export class Baker {
             if (!name) {
                 throw new Error('Asset name is required');
             }
-            const path = type ? `/${type}/${name}` : name;
+            const path = name;
             const result = this.db.prepare('SELECT content, type FROM assets WHERE path = ? and type = ?').get(path, type);
             if (!result) {
-                const allassets = this.db.prepare('SELECT * FROM assets').all();
-                console.warn(`Asset not found: ${path}`, allassets);
+                const allassetsPaths = this.db.prepare('SELECT path FROM assets').all();
+                console.warn(`Asset not found: ${path}`, allassetsPaths);
 
             }
             return result;
@@ -86,10 +86,11 @@ export class Baker {
             if (!page.data?.template) {
                 throw new Error(`No template specified for page: {{ page.slug }}`);
             }
-            
-            const template = this.getAsset(page.data.template, 'templates');
+            const templateName = page.data.template.includes('.') ? page.data.template : `${page.data.template}.html`;
+            const template = this.getAsset(templateName, 'templates');
+            console.log('got template?', template, templateName, page);
             if (!template) {
-                throw new Error(`Template not found: {{ page.data.template }}`);
+                throw new Error(`Template not found: ${templateName}`);
             }
             
             return template(page, this, this.site);

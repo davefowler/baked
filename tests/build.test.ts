@@ -4,7 +4,7 @@ import Database, { Database as DatabaseType } from 'better-sqlite3';
 import bake from "../src/cli/build";
 import { existsSync } from "fs";
 import path from 'path';
-
+import type { Page } from '../src/types';
 
 
 describe("build process", () => {
@@ -18,8 +18,6 @@ describe("build process", () => {
     });
 
     beforeEach(async () => {
-        console.log('Creating test directories...');
-        
         // Create base directories
         await mkdir(TEST_DIR, { recursive: true });
 
@@ -36,12 +34,11 @@ describe("build process", () => {
 
     test("initializes build directory correctly", async () => {
 
-        console.log('things in the test dir', await readdir(TEST_DIR));
         // Add check to ensure TEST_DIST exists before baking
         expect(existsSync(TEST_DIR)).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'assets'))).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'pages'))).toBe(true);
-        expect(existsSync(path.join(TEST_DIR, 'manifest.json'))).toBe(true);
+        expect(existsSync(path.join(TEST_DIR, 'public/manifest.json'))).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'assets/css'))).toBe(true);
         expect(existsSync(path.join(TEST_DIR, 'assets/templates'))).toBe(true);
 
@@ -53,26 +50,18 @@ describe("build process", () => {
         expect(existsSync(distDir)).toBe(true);
         expect(existsSync(path.join(distDir, 'site.db'))).toBe(true);
         
+        console.log('files in the dist dir', await readdir(distDir));
         // Check that public files were copied
         expect(existsSync(path.join(distDir, 'manifest.json'))).toBe(true);
     });
 
     test("loads assets into database", async () => {
         // Verify directories exist before proceeding
-        const assetsPath = path.join(TEST_DIR, 'assets');
-        console.log('Before bake - assets directory exists?', existsSync(assetsPath));
-        console.log('Assets directory contents:', await readdir(assetsPath));
-        
+        const assetsPath = path.join(TEST_DIR, 'assets');        
         await bake(TEST_DIR, SQL_DIR);
-        
-        console.log('After bake - assets directory exists?', existsSync(assetsPath));
-        if (existsSync(assetsPath)) {
-            console.log('Assets directory contents after bake:', await readdir(assetsPath));
-        }
-        
+                
         const distDir = path.join(TEST_DIR, 'dist');
         const dbPath = path.join(distDir, 'site.db');
-        console.log('Database path exists?', existsSync(dbPath));
         
         const db = new Database(dbPath);
         const assets = db.prepare("SELECT * FROM assets").all();
@@ -84,16 +73,14 @@ describe("build process", () => {
     test("loads pages into database", async () => {
 
         const num_pages = await readdir(path.join(TEST_DIR, 'pages'));
-        console.log('num_pages', num_pages);
-
         await bake(TEST_DIR, SQL_DIR);
         
         const db = new Database(path.join(TEST_DIR, 'dist', 'site.db'));
-        const pages = db.prepare("SELECT * FROM pages").all();
+        const pages = db.prepare("SELECT * FROM pages").all() as Page[];
         expect(pages).toBeDefined();
         expect(Array.isArray(pages)).toBe(true);
-
-        expect(pages.length).toBe(3);
+        expect(pages.length).toBe(4);
+        expect(pages.map((page) => page.slug)).toEqual(['about', 'blog/customization', 'blog', 'index']);
         
         const manifestPage = db.prepare("SELECT * FROM pages WHERE slug like '%manifest%'").get();
         expect(manifestPage).toBeUndefined();
