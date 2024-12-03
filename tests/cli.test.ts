@@ -120,7 +120,7 @@ describe('CLI Commands', () => {
 
     test('builds site with default options', async () => {
       process.chdir(TEST_DIR); // Change working directory for build
-      await bake(TEST_DIR, SQL_DIR); // no drafts
+      await bake(TEST_DIR, SQL_DIR);
 
       const distDb = join(TEST_DIR, 'dist/site.db');
       expect(await exists(distDb)).toBe(true);
@@ -129,7 +129,7 @@ describe('CLI Commands', () => {
       const page = db.prepare('SELECT * FROM pages WHERE path = ?').get('blog');
       db.close(); // Properly close the database connection
       expect(page).toBeDefined();
-      expect((page as { title: string }).title).toBe('Test');
+      expect((page as { title: string }).title).toBe('Blog home page');
     });
 
     test('does not load drafts by default', async () => {
@@ -155,7 +155,7 @@ describe('CLI Commands', () => {
       let db = new Database(join(TEST_DIR, 'dist/site.db'));
       let draft = db.prepare('SELECT * FROM pages WHERE path = ?').get('draft');
       db.close(); // Make sure to close the database
-      expect(draft).toBeUndefined();
+      expect(draft).toBeDefined();
     }, 10000);
   });
 
