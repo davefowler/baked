@@ -86,10 +86,8 @@ class BakerLoader {
 }
 
 const Template = (rawAsset) => {
-  // Create environment with custom loader (will be set for each render)
   let env;
 
-  // Return render function
   return (page, baker, site) => {
     // Create new environment for each render with the current baker
     env = new nunjucks.Environment(new BakerLoader(baker), {
@@ -132,10 +130,10 @@ const Template = (rawAsset) => {
     };
 
     try {
-      return template.render(context);
+      return template.render(context).trim();
     } catch (error) {
       console.error('Template render error:', error);
-      return `<pre>Template Error: ${sanitizeHtml(error.message)}</pre>`;
+      return '';
     }
   };
 };
