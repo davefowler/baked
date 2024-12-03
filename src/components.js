@@ -67,7 +67,6 @@ class BakerLoader {
         name = cleanAssetName(name);
         
         const {content: template} = this.baker.getRawAsset(name, 'templates');
-        console.log('nunjucks get source', name, 'template?', template);
         if (!template) {
             throw new Error(`Template ${name} not found`);
         }

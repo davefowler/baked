@@ -80,7 +80,12 @@ const dish = async (db: DatabaseType, dist: string) => {
                 
                 const rendered = await baker.renderPage(page);
 
-                console.log(`Rendering page: ${path} to ${dist}/${path}.html`);
+                console.log(`Rendering page: ${path} to ${dist}/${path}.html ${rendered.length} bytes`);
+
+                // Ensure directory exists before writing file
+                const fileDir = `${dist}/${path}`.split('/').slice(0, -1).join('/');
+                await mkdir(fileDir, { recursive: true });
+                    
                 // Write the rendered content to a file
                 await writeFile(`${dist}/${path}.html`, rendered, {
                     encoding: 'utf8',
