@@ -4,7 +4,7 @@
 2. dish - Pre-rendering each page
 */
 
-import { rename, cp, mkdir, rm } from "fs/promises";
+import { rename, cp, mkdir, rm, readdir } from "fs/promises";
 import path from "path";
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from "../baked/loading.js";
@@ -63,7 +63,6 @@ const dish = async (db: DatabaseType, dist: string) => {
     
     try {
         const paths = baker.query(`SELECT path FROM pages`).map((p: { path: string }) => p.path) as string[];
-        console.log(`Found ${paths.length} pages to render `, paths);
         if (!paths?.length) {
             console.warn('No pages found to render');
             return;
@@ -73,15 +72,11 @@ const dish = async (db: DatabaseType, dist: string) => {
             try {
                 const page = baker.getPage(path);
                 if (!page) {
-                    console.error(`Failed to load page: ${path}`);
+                    console.error(`Cannot find page: ${path}`);
                     failures++;
                     continue;
                 }
-                
                 const rendered = await baker.renderPage(page);
-
-                console.log(`Rendering page: ${path} to ${dist}/${path}.html ${rendered.length} bytes`);
-
                 // Ensure directory exists before writing file
                 const fileDir = `${dist}/${path}`.split('/').slice(0, -1).join('/');
                 await mkdir(fileDir, { recursive: true });
@@ -104,7 +99,6 @@ const dish = async (db: DatabaseType, dist: string) => {
             throw new Error(`Build completed with ${failures} failed pages`);
         }
 
-        console.log('Pre-rendering completed successfully');
     } catch (error) {
         console.error('Pre-rendering failed:', error);
         throw error;
@@ -126,12 +120,12 @@ export default async function bake(rootDir: string,  sqlDir: string, includeDraf
         throw new Error(`Failed to prepare tmp directory: ${message}`);
     }
 
+    // prep the database
+    const db = await prep(tmpDist, sqlDir);
+
     // copy the public files into the tmp dist
     const publicDir = path.join(rootDir, 'public');
     await cp(publicDir, tmpDist, { recursive: true });
-
-    // prep the database
-    const db = await prep(tmpDist, sqlDir);
 
     // mix in the assets
     const assetsDir = path.join(rootDir, 'assets');
