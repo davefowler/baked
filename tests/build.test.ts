@@ -8,8 +8,8 @@ import type { Page } from '../src/types';
 
 
 describe("build process", () => {
-    const TEST_DIR = path.join(process.cwd(), "tmp/test");
-    const SQL_DIR = path.join(process.cwd(), "src/sql");
+    const TEST_DIR = path.join(__dirname, "../tmp/test");
+    const SQL_DIR = path.join(__dirname, "../src/sql");
     let db: DatabaseType;
     let schema: string;
     beforeAll(async () => {

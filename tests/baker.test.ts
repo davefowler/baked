@@ -50,10 +50,23 @@ describe('Baker', () => {
         test('getAsset processes assets with components', async () => {
             db.prepare(
                 'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
-            ).run('/css/test.css', 'body { color: red; }', 'css');
+            ).run('test.css', 'body { color: red; }', 'css');
 
+            // Test 3 diffferent ways to grab the same asset
+
+            // just by the asset name (no directory)
             const processed = baker.getAsset('test.css', 'css');
             expect(processed).toBe('<style>body { color: red; }</style>'); // Remove style tags expectation since Components is mocked
+
+            // test that it works the type folder 
+            const p2 = baker.getAsset('css/test.css', 'css');
+            expect(p2).toBe('<style>body { color: red; }</style>'); // Remove style tags expectation since Components is mocked
+
+
+            // test that it works with a leading slash
+            const p3 = baker.getAsset('/css/test.css', 'css');
+            expect(p3).toBe('<style>body { color: red; }</style>'); // Remove style tags expectation since Components is mocked
+
         });
     });
 
