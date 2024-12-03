@@ -12,7 +12,7 @@
    - query(sql, params) # run a sql query on the database and return the results
 */
 
-import { Components } from '../components.js';
+import { Components, cleanAssetName } from '../components.js';
 
 export class Baker {
     constructor(db, isClient) {
@@ -22,6 +22,7 @@ export class Baker {
     }
 
     getRawAsset(name, type) {
+        name = cleanAssetName(name, type);
         try {
             if (!name) {
                 throw new Error('Asset name is required');
@@ -29,13 +30,13 @@ export class Baker {
             const path = name;
             const result = this.db.prepare('SELECT content, type FROM assets WHERE path = ? and type = ?').get(path, type);
             if (!result) {
-                const allassetsPaths = this.db.prepare('SELECT path FROM assets').all();
-                console.warn(`Asset not found: ${path}`, allassetsPaths);
+                const allassetsPaths = this.db.prepare('SELECT path, type FROM assets').all();
+                console.warn(`Asset not found: ${path}, ${type}`, allassetsPaths);
 
             }
             return result;
         } catch (error) {
-            console.error(`Failed to get asset ${name}:`, error);
+            console.error(`Failed to get asset ${name}, ${type}:`, error);
             throw error;
         }
     }
@@ -88,7 +89,6 @@ export class Baker {
             }
             const templateName = page.data.template.includes('.') ? page.data.template : `${page.data.template}.html`;
             const template = this.getAsset(templateName, 'templates');
-            console.log('got template?', template, templateName, page);
             if (!template) {
                 throw new Error(`Template not found: ${templateName}`);
             }

@@ -48,7 +48,7 @@ describe('Template System', () => {
             // fake baker with getRawAsset
             const faker = {
                 getRawAsset: (name: string) => {
-                    if (name === 'base.html') return rawBase;
+                    if (name === 'base.html') return {content: rawBase, type: 'templates'};
                     return null;
                 }
             };
@@ -73,7 +73,7 @@ describe('Template System', () => {
             // fake baker with getRawAsset
             const faker = {
                 getRawAsset: (name: string) => {
-                    if (name === 'base.html') return rawBase;
+                    if (name === 'base.html') return {content: rawBase, type: 'templates'};
                     return null;
                 }
             };

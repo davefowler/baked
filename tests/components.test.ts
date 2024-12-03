@@ -1,5 +1,5 @@
 import { expect, test, describe } from "@jest/globals";
-import { Components } from '../src/components.js';
+import { Components, cleanAssetName } from '../src/components.js';
 
 describe('Component System', () => {
     describe('Template Component', () => {
@@ -79,5 +79,37 @@ describe('Component System', () => {
             const passthrough = Components.images(content);            
             expect(passthrough).toBe(content);
         });
+    });
+});
+
+describe('cleanAssetName', () => {
+    test('adds .html extension to template names without extension', () => {
+        const result = cleanAssetName('about', 'templates');
+        expect(result).toBe('about.html');
+    });
+
+    test('does not add .html if already has extension', () => {
+        const result = cleanAssetName('about.njk', 'templates');
+        expect(result).toBe('about.njk');
+    });
+
+    test('removes leading slash', () => {
+        const result = cleanAssetName('/about.html', 'templates');
+        expect(result).toBe('about.html');
+    });
+
+    test('removes type prefix from path', () => {
+        const result = cleanAssetName('templates/about.html', 'templates');
+        expect(result).toBe('about.html');
+    });
+
+    test('handles nested paths correctly', () => {
+        const result = cleanAssetName('templates/blog/post.html', 'templates');
+        expect(result).toBe('blog/post.html');
+    });
+
+    test('does not modify non-template assets', () => {
+        const result = cleanAssetName('images/photo', 'images');
+        expect(result).toBe('photo');
     });
 });

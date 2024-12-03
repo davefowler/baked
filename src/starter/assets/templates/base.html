@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="{{ page.metadata.lang|default('en') }}">
+<html lang="{{ page.data.lang|default('en') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ site.title|default('Site Title') }}</title>
-    <meta name="description" content="{{ page.metadata.description|default('') }}">
+    <meta name="description" content="{{ page.data.description|default('') }}">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#000000">
-    {{ baker.getAsset('/css/main.css')|safe }}
+    {{ baker.getAsset('css/main.css', 'css')|safe }}
 
     <script type="module" src="/baked/baker.js" async></script>
     <script>

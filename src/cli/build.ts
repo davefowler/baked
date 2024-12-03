@@ -62,31 +62,34 @@ const dish = async (db: DatabaseType, dist: string) => {
     let failures = 0;
     
     try {
-        const pageSlugs = await baker.query(`SELECT slug FROM pages`) as Array<{slug: string}>;
-        if (!pageSlugs?.length) {
+        const paths = baker.query(`SELECT path FROM pages`).map((p: { path: string }) => p.path) as string[];
+        console.log(`Found ${paths.length} pages to render `, paths);
+        if (!paths?.length) {
             console.warn('No pages found to render');
             return;
         }        
         // N+1 query here - but it's fast in SQLite and better for larger sites vs loading all pages into memory
-        for (const slug of pageSlugs) {
+        for (const path of paths) {
             try {
-                const page = baker.getPage(slug.slug);
+                const page = baker.getPage(path);
                 if (!page) {
-                    console.error(`Failed to load page: ${slug}`);
+                    console.error(`Failed to load page: ${path}`);
                     failures++;
                     continue;
                 }
                 
                 const rendered = await baker.renderPage(page);
+
+                console.log(`Rendering page: ${path} to ${dist}/${path}.html`);
                 // Write the rendered content to a file
-                await writeFile(`${dist}/${slug}.html`, rendered, {
+                await writeFile(`${dist}/${path}.html`, rendered, {
                     encoding: 'utf8',
                     mode: 0o666, // File permissions
                     flag: 'w'    // 'w' for write (overwrites if file exists)
                 });
                 
             } catch (error) {
-                console.error(`Failed to render page ${slug}:`, error);
+                console.error(`Failed to render page ${path}:`, error);
                 failures++;
             }
         }

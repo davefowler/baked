@@ -37,6 +37,25 @@ env.addFilter('date', (str, format) => {
     return date.toLocaleDateString();
 });
 
+// We're a little flexible here with the asset names for convenience
+//  - templates don't need the .html extension
+//  - we allow /css/style.css as well as css/style.css
+//  - and you can just use css/style.css instead of style.css - more intuitive sometimes
+export const cleanAssetName = (name, type) => {
+    // add .html to the name if it has no other extension
+    if (type === 'templates' && !name.includes('.')) name += '.html';
+    
+    // if it starts with /, remove it.
+    if (name.startsWith('/')) name = name.slice(1);
+
+    // if it starts with it's type name remove it.
+    if (name.startsWith(`${type}/`)) {
+        name = name.split('/').slice(1).join('/');
+    }
+    
+    return name;
+};
+
 // Create custom loader for templates
 class BakerLoader {
     constructor(baker) {
@@ -45,12 +64,10 @@ class BakerLoader {
 
     // Nunjucks loader overwrite to extend or include templates from the baked database instead of a file system
     getSource(name) {
-        // add .html to the name if it has no other extension
-        if (!name.includes('.')) {
-            name += '.html';
-        }
-
-        const template = this.baker.getRawAsset(name, 'templates');
+        name = cleanAssetName(name);
+        
+        const {content: template} = this.baker.getRawAsset(name, 'templates');
+        console.log('nunjucks get source', name, 'template?', template);
         if (!template) {
             throw new Error(`Template ${name} not found`);
         }
@@ -80,11 +97,12 @@ const Template = (rawAsset) => {
     };
     
     const validatePath = (path) => {
-        // Prevent path traversal
-        if (path.includes('..') || path.startsWith('/')) {
+        // Only prevent path traversal, allow absolute paths
+        if (path.includes('..')) {
             throw new Error('Invalid path');
         }
-        return path;
+        // Remove leading slash if present
+        return path.replace(/^\//, '');
     };
     
     // Return render function
@@ -116,7 +134,7 @@ const Template = (rawAsset) => {
                 path: validatePath(page.path || '')
             },
             baker: {
-                getAsset: (path) => baker?.getAsset?.(validatePath(path)) ?? null,
+                getAsset: (path, type) => baker?.getAsset?.(validatePath(path), type) ?? null,
                 getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
                 getLatestPages: (...args) => baker?.getLatestPages?.(...args) ?? [],
                 getPrevPage: (...args) => baker?.getPrevPage?.(...args) ?? null,
