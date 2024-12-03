@@ -11,8 +11,12 @@ import { loadPage } from '../src/baked/loading.js';
 describe('Security Tests', () => {
   let tempDir: string;
   let db: DatabaseType;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(async () => {
+    // Suppress console warnings
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
     tempDir = await mkdtemp(join(tmpdir(), 'baked-security-test-'));
     db = new Database(':memory:');
 
@@ -22,6 +26,9 @@ describe('Security Tests', () => {
   });
 
   afterEach(async () => {
+    // Restore console.warn
+    consoleWarnSpy.mockRestore();
+
     await rm(tempDir, { recursive: true, force: true });
     await db.close();
   });
@@ -79,7 +86,13 @@ describe('Security Tests', () => {
       const baker = new Baker(db, false);
       const maliciousPath = '../../../etc/passwd';
 
-      await expect(baker.getAsset(maliciousPath)).rejects.toThrow('Invalid path');
+      try {
+        await baker.getAsset(maliciousPath);
+        // If we get here, the test should fail because no error was thrown
+        fail('Expected path traversal to throw an error');
+      } catch (error: any) {
+        expect(error.message).toBe(`Invalid path: ${maliciousPath}`);
+      }
     });
   });
 });
