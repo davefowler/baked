@@ -7,6 +7,34 @@ const sanitizeHtml = (str) => {
     });
 };
 
+const validatePath = (path) => {
+    // Only prevent path traversal, allow absolute paths
+    if (path.includes('..')) {
+        throw new Error(`Invalid path: ${path}`);
+    }
+    // Remove leading slash if present
+    return path.replace(/^\//, '');
+};
+
+// We're a little flexible here with the asset names for convenience
+//  - templates don't need the .html extension
+//  - we allow /css/style.css as well as css/style.css
+//  - and you can just use css/style.css instead of style.css - more intuitive sometimes
+export const cleanAssetName = (name, type) => {
+    // add .html to the name if it has no other extension
+    if (type === 'templates' && !name.includes('.')) name += '.html';
+    
+    // if it starts with /, remove it.
+    name = validatePath(name);
+
+    // if it starts with it's type name remove it.
+    if (name.startsWith(`${type}/`)) {
+        name = name.split('/').slice(1).join('/');
+    }
+    
+    return name;
+};
+
 
 const PassThrough = (rawAsset) => {
     return rawAsset;
@@ -37,24 +65,6 @@ env.addFilter('date', (str, format) => {
     return date.toLocaleDateString();
 });
 
-// We're a little flexible here with the asset names for convenience
-//  - templates don't need the .html extension
-//  - we allow /css/style.css as well as css/style.css
-//  - and you can just use css/style.css instead of style.css - more intuitive sometimes
-export const cleanAssetName = (name, type) => {
-    // add .html to the name if it has no other extension
-    if (type === 'templates' && !name.includes('.')) name += '.html';
-    
-    // if it starts with /, remove it.
-    if (name.startsWith('/')) name = name.slice(1);
-
-    // if it starts with it's type name remove it.
-    if (name.startsWith(`${type}/`)) {
-        name = name.split('/').slice(1).join('/');
-    }
-    
-    return name;
-};
 
 // Create custom loader for templates
 class BakerLoader {
@@ -82,27 +92,6 @@ const Template = (rawAsset) => {
     // Create environment with custom loader (will be set for each render)
     let env;
 
-    const sanitizeHtml = (str) => {
-        return str.replace(/[&<>"']/g, (match) => {
-            const escape = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;'
-            };
-            return escape[match];
-        });
-    };
-    
-    const validatePath = (path) => {
-        // Only prevent path traversal, allow absolute paths
-        if (path.includes('..')) {
-            throw new Error('Invalid path');
-        }
-        // Remove leading slash if present
-        return path.replace(/^\//, '');
-    };
     
     // Return render function
     return (page, baker, site) => {

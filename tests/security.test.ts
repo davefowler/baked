@@ -82,8 +82,8 @@ describe('Security Tests', () => {
             const baker = new Baker(db, false);
             const maliciousPath = '../../../etc/passwd';
             
-            const result = await baker.getAsset(maliciousPath);
-            expect(result).toBeNull();
+            await expect(baker.getAsset(maliciousPath))
+                .rejects.toThrow('Invalid path');
         });
     });
 });

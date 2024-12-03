@@ -13,7 +13,7 @@ describe('Baker Template Integration', () => {
     beforeEach(async () => {
 
         if (!schema) {
-            schema = await fs.readFile(path.join(process.cwd(), 'src/sql/schema.sql'), 'utf-8');
+            schema = await fs.readFile(path.join(__dirname, '../src/sql/schema.sql'), 'utf-8');
         }
 
         db = new Database(':memory:');
@@ -21,7 +21,7 @@ describe('Baker Template Integration', () => {
         db.exec(schema);
         db.exec(`
             -- Add some test data
-            INSERT INTO pages (slug, title, content, template, metadata, published_date)
+            INSERT INTO pages (slug, title, content, template, data, published_date)
             VALUES 
                 ('test1', 'Test Page 1', 'Content 1', 'default', '{}', '2024-01-01'),
                 ('test2', 'Test Page 2', 'Content 2', 'default', '{}', '2024-01-02');
@@ -36,7 +36,7 @@ describe('Baker Template Integration', () => {
     });
 
     afterEach(() => {
-        db.close();
+        if (db) db.close();
     });
 
     describe('Template Baker Integration', () => {

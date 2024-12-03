@@ -70,6 +70,11 @@ describe('Baker', () => {
                 '{"author":"test","template":"default"}',
                 '2024-01-01'
             );
+
+            // Add a template
+            db.prepare(
+                'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
+            ).run('default', '<h1>{{ page.title }}</h1>{{ page.content }}', 'templates');
         });
 
         test('getPage retrieves pages with metadata', async () => {
@@ -80,18 +85,17 @@ describe('Baker', () => {
         });
 
         test('renderPage renders pages with template', async () => {
-            db.prepare(
-                'INSERT INTO assets (path, content, type) VALUES (?, ?, ?)'
-            ).run(
-                '/templates/default',
-                '<h1>{{ page.title }}</h1>{{ page.content }}',
-                'templates'
-            );
-
-            const page = baker.getPage('test');
-            const rendered = await baker.renderPage(page);
-            expect(rendered).toContain('<h1>Test Page</h1>');
-            expect(rendered).toContain('Test content');
+            const testPage = {
+                title: 'Test from a new Page',
+                content: 'Test content from a new page',
+                data: {
+                    author: 'test'
+                },
+                template: 'default'
+            };
+            const rendered = await baker.renderPage(testPage);
+            expect(rendered).toContain('<h1>Test from a new Page</h1>');
+            expect(rendered).toContain('Test content from a new page');
         });
     });
 
