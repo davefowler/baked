@@ -170,20 +170,22 @@ describe('CLI Commands', () => {
 
     test('serves static files correctly', async () => {
       // Create test dist directory with content
+
+      process.chdir(TEST_DIR);
+
       await ensureDir(join(TEST_DIR, 'dist'));
       await writeFile(join(TEST_DIR, 'dist', 'index.html'), '<html><body>Test</body></html>');
 
-      process.chdir(TEST_DIR);
-      server = await startServer();
-
-      await request(`http://localhost:4242`) // Use the actual server URL
+      const testPort = 4245;
+      server = await startServer(testPort);
+      await request(`http://localhost:${testPort}`) // Use the actual server URL
         .get('/')
         .expect(200)
         .expect((res) => {
           expect(res.text).toContain('Test');
         });
 
-      await request(`http://localhost:4242`).get('/notfound').expect(404);
+      await request(`http://localhost:${testPort}`).get('/notfound').expect(404);
     });
   });
 });

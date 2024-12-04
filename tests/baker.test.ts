@@ -63,15 +63,15 @@ describe('Baker', () => {
 
       // just by the asset name (no directory)
       const processed = baker.getAsset('test.css', 'css');
-      expect(processed).toBe('<style>body { color: red; }</style>'); // Remove style tags expectation since Components is mocked
+      expect(processed).toBe('body { color: red; }'); // Remove style tags expectation since Components is mocked
 
       // test that it works the type folder
       const p2 = baker.getAsset('css/test.css', 'css');
-      expect(p2).toBe('<style>body { color: red; }</style>'); // Remove style tags expectation since Components is mocked
+      expect(p2).toBe('body { color: red; }'); // Remove style tags expectation since Components is mocked
 
       // test that it works with a leading slash
       const p3 = baker.getAsset('/css/test.css', 'css');
-      expect(p3).toBe('<style>body { color: red; }</style>'); // Remove style tags expectation since Components is mocked
+      expect(p3).toBe('body { color: red; }'); // Remove style tags expectation since Components is mocked
     });
   });
 

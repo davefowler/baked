@@ -1,9 +1,8 @@
 import express from 'express';
 import path from 'path';
 
-export default function startServer() {
+export default function startServer(port: number = 4242) {
   const app = express();
-  const port = 4242;
 
   // Serve static files from dist directory
   app.use(express.static('dist'));

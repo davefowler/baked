@@ -1,12 +1,5 @@
 import nunjucks from 'nunjucks';
 
-const sanitizeHtml = (str) => {
-  return str.replace(/[&<>"']/g, (match) => {
-    const escape = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-    return escape[match];
-  });
-};
-
 const validatePath = (path) => {
   // Only prevent path traversal, allow absolute paths
   if (path.includes('..')) {
@@ -35,14 +28,18 @@ export const cleanAssetName = (name, type) => {
   return name;
 };
 
+const inferType = (path) => {
+  if (path.endsWith('.html')) return 'templates';
+  if (path.endsWith('.css')) return 'css';
+  return null;
+};
+
 const PassThrough = (rawAsset) => {
   return rawAsset;
 };
 
 // TODO - should the component wrap the style class?
-const CssComponent = (rawAsset) => {
-  return `<style>${sanitizeHtml(rawAsset)}</style>`;
-};
+const CssComponent = PassThrough;
 
 const JsonComponent = (rawAsset) => {
   return JSON.parse(rawAsset);
@@ -56,7 +53,7 @@ const env = new nunjucks.Environment(null, {
 });
 
 // Add custom filters
-env.addFilter('safe', (str) => sanitizeHtml(str));
+env.addFilter('safe', (str) => str);
 env.addFilter('date', (str, format) => {
   if (!str) return '';
   const date = new Date(str);
@@ -97,11 +94,24 @@ const Template = (rawAsset) => {
     });
 
     // Re-add filters to the new environment
-    env.addFilter('safe', (str) => sanitizeHtml(str));
+    env.addFilter('safe', (str) => str);
     env.addFilter('date', (str, format) => {
       if (!str) return '';
       const date = new Date(str);
       return date.toLocaleDateString();
+    });
+
+    // Add the css filter for easy loading of css assets
+    env.addFilter('css', (path) => {
+      const styleAsset = baker.getAsset(path, 'css');
+      if (!styleAsset) return '';
+      const escapedStyle = styleAsset.replace(/<\/style>/gi, '<\\/style>');
+      return new nunjucks.runtime.SafeString(`<style>${escapedStyle}</style>`);
+    });
+
+    env.addFilter('asset', (path, type) => {
+      type = type || inferType(path);
+      return baker.getAsset(path, type);
     });
 
     // Compile template with new environment

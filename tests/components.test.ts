@@ -50,14 +50,11 @@ describe('Component System', () => {
   });
 
   describe('CSS Component', () => {
-    test('wraps CSS in style tags', () => {
-      const css = Components.css(`
-                body { color: red; }
-            `);
+    test('css simply does a pass through', () => {
+      const content = 'body { color: red; }';
+      const css = Components.css(content);
 
-      expect(css).toContain('<style>');
-      expect(css).toContain('body { color: red; }');
-      expect(css).toContain('</style>');
+      expect(css).toBe(content);
     });
   });
 

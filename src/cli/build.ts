@@ -13,7 +13,7 @@ import { writeFile, readFile } from 'fs/promises';
 
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
-  console.log('Preparing build...');
+  console.log('...Preparing ingredients');
 
   // Validate input
   if (!dist) {
@@ -139,9 +139,12 @@ export default async function bake(
   // add in just a splash of site metadata
   await loadSiteMetadata(rootDir, db);
 
+  console.log('...Ingredients mixed, now baking');
+
   // dish out the pages (pre-render them)
   await dish(db, tmpDist);
 
+  console.log('Site baked, ready to serve!');
   // swap the tmp dist to the final dist
   try {
     await rm(finalDist, { recursive: true, force: true });

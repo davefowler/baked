@@ -102,5 +102,37 @@ describe('Template System', () => {
       const result = template({ content: '<div>Safe HTML</div>' }, {}, {});
       expect(result).toBe('&lt;div&gt;Safe HTML&lt;/div&gt;');
     });
+
+    test('css helper escapes style tags correctly', () => {
+      const template = Components.templates(`{{ 'style.css'|css }}`);
+      const baker = {
+        getAsset: (path: string, type: string) => {
+          if (path === 'style.css' && type === 'css') {
+            return 'body { color: red; } </style><script>alert("xss")</script>';
+          }
+          return null;
+        },
+      };
+
+      const result = template({}, baker, {});
+      expect(result).toContain('body { color: red; }');
+      expect(result).toContain('<\\/style><script>alert("xss")</script>');
+      expect(result).toMatch(/<style>.*<\/style>/);
+    });
+  });
+
+  test('asset helper returns asset', () => {
+    const template = Components.templates(`{{ 'style.css'|asset }}`);
+    const baker = {
+      getAsset: (path: string, type: string) => {
+        if (path === 'style.css' && type === 'css') {
+          return 'body { color: red; }';
+        }
+        return null;
+      },
+    };
+
+    const result = template({}, baker, {});
+    expect(result).toEqual('body { color: red; }');
   });
 });
