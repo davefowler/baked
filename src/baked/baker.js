@@ -22,18 +22,26 @@ export class Baker {
   }
 
   getRawAsset(name, type) {
-    name = cleanAssetName(name, type);
     try {
       if (!name) {
         throw new Error('Asset name is required');
       }
-      const path = name;
+      // For templates, try .svelte extension first
+      if (type === 'templates') {
+        const sveltePath = name.replace(/\.html$/, '.svelte');
+        const svelteResult = this.db
+          .prepare('SELECT content, type FROM assets WHERE path = ? and type = ?')
+          .get(sveltePath, type);
+        if (svelteResult) return svelteResult;
+      }
+      
       const result = this.db
         .prepare('SELECT content, type FROM assets WHERE path = ? and type = ?')
-        .get(path, type);
+        .get(name, type);
+      
       if (!result) {
         const allassetsPaths = this.db.prepare('SELECT path, type FROM assets').all();
-        console.warn(`Asset not found: ${path}, ${type}`, allassetsPaths);
+        console.warn(`Asset not found: ${name}, ${type}`, allassetsPaths);
       }
       return result;
     } catch (error) {
@@ -45,13 +53,6 @@ export class Baker {
   getAsset(name, type) {
     const asset = this.getRawAsset(name, type);
     if (!asset) return null;
-
-    // Get the component processor for this asset type
-    const processor = Components[asset.type];
-    if (processor) {
-      return processor(asset.content);
-    }
-    console.warn(`No component found for asset type: ${asset.type}`);
     return asset.content;
   }
 
@@ -89,15 +90,26 @@ export class Baker {
       if (!page.data?.template) {
         throw new Error(`No template specified for page: ${page.path}`);
       }
+      
+      // Default to .svelte extension if none specified
       const templateName = page.data.template.includes('.')
         ? page.data.template
-        : `${page.data.template}.html`;
+        : `${page.data.template}.svelte`;
+      
       const template = this.getAsset(templateName, 'templates');
       if (!template) {
         throw new Error(`Template not found: ${templateName}`);
       }
 
-      return template(page, this, this.site);
+      // Import and render the Svelte component
+      const { render } = require('svelte/server');
+      const rendered = render(template, {
+        page,
+        baker: this,
+        site: this.site
+      });
+
+      return rendered.html;
     } catch (error) {
       console.error(`Failed to render page:`, error);
       // Return a basic error page in production
