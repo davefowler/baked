@@ -15,12 +15,31 @@
 import { compile } from 'svelte/compiler';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import Base from '../starter/assets/templates/Base.svelte';
+import Blog from '../starter/assets/templates/Blog.svelte';
 
 export class Baker {
   constructor(db, isClient) {
     this.db = db;
     this.isClient = isClient;
     this.site = this.getAsset('site.yaml', 'json');
+    
+    // Pre-compile templates
+    this.templates = {
+      'base.svelte': this.compileTemplate(Base),
+      'blog.svelte': this.compileTemplate(Blog)
+    };
+  }
+
+  compileTemplate(template) {
+    const { js } = compile(template, {
+      filename: template.name || 'Template.svelte',
+      generate: 'server'
+    });
+    const mod = { exports: {} };
+    const fn = new Function('module', 'exports', js.code);
+    fn(mod, mod.exports);
+    return mod.exports;
   }
 
   getRawAsset(name, type) {
@@ -84,24 +103,18 @@ export class Baker {
         throw new Error(`No template specified for page: ${page.path}`);
       }
       
-      // Load and compile the template directly
+      // Get the pre-compiled template
       const templateName = page.data.template.endsWith('.svelte') 
-        ? page.data.template 
-        : `${page.data.template}.svelte`;
-      const templatePath = join(process.cwd(), 'src/starter/assets/templates', templateName);
-      const template = readFileSync(templatePath, 'utf8');
-      const { js } = compile(template, {
-        filename: templateName,
-        generate: 'server'
-      });
-
-      // Create a temporary module to execute the compiled code
-      const mod = { exports: {} };
-      const fn = new Function('module', 'exports', js.code);
-      fn(mod, mod.exports);
+        ? page.data.template.toLowerCase()
+        : `${page.data.template}.svelte`.toLowerCase();
+      
+      const template = this.templates[templateName];
+      if (!template) {
+        throw new Error(`Template not found: ${templateName}`);
+      }
 
       // Render the component with props
-      const { render } = mod.exports;
+      const { render } = template;
       const rendered = render({
         page,
         baker: this,
