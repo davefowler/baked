@@ -1,5 +1,5 @@
 import { expect, test, describe, beforeEach, afterEach } from '@jest/globals';
-import { Components } from '../src/components.js';
+import { compile } from 'svelte/compiler';
 import { Baker } from '../src/baked/baker';
 import { promises as fs } from 'fs';
 import path from 'path';

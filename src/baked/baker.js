@@ -12,7 +12,7 @@
    - query(sql, params) # run a sql query on the database and return the results
 */
 
-import { Components, cleanAssetName } from '../components.js';
+import { compile } from 'svelte/compiler';
 
 export class Baker {
   constructor(db, isClient) {

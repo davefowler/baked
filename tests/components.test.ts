@@ -1,5 +1,5 @@
 import { expect, test, describe } from '@jest/globals';
-import { Components, cleanAssetName } from '../src/components.js';
+import { compile } from 'svelte/compiler';
 
 describe('Component System', () => {
   describe('Template Component', () => {
