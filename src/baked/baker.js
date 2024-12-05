@@ -84,17 +84,9 @@ export class Baker {
         throw new Error(`No template specified for page: ${page.path}`);
       }
       
-      // Default to .svelte extension if none specified
-      const templateName = page.data.template.includes('.')
-        ? page.data.template
-        : `${page.data.template}.svelte`;
-      
-      const template = this.getAsset(templateName, 'templates');
-      if (!template) {
-        throw new Error(`Template not found: ${templateName}`);
-      }
-
-      // Compile and render the Svelte component
+      // Load and compile the template directly
+      const templatePath = join(process.cwd(), 'src/starter/templates', page.data.template);
+      const template = readFileSync(templatePath, 'utf8');
       const { js } = compile(template, {
         filename: templateName,
         generate: 'server'

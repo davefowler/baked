@@ -57,8 +57,6 @@ const imageMixer: Mixer = async (filepath, content, metadata, distPath) => {
 // Map directories to Mixers
 const mixers: Record<string, Mixer> = {
   images: imageMixer,
-  components: defaultMixer,
-  templates: defaultMixer,
   css: defaultMixer,
   pages: markdownMixer,
 };
