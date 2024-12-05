@@ -26,13 +26,16 @@ export class Baker {
       if (!name) {
         throw new Error('Asset name is required');
       }
-      // For templates, try .svelte extension first
+      // For templates, try both .html and .svelte extensions
       if (type === 'templates') {
-        const sveltePath = name.replace(/\.html$/, '.svelte');
-        const svelteResult = this.db
-          .prepare('SELECT content, type FROM assets WHERE path = ? and type = ?')
-          .get(sveltePath, type);
-        if (svelteResult) return svelteResult;
+        const extensions = ['.svelte', '.html'];
+        for (const ext of extensions) {
+          const templatePath = name.replace(/\.(html|svelte)$/, ext);
+          const result = this.db
+            .prepare('SELECT content, type FROM assets WHERE path = ? and type = ?')
+            .get(templatePath, type);
+          if (result) return result;
+        }
       }
       
       const result = this.db

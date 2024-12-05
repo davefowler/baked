@@ -44,7 +44,7 @@ describe('Security Tests', () => {
 
       const { js } = compile(template, {
         filename: 'Test.svelte',
-        generate: 'ssr'
+        generate: 'server'
       });
       
       expect(js.code).toBeDefined();
