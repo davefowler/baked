@@ -12,12 +12,12 @@ describe('Template System', () => {
         </script>
         <h1>{page.title}</h1>
       `;
-      
+
       const { js } = compile(template, {
         filename: 'Test.svelte',
-        generate: 'ssr'
+        generate: 'ssr',
       });
-      
+
       expect(js.code).toBeDefined();
       expect(js.code).toContain('export function render');
     });
@@ -29,12 +29,12 @@ describe('Template System', () => {
         </script>
         <h1>{page?.nonexistent || ''}</h1>
       `;
-      
+
       const { js } = compile(template, {
         filename: 'Test.svelte',
-        generate: 'ssr'
+        generate: 'ssr',
       });
-      
+
       expect(js.code).toBeDefined();
     });
 
@@ -45,12 +45,12 @@ describe('Template System', () => {
         </script>
         <div>{page.content}</div>
       `;
-      
+
       const { js } = compile(template, {
         filename: 'Test.svelte',
-        generate: 'ssr'
+        generate: 'ssr',
       });
-      
+
       expect(js.code).toBeDefined();
     });
   });

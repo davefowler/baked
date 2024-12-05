@@ -1,7 +1,0 @@
-{% extends "base" %} {% block content %}
-<article>
-  {% if page.data.date %}
-  <time datetime="{{ page.data.date }}">{{ page.data.date }}</time>
-  {% endif %} {{ page.content|safe }}
-</article>
-{% endblock %}
