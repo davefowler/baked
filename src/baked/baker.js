@@ -13,6 +13,8 @@
 */
 
 import { compile } from 'svelte/compiler';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export class Baker {
   constructor(db, isClient) {
@@ -26,18 +28,6 @@ export class Baker {
       if (!name) {
         throw new Error('Asset name is required');
       }
-      // For templates, try both .html and .svelte extensions
-      if (type === 'templates') {
-        const extensions = ['.svelte', '.html'];
-        for (const ext of extensions) {
-          const templatePath = name.replace(/\.(html|svelte)$/, ext);
-          const result = this.db
-            .prepare('SELECT content, type FROM assets WHERE path = ? and type = ?')
-            .get(templatePath, type);
-          if (result) return result;
-        }
-      }
-      
       const result = this.db
         .prepare('SELECT content, type FROM assets WHERE path = ? and type = ?')
         .get(name, type);
@@ -104,9 +94,20 @@ export class Baker {
         throw new Error(`Template not found: ${templateName}`);
       }
 
-      // Import and render the Svelte component
-      const { render } = require('svelte/server');
-      const rendered = render(template, {
+      // Compile and render the Svelte component
+      const { js } = compile(template, {
+        filename: templateName,
+        generate: 'server'
+      });
+
+      // Create a temporary module to execute the compiled code
+      const mod = { exports: {} };
+      const fn = new Function('module', 'exports', js.code);
+      fn(mod, mod.exports);
+
+      // Render the component with props
+      const { render } = mod.exports;
+      const rendered = render({
         page,
         baker: this,
         site: this.site
