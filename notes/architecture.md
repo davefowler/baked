@@ -86,61 +86,62 @@ This page is of type: {{ page.data.type }}
 ```
 
 
-## Templates
+## Templates and Components
 
-Templates in Baked use Nunjucks, a powerful templating language inspired by Jinja2. This provides a secure, feature-rich templating system with inheritance, macros, filters and more. Templates are HTML files with Nunjucks syntax for dynamic content.
+Baked uses Svelte for templating and components. The core templates are compiled into the application bundle, providing better performance, type safety, and a modern component-based architecture.
 
-Template inheritance is handled through Nunjucks' native extend/block system. Child templates can extend parent templates and override specific blocks.
+### Core Templates
+Templates are Svelte components that ship with the application code in the `/templates` directory. These provide the base structure and layouts for different page types.
 
-For example:
-
-base.html:
-```html
-<html>
-  <body>
-    <nav>{{ site.title }}</nav>
-
-    <div id="content">
-      {% block content %}{% endblock %}
-    </div>
-
-    <footer>
-      {% block footer %}
-        <p>© {{ site.title }}</p>
-      {% endblock %}
-    </footer>
-  </body>
-</html>
-```
-
-blog.html:
-```html
-{% extends "base.html" %}
-
-{% block content %}
-  <article>
-    <h1>{{ page.title }}</h1>
-    <time>{{ page.date | date }}</time>
-    {{ page.content | safe }}
-  </article>
-{% endblock %}
-```
-
-### Template Context
-
-Templates have access to these variables:
+Each template is a Svelte component that receives:
 - `page`: The current page object (title, content, metadata, etc)
-- `site`: Global site configuration from site.yaml
+- `site`: Global site configuration from site.yaml  
 - `baker`: Helper object for querying other pages/assets
 
-### Nunjucks Features Available
-- Template inheritance with `extends` and `block`
-- Include other templates with `include`
-- Macros for reusable components
-- Built-in filters for formatting (date, safe, etc)
-- Custom filters can be added
-- Conditional logic and loops
-- Whitespace control
+The template system uses Svelte's built-in features:
+- Component composition with <slot>
+- Reactive state management
+- Scoped styling
+- TypeScript support
+- Built-in transitions and animations
+
+### Custom Components
+Users can extend their site with custom Svelte components by adding them to the `/components` directory:
+
+```
+/components
+  Gallery.svelte
+  ProductCard.svelte 
+  SearchBox.svelte
+```
+
+These components are discovered and compiled during the build process and can be used in page content via special markers:
+
+```markdown
+# My Gallery Page
+
+<Gallery images={page.data.images} />
+```
+
+### Component Context
+All components (both core templates and custom components) have access to:
+
+- `page`: Current page data
+  - title
+  - content 
+  - metadata
+  - path
+  - published_date
+- `site`: Site configuration
+  - title
+  - description
+  - author
+  - custom fields
+- `baker`: Helper methods
+  - getPage()
+  - getLatestPages()
+  - getAsset()
+  - search()
 
 ### Variables available in templates
 
