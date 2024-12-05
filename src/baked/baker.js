@@ -85,7 +85,10 @@ export class Baker {
       }
       
       // Load and compile the template directly
-      const templatePath = join(process.cwd(), 'src/starter/templates', page.data.template);
+      const templateName = page.data.template.endsWith('.svelte') 
+        ? page.data.template 
+        : `${page.data.template}.svelte`;
+      const templatePath = join(process.cwd(), 'src/starter/assets/templates', templateName);
       const template = readFileSync(templatePath, 'utf8');
       const { js } = compile(template, {
         filename: templateName,
