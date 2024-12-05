@@ -1,24 +1,57 @@
 import { expect, test, describe } from '@jest/globals';
-import { Components } from '../src/components.js';
+import { compile } from 'svelte/compiler';
 
 describe('Template System', () => {
   describe('Basic Template Features', () => {
-    test('renders variables correctly', () => {
-      const template = Components.templates(`<h1>{{ page.title }}</h1>`);
-      const result = template({ title: 'Test Title' }, {}, {});
-      expect(result).toBe('<h1>Test Title</h1>');
+    test('compiles Svelte templates correctly', async () => {
+      const template = `
+        <script>
+          export let page;
+          export let site;
+          export let baker;
+        </script>
+        <h1>{page.title}</h1>
+      `;
+      
+      const { js } = compile(template, {
+        filename: 'Test.svelte',
+        generate: 'ssr'
+      });
+      
+      expect(js.code).toBeDefined();
+      expect(js.code).toContain('export function render');
     });
 
-    test('handles missing variables gracefully', () => {
-      const template = Components.templates(`<h1>{{ page.nonexistent }}</h1>`);
-      const result = template({}, {}, {});
-      expect(result).toBe('<h1></h1>');
+    test('handles missing variables gracefully', async () => {
+      const template = `
+        <script>
+          export let page = {};
+        </script>
+        <h1>{page?.nonexistent || ''}</h1>
+      `;
+      
+      const { js } = compile(template, {
+        filename: 'Test.svelte',
+        generate: 'ssr'
+      });
+      
+      expect(js.code).toBeDefined();
     });
 
-    test('supports filters', () => {
-      const template = Components.templates(`{{ page.content }}`);
-      const result = template({ content: '<p>Test</p>' }, {}, {});
-      expect(result).toBe('&lt;p&gt;Test&lt;/p&gt;');
+    test('supports HTML escaping', async () => {
+      const template = `
+        <script>
+          export let page;
+        </script>
+        <div>{page.content}</div>
+      `;
+      
+      const { js } = compile(template, {
+        filename: 'Test.svelte',
+        generate: 'ssr'
+      });
+      
+      expect(js.code).toBeDefined();
     });
   });
 

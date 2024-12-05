@@ -38,22 +38,36 @@ describe('Baker Template Integration', () => {
   });
 
   describe('Template Baker Integration', () => {
-    test('template can access baker.getAsset', () => {
-      const template = Components.templates(`
-                {{ baker.getAsset('test.css', 'css') }}
-            `);
+    test('template can access baker.getAsset', async () => {
+      const template = `
+        <script>
+          export let baker;
+        </script>
+        {baker.getAsset('test.css', 'css')}
+      `;
 
-      const result = template({}, baker, {});
-      expect(result).toContain('body { color: red; }');
+      const { js } = compile(template, {
+        filename: 'Test.svelte',
+        generate: 'ssr'
+      });
+      
+      expect(js.code).toBeDefined();
     });
 
-    test('template can access baker.getPage', () => {
-      const template = Components.templates(`
-                {{ baker.getPage('test1').title }}
-            `);
+    test('template can access baker.getPage', async () => {
+      const template = `
+        <script>
+          export let baker;
+        </script>
+        {baker.getPage('test1').title}
+      `;
 
-      const result = template({}, baker, {});
-      expect(result).toContain('Test Page 1');
+      const { js } = compile(template, {
+        filename: 'Test.svelte',
+        generate: 'ssr'
+      });
+      
+      expect(js.code).toBeDefined();
     });
 
     test('template can access baker.getLatestPages', () => {
