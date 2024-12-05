@@ -5,6 +5,10 @@ export default {
   moduleFileExtensions: ['js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'json', 'node', 'svelte'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^.+\\.svelte$': ['jest-transform-svelte', {
+      preprocess: true,
+      compilerOptions: { generate: 'ssr' }
+    }]
   },
   transform: {
     '^.+\\.[tj]sx?$': ['ts-jest', {
@@ -12,12 +16,9 @@ export default {
       tsconfig: {
         esModuleInterop: true
       }
-    }],
-    '^.+\\.svelte$': ['svelte-jester', {
-      preprocess: true
     }]
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(baked|svelte)/)'
+    '/node_modules/(?!(svelte|@testing-library|baked)/)'
   ]
 };
