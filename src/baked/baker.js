@@ -1,9 +1,9 @@
 /*
  - baker # a helper object with some useful functions for baking/rendering a site
    - init(db) # initialize the baker object with the given database (client or server side sqlite db)
-   - getAsset(type, name) # fetch an asset from the database as a component
-   - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
-   - getPage(slug) # fetch a page from the database
+   - getAsset(name, type) # fetch an asset from the database as a component
+   - getRawAsset(name, type) # fetch the raw asset from the database without wrapping it in it's component
+   - getPage(path) # fetch a page from the database
    - getLatestPages(limit=10, offset=0) # fetch the latest pages from the database
    - getPrevPage(currentPage) # fetch the previous page from the database
    - getNextPage(currentPage) # fetch the next page from the database
@@ -55,21 +55,21 @@ export class Baker {
         return asset.content;
     }
 
-    getPage(slug) {
-        // Validate slug to prevent SQL injection and path traversal
-        if (typeof slug !== 'string' || slug.includes('..') || /[<>"']/.test(slug)) {
+    getPage(path) {
+        // Validate path to prevent SQL injection and path traversal
+        if (typeof path !== 'string' || path.includes('..') || /[<>"']/.test(path)) {
             return null;
         }
 
         const page = this.db.prepare(`
-            SELECT * FROM pages WHERE slug = ?
-        `).get(slug);
+            SELECT * FROM pages WHERE path = ?
+        `).get(path);
 
         if (page) {
             try {
                 page.data = JSON.parse(page.data || '{}');
             } catch (error) {
-                console.error(`Invalid metadata JSON for page ${slug}`);
+                console.error(`Invalid metadata JSON for page with path ${path}`);
                 page.data = {};
             }
         }

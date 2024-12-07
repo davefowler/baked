@@ -113,14 +113,11 @@ async function createDatabase(dbFilePath) {
 
     await db.exec(\`
         CREATE TABLE IF NOT EXISTS pages (
-            id INTEGER PRIMARY KEY,
-            slug TEXT NOT NULL,
+            path TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             content TEXT NOT NULL,
             template TEXT NOT NULL,
             lang TEXT,
-            tags TEXT,
-            path TEXT NOT NULL
         );
     \`);
 

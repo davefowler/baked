@@ -112,7 +112,7 @@ const Template = (rawAsset) => {
             },
             baker: {
                 getAsset: (path) => baker?.getAsset?.(validatePath(path)) ?? null,
-                getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
+                getPage: (path) => baker?.getPage?.(validatePath(path)) ?? null,
                 getLatestPages: (...args) => baker?.getLatestPages?.(...args) ?? [],
                 getPrevPage: (...args) => baker?.getPrevPage?.(...args) ?? null,
                 getNextPage: (...args) => baker?.getNextPage?.(...args) ?? null,

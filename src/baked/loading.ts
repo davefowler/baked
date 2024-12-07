@@ -91,11 +91,10 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
     
     const params = {
         path: fullPath,
-        slug,
         title,
         content,
         template,
-        data: JSON.stringify(sanitizedData),
+        data: String(JSON.stringify(sanitizedData)),
         published_date: publishedDate
     };
 
@@ -104,14 +103,14 @@ export const loadPage = (db: Database, pagePath: string, content: string, data: 
     
     try {
         const sql = `
-            REPLACE INTO pages (path, slug, title, content, template, data, published_date) 
-            VALUES ('${params.path}', '${params.slug}', '${params.title}', '${params.content}', '${params.template}', '${params.data}', ${params.published_date ? `'${params.published_date}'` : 'NULL'})
+            REPLACE INTO pages (path, title, content, template, data, published_date) 
+            VALUES ('${params.path}', '${params.title}', '${params.content}', '${params.template}', '${params.data}', ${params.published_date ? `'${params.published_date}'` : 'NULL'})
         `;
         console.log('Executing SQL:', sql);
 
         const stmt = db.prepare(`
-            REPLACE INTO pages (path, slug, title, content, template, data, published_date) 
-            VALUES (@path, @slug, @title, @content, @template, @data, @published_date)
+            REPLACE INTO pages (path, title, content, template, data, published_date) 
+            VALUES (@path, @title, @content, @template, @data, @published_date)
         `);
         
         stmt.run(params);

@@ -45,7 +45,6 @@ When the build command is run, it first creates a sqlite database and loads ever
 
 ```sql
 CREATE TABLE IF NOT EXISTS pages (
-    slug TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     template TEXT NOT NULL,
@@ -148,17 +147,17 @@ There are 3 objects passed to the templates on render:
 
  - site # the data from the site.yaml file, including the title, description, and what ever else you want to add
  - page # the current page object from the database that is being rendered
+   - path
    - title
    - content
    - metadata # loaded from meta.yaml dirs and frontmatter of the pages
    - template
-   - slug
    - published_date
  - baker # a helper object with some useful functions
    - init(db) # initialize the baker object with the given database (client or server side sqlite db)
    - getAsset(type, name) # fetch an asset from the database as a component
-   - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
-   - getPage(slug) # fetch a page from the database
+   - getRawAsset(name, type) # fetch the raw asset from the database without wrapping it in it's component
+   - getPage(path) # fetch a page from the database
    - getLatestPages(limit=10, offset=0) # fetch the latest pages from the database
    - getPrevPage(currentPage) # fetch the previous page from the database
    - getNextPage(currentPage) # fetch the next page from the database

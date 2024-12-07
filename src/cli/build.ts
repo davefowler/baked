@@ -65,16 +65,16 @@ const dish = async (db: Database, dist: string) => {
     let failures = 0;
     
     try {
-        const pageSlugs = await baker.query(`SELECT slug FROM pages`) as string[];
-        if (!pageSlugs?.length) {
+        const paths = await baker.query(`SELECT path FROM pages`) as string[];
+        if (!paths?.length) {
             console.warn('No pages found to render');
             return;
         }
 
-        console.log(`Pre-rendering ${pageSlugs.length} pages...`);
+        console.log(`Pre-rendering ${paths.length} pages...`);
         
         // N+1 query here - but it's fast in SQLite and better for larger sites vs loading all pages into memory
-        for (const slug of pageSlugs) {
+        for (const slug of paths) {
             try {
                 const page = baker.getPage(slug);
                 if (!page) {
