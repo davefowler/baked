@@ -5,6 +5,7 @@ import path from 'path';
 import yaml from 'yaml';
 import matter from 'gray-matter';
 import { escape } from 'html-escaper';
+import { marked } from 'marked';
 
 // Mixer - a function that takes a file and loads it properly into the database depending on its type
 type Mixer = (
@@ -27,11 +28,11 @@ const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
 const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
   const frontmatter = matter(content);
   const combinedMetadata = { ...metadata, ...frontmatter.data };
-  return {
-    content: frontmatter.content,
+  const result = {
+    content: await marked.parse(frontmatter.content),
     data: combinedMetadata,
-    title: combinedMetadata.title || path.basename(filepath, path.extname(filepath)),
   };
+  return Promise.resolve(result);
 };
 
 // Process image files
