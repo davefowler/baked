@@ -25,14 +25,26 @@ const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
 };
 
 // Process markdown files
-const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
+export const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
   const frontmatter = matter(content);
   const combinedMetadata = { ...metadata, ...frontmatter.data };
-  const result = {
-    content: await marked.parse(frontmatter.content),
-    data: combinedMetadata,
+
+  // Configure marked to use custom renderer for images
+  const renderer = new marked.Renderer();
+  renderer.image = (href, title, text) => {
+    return `{% image "${href}", "${text}", "${title || ''}" %}`;
   };
-  return Promise.resolve(result);
+
+  // Configure marked
+  marked.setOptions({
+    renderer,
+    headerIds: false // Prevents automatic ID generation which could interfere with template vars
+  });
+
+  return Promise.resolve({
+    content: marked.parse(frontmatter.content),
+    data: combinedMetadata,
+  });
 };
 
 // Process image files
