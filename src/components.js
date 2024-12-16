@@ -93,27 +93,6 @@ const Template = (rawAsset) => {
       noGlobals: true,
     });
 
-    // Re-add filters to the new environment
-    env.addFilter('safe', (str) => str);
-    env.addFilter('date', (str, format) => {
-      if (!str) return '';
-      const date = new Date(str);
-      return date.toLocaleDateString();
-    });
-
-    // Add the css filter for easy loading of css assets
-    env.addFilter('css', (path) => {
-      const styleAsset = baker.getAsset(path, 'css');
-      if (!styleAsset) return '';
-      const escapedStyle = styleAsset.replace(/<\/style>/gi, '<\\/style>');
-      return new nunjucks.runtime.SafeString(`<style>${escapedStyle}</style>`);
-    });
-
-    env.addFilter('asset', (path, type) => {
-      type = type || inferType(path);
-      return baker.getAsset(path, type);
-    });
-
     // Compile template with new environment
     const template = nunjucks.compile(rawAsset, env);
 

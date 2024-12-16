@@ -38,7 +38,7 @@ export const markdownMixer: Mixer = async (filepath, content, metadata, distPath
   // Configure marked
   marked.setOptions({
     renderer,
-    headerIds: false // Prevents automatic ID generation which could interfere with template vars
+    headerIds: false, // Prevents automatic ID generation which could interfere with template vars
   });
 
   return Promise.resolve({

@@ -14,3 +14,7 @@ export type RawAsset = {
   content: string;
   type: string;
 };
+
+export type Filter = () => string; 
+
+export type FilterMap = Record<string, Filter>;
