@@ -1,12 +1,12 @@
 ---
-title: Baked site starter hope page!
-description: This is the baked site starter hope page!  Replace this with your own content.
+title: Baked site starter homepage!
+description: This is the baked site starter homepage!  Replace this with your own content.
 template: base
 ---
 
 # Hello World!
 
-This is the baked site starter hope page! Replace this with your own content.
+This is the baked site starter homepage! Replace this with your own content.
 
 You can use [markdown](/blog/markdown-guide) for your content, or use HTML.
 

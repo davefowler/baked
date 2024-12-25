@@ -26,6 +26,7 @@ export class TemplateFilters {
     // Need to do bind?
   }
 
+
   // Function to add all filters to a given nunjucks environment
   applyFilters(env) {
     const excludeFuncs = ['constructor', 'applyFilters'];
@@ -35,6 +36,16 @@ export class TemplateFilters {
       env.addFilter(fName, filters[fName])
     })
   }
+
+  // TODO - is this really doing the right thing?
+  safe(str) { return str; }
+
+  // TODO - have this actually take and work with a format
+  date(str, format) { 
+    if (!str) return '';
+    const date = new Date(str);
+    return date.toLocaleDateString();
+  } 
 
   // Defaults here
   css(path) {

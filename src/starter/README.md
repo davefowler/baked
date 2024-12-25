@@ -90,3 +90,13 @@ To perfect your recipe:
 Now get cooking! 👩‍🍳👨‍🍳
 
 _Remember: Whether you prefer to think of it as coding or cooking, Baked serves up websites that are **fully baked** and ready to go!_
+
+
+## Future
+
+If this becomes at all interesting, there's a number of future additions in the [roadmap.md](/roadmap.md) and ideas including using Svelt instead of nunjucks and potentially making the database a simple collection of diffs, so that this could run ontop of (at the end of) any static site generator.  Read more in [notes.md](/notes.md#future-considerations)
+
+
+## How to contribute
+
+I'd love any feedback and contributions!  Take a look at the [roadmap](/roadmap.md) if you need ideas or reach out to me on any of the [various platforms](https://thingsilearned.com/about/)

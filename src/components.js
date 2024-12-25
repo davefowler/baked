@@ -96,15 +96,7 @@ const Template = (rawAsset) => {
 
     const filters = new TemplateFilters(baker);
 
-    
-
-    // Re-add filters to the new environment
-    env.addFilter('safe', (str) => str);
-    env.addFilter('date', (str, format) => {
-      if (!str) return '';
-      const date = new Date(str);
-      return date.toLocaleDateString();
-    });
+    filters.applyFilters(env);
 
     // Add the css filter for easy loading of css assets
     env.addFilter('css', (path) => {
@@ -129,13 +121,13 @@ const Template = (rawAsset) => {
         content: page.content || '',
         data: page.data || {},
         path: validatePath(page.path || ''),
+        prevPage: (...args) => baker?.getPrevPage?.(...args) ?? null,
+        nextPage: (...args) => baker?.getNextPage?.(...args) ?? null,
       },
       baker: {
         getAsset: (path, type) => baker?.getAsset?.(validatePath(path), type) ?? null,
         getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
         getLatestPages: (...args) => baker?.getLatestPages?.(...args) ?? [],
-        getPrevPage: (...args) => baker?.getPrevPage?.(...args) ?? null,
-        getNextPage: (...args) => baker?.getNextPage?.(...args) ?? null,
         search: (...args) => baker?.search?.(...args) ?? [],
         query: (sql, params) => {
           throw new Error('Direct SQL queries not allowed in templates');

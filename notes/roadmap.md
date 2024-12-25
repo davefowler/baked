@@ -17,6 +17,7 @@
  - [ ] comprehensive testing
  - [ ] change "types" to mimetypes
  - [ ] tests for filters
+ - [ ] suite of tests for pre-rendering (ensure it isn't escaped)
 
 
 ## Static site things
