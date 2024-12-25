@@ -45,18 +45,19 @@ export const markdownMixer: Mixer = (filePath, content, metadata, distPath) => {
 
   // Configure marked to use custom renderer for images
   const renderer = new marked.Renderer();
-  renderer.image = (href, title, text) => {
+  renderer.image = ({href, title, text}) => {
     return `{% image "${href}", "${text}", "${title || ''}" %}`;
   };
 
   // Configure marked
   marked.setOptions({
     renderer,
-    headerIds: false // Prevents automatic ID generation which could interfere with template vars
   });
 
+  const parsedContent = marked.parse(frontmatter.content) as string;
+
   return {
-    content: marked.parse(frontmatter.content),
+    content: parsedContent,
     data: combinedMetadata,
   };
 };
