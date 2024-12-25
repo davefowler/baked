@@ -1,4 +1,5 @@
 import nunjucks from 'nunjucks';
+import { TemplateFilters } from './filters'
 
 const validatePath = (path) => {
   // Only prevent path traversal, allow absolute paths
@@ -92,6 +93,10 @@ const Template = (rawAsset) => {
       throwOnUndefined: false,
       noGlobals: true,
     });
+
+    const filters = new TemplateFilters(baker);
+
+    
 
     // Re-add filters to the new environment
     env.addFilter('safe', (str) => str);

@@ -2,11 +2,11 @@
 
 # Pre 1.0 yet
 
- - [ ] get the cli working
- - [ ] confirm loading pages and assets
- - [ ] confirm the templating system working
- - [ ] Figure out secure eval of components from db
- - [ ] pre-render pages
+ - [x] get the cli working
+ - [x] confirm loading pages and assets
+ - [x] confirm the templating system working
+ - [x] Figure out secure eval of components from db
+ - [x] pre-render pages
  - [ ] absurdsql working to store database on client
  - [ ] image assets 
  - [ ] pwa working
@@ -50,3 +50,9 @@
  - [ ] Incremental Static Regeneration (https://vercel.com/docs/functions/incremental-static-regeneration, https://www.smashingmagazine.com/2021/04/incremental-static-regeneration-nextjs/)
  - [ ] Load ahead - instead of load all (just load the pages that are linked from the current page - not the whole site)
  - [ ] Create a "gallery" component example 
+
+
+## Future considerations
+
+ - [ ] Diff version?  - see [notes.md](notes.md)
+ - [ ] use Svelte instead of nunjucks?
