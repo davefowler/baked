@@ -13,5 +13,7 @@ There could be a configurable or automatically generated diff map to tell it whi
 
 This would have the most flexible applications - it could then work with any static site generator - it'd just run it on a dist directory.
 
+The front-end for this would then be super basic - just a diff machine.
+
 
 

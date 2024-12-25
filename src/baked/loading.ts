@@ -9,23 +9,37 @@ import { marked } from 'marked';
 
 // Mixer - a function that takes a file and loads it properly into the database depending on its type
 type Mixer = (
-  filepath: string,
+  filePath: string,
   content: string,
   metadata: any,
   distPath?: string
-) => Promise<{
+) => {
   content: string;
   data: any;
-}>;
+};
+
+  // Copy asset to it's directory
+  const copyAsset = async (filePath: string, distPath?: string, assetDirName?: string) => {
+    const defaultDistPath = path.join(process.cwd(), 'dist');
+    const targetDistPath = distPath || defaultDistPath;
+
+    // Create images directory if it doesn't exist
+    const assetDir = path.join(targetDistPath, assetDirName || '');
+    await fs.mkdir(assetDir, { recursive: true });
+    const filename = path.basename(filePath);
+    const newPath = path.join(assetDir, filename)
+    await fs.copyFile(filePath, newPath);
+  }
+
 
 // Default Mixer just returns content and metadata unchanged
 // TODO - right now we're allowing all file types to be loaded, but maybe we shouldn't.
-const defaultMixer: Mixer = async (filepath, content, metadata, distPath) => {
+const defaultMixer: Mixer = (filePath, content, metadata, distPath) => {
   return { content, data: metadata };
 };
 
-// Process markdown files
-export const markdownMixer: Mixer = async (filepath, content, metadata, distPath) => {
+// Process markdown files 
+export const markdownMixer: Mixer = (filePath, content, metadata, distPath) => {
   const frontmatter = matter(content);
   const combinedMetadata = { ...metadata, ...frontmatter.data };
 
@@ -41,24 +55,21 @@ export const markdownMixer: Mixer = async (filepath, content, metadata, distPath
     headerIds: false // Prevents automatic ID generation which could interfere with template vars
   });
 
-  return Promise.resolve({
+  return {
     content: marked.parse(frontmatter.content),
     data: combinedMetadata,
-  });
+  };
 };
 
 // Process image files
-const imageMixer: Mixer = async (filepath, content, metadata, distPath) => {
-  const defaultDistPath = path.join(process.cwd(), 'dist');
-  const targetDistPath = distPath || defaultDistPath;
-  // Create images directory if it doesn't exist
-  const imagesDir = path.join(targetDistPath, 'images');
-  await fs.mkdir(imagesDir, { recursive: true });
+const imageMixer: Mixer = (filePath, content, metadata, distPath) => {
 
-  // Copy image to images directory
-  const filename = path.basename(filepath);
+
+  const filename = path.basename(filePath);
   const newPath = path.join('images', filename);
-  await fs.copyFile(filepath, path.join(imagesDir, filename));
+
+  // No need to await this async function
+  copyAsset(filePath, distPath, 'images')
 
   // Return img tag as content
   return {

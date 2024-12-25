@@ -16,6 +16,7 @@
  - [ ] make components have both loading and rendering functions
  - [ ] comprehensive testing
  - [ ] change "types" to mimetypes
+ - [ ] tests for filters
 
 
 ## Static site things
@@ -49,7 +50,7 @@
  - [ ] updating from sqlite server (cache api requests? - have the app poll for changes but pasted on the last date it has in the database - this makes the responses cachable)
  - [ ] Incremental Static Regeneration (https://vercel.com/docs/functions/incremental-static-regeneration, https://www.smashingmagazine.com/2021/04/incremental-static-regeneration-nextjs/)
  - [ ] Load ahead - instead of load all (just load the pages that are linked from the current page - not the whole site)
- - [ ] Create a "gallery" component example 
+ - [ ] Create a "gallery" component example
 
 
 ## Future considerations

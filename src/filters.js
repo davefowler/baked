@@ -7,6 +7,18 @@ const Safe = (str) => {
   return new nunjucks.runtime.SafeString(str);
 }
 
+// !TODO - ensure this escapes well
+// TODO - write test for filters
+const Escape = (str) => {
+  return str.replace(/\</gi, '\\<');
+}
+
+const addStyle = (name, value) => {
+  if (!value) return '';
+  const escapedValue = Escape(value);
+  return `$name="${escapedValue}" `
+}
+
 export class TemplateFilters {
   constructor(baker) {
     this.baker = baker;
@@ -37,14 +49,13 @@ export class TemplateFilters {
     return this.baker.getAsset(path, type);
   }
 
-  image(path, maxWidth, maxHeight) {
+  image(path, title,  maxWidth, maxHeight) {
     const imgAsset = this.baker.getAsset(path, 'image');
     if (!imgAsset) return '';
-
-    let style = '';
-    if (maxWidth) style += `maxWidth="${maxWidth}" `
-    if (maxHeight) style += `maxHeight="${maxHeight} `
-    return Safe(`<img ${style} src=${path}></img>`);
+    
+    const escapedStyle = addStyle('maxHeight', maxHeight) + addStyle('maxWidth', maxWidth);
+    const escapedTitle = Escape(title);
+    return Safe(`<img ${escapedStyle} alt=${escapedTitle} src=${path}></img>`);
   }
 }
 
