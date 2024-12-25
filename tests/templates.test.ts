@@ -121,6 +121,36 @@ describe('Template System', () => {
     });
   });
 
+  test('safe filter working in template', () => {
+    const page = {htmlTest: `Render this as <div>safe</div>`};
+    // Double check that by default the template will escape strings
+    const noSafeTemplate = Components.templates(`{{ page.htmlTest}}`);
+    const noSafeResult = noSafeTemplate(page, {}, {});
+    expect(noSafeResult).toContain('\<')
+    expect(noSafeResult).toBe('')
+
+    // Now try it with |safe and we should keep the divs
+    const safeAppliedTemplate = Components.templates(`{{ page.htmlTest|safe }}`)
+    const safeResult = safeAppliedTemplate(page, {}, {});
+    expect(safeResult).toContain('<div>')
+    expect(safeResult).toBe('')
+  });
+
+  test('date filter works',  () => {
+    const page = {date: '12-25-24', title: "It's Christmas!", content: 'Why am I coding?!'};
+    const t = Components.templates('{{ page.date|date }}');
+    const result = t(page, {}, {});
+    expect(result).toBe('asdf');
+
+    const formatT = Components.templates(`{{ page.date|date "YYYY-MM-DD" }}`);
+    const formatResult = formatT(page, {}, {});
+    expect(formatResult).toBe('asd');
+
+    const formatT2 = Components.templates(`{{ page.date|date "YY-WW" }}`);
+    const formatResult2 = formatT2(page, {}, {});
+    expect(formatResult2).toBe('asd');
+  })
+
   test('asset helper returns asset', () => {
     const template = Components.templates(`{{ 'style.css'|asset }}`);
     const baker = {

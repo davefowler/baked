@@ -55,6 +55,7 @@ program
   .argument('<site destination>', 'Destination directory for the new site')
   .description('Create a new baked site')
   .action(async (destination) => {
+    // TODO - run a check that the site doesn't already exist and this will be overwriting it...
     console.log(`Getting the ingredients for ${destination}...`);
     const starterDir = join(packageRoot, 'dist', 'starter');
     await createSite(destination, starterDir);
@@ -78,6 +79,18 @@ program
     console.log('Starting development server...');
     await serveSite();
   });
+
+program
+  .command('andserve')
+  .description('build and serve the site - combo command')
+  .action(async (options) => {
+    // TODO - can probably call the other program.commands?  This isn't dry
+    console.log("Let's get cooking...");
+    const sqlDir = join(packageRoot, 'dist/sql');
+    await buildSite(process.cwd(), sqlDir, options.drafts);
+    console.log('Starting development server...');
+    await serveSite();
+  })
 
 program.command('help').action(() => {
   program.help();

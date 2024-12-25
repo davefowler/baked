@@ -4,7 +4,7 @@
    - getAsset(type, name) # fetch an asset from the database as a component
    - getRawAsset(slug) # fetch the raw asset from the database without wrapping it in it's component
    - getPage(slug) # fetch a page from the database
-   - getLatestPages(limit=10, offset=0) # fetch the latest pages from the database
+   - getLatestPages(limit=10, offset=0, category) # fetch the latest pages from the database
    - getPrevPage(currentPage) # fetch the previous page from the database
    - getNextPage(currentPage) # fetch the next page from the database
    - renderPage(page) # render a page with the given site and baker objects
@@ -114,16 +114,31 @@ export class Baker {
     }
   }
 
-  getLatestPages(limit = 10, offset = 0) {
+  getLatestPages(limit = 10, offset = 0, category) {
+    if (category === undefined) {
+      return this.db
+        .prepare(
+          `
+              SELECT * FROM pages
+              ORDER BY published_date DESC 
+              LIMIT ? OFFSET ?
+          `
+        )
+        .all(limit, offset);
+    }
+
+    // TODO - fix this query with json parsing by category and add tests
     return this.db
-      .prepare(
-        `
-            SELECT * FROM pages
-            ORDER BY published_date DESC 
-            LIMIT ? OFFSET ?
-        `
-      )
-      .all(limit, offset);
+    .prepare(
+      `
+          SELECT * FROM pages
+          ORDER BY published_date DESC 
+          WHERE metadata.category = ?
+          LIMIT ? OFFSET ?
+      `
+    )
+    .all(category, limit, offset);
+
   }
 
   getPrevPage(currentPage) {
@@ -168,6 +183,7 @@ export class Baker {
       .all(`%${query}%`, `%${query}%`, limit);
   }
 
+  // TODO - make query a filter?
   query(sql, params = []) {
     return this.db.prepare(sql).all(...params);
   }

@@ -53,14 +53,6 @@ const env = new nunjucks.Environment(null, {
   noGlobals: true,
 });
 
-// Add custom filters
-env.addFilter('safe', (str) => str);
-env.addFilter('date', (str, format) => {
-  if (!str) return '';
-  const date = new Date(str);
-  return date.toLocaleDateString();
-});
-
 // Create custom loader for templates
 class BakerLoader {
   constructor(baker) {
@@ -94,22 +86,9 @@ const Template = (rawAsset) => {
       noGlobals: true,
     });
 
+    // Add default and custom filters
     const filters = new TemplateFilters(baker);
-
     filters.applyFilters(env);
-
-    // Add the css filter for easy loading of css assets
-    env.addFilter('css', (path) => {
-      const styleAsset = baker.getAsset(path, 'css');
-      if (!styleAsset) return '';
-      const escapedStyle = styleAsset.replace(/<\/style>/gi, '<\\/style>');
-      return new nunjucks.runtime.SafeString(`<style>${escapedStyle}</style>`);
-    });
-
-    env.addFilter('asset', (path, type) => {
-      type = type || inferType(path);
-      return baker.getAsset(path, type);
-    });
 
     // Compile template with new environment
     const template = nunjucks.compile(rawAsset, env);

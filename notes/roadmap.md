@@ -7,6 +7,7 @@
  - [x] confirm the templating system working
  - [x] Figure out secure eval of components from db
  - [x] pre-render pages
+ - [ ] baker functions working in templates - with tests
  - [ ] absurdsql working to store database on client
  - [ ] image assets 
  - [ ] pwa working
@@ -17,7 +18,7 @@
  - [ ] comprehensive testing
  - [ ] change "types" to mimetypes
  - [ ] tests for filters
- - [ ] suite of tests for pre-rendering (ensure it isn't escaped)
+ - [x] suite of tests for pre-rendering (ensure it isn't escaped)
 
 
 ## Static site things
