@@ -22,6 +22,8 @@ const addStyle = (name, value) => {
 export class TemplateFilters {
   constructor(baker) {
     this.baker = baker;
+    this.applyFilters = this.applyFilters.bind(this);
+    // this.applyFilters = this.bind(this.applyFilters);
     // TODO - get things from registered filters
     // Need to do bind?
   }
@@ -30,7 +32,7 @@ export class TemplateFilters {
   // Function to add all filters to a given nunjucks environment
   applyFilters(env) {
     const excludeFuncs = ['constructor', 'applyFilters'];
-    const filters = Object.getOwnPropertyNames(this.prototype).filter(n => !excludeFuncs.includes(n));
+    const filters = Object.getOwnPropertyNames(this).filter(n => !excludeFuncs.includes(n));
 
     filters.forEach((fName) => {
       env.addFilter(fName, filters[fName])
