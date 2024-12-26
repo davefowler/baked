@@ -67,10 +67,9 @@ export class TemplateFilters {
 
   // Function to add all filters to a given nunjucks environment
   applyFilters(env) {
-    Object.entries(TemplateFilters.filterRegistry).forEach(([name, fn]) => {
-      console.log('Filter - ', name, fn)
-      env.addFilter(name, fn)
-    })
+    TemplateFilters.filterRegistry.forEach((fn, name) => {
+      env.addFilter(name, fn);
+    });
   }
 }
 
