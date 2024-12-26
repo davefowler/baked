@@ -37,7 +37,7 @@ Here's an image:
 `;
 
     const result = await markdownMixer('test.md', content, {}, '');
-    expect(result.content).toContain('{% image "path/to/image.jpg", "Alt text", "Image title" %}');
+    expect(result.content).toContain('{{ "path/to/image.jpg" | image("Alt text", "Image title") }}');
     expect(result.content).not.toContain('<img');
   });
 

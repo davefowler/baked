@@ -42,10 +42,19 @@ export const markdownMixer: Mixer = (filePath, content, metadata, distPath) => {
   const frontmatter = matter(content);
   const combinedMetadata = { ...metadata, ...frontmatter.data };
 
-  // Configure marked to use custom renderer for images
+  // Configure marked to use custom renderer for images and blocks
   const renderer = new marked.Renderer();
   renderer.image = ({href, title, text}) => {
-    return `{% image "${href}", "${text}", "${title || ''}" %}`;
+    return `{{ "${href}" | image("${text}", "${title}") %}`;
+  };
+
+  // Add custom handling for HTML blocks that contain Nunjucks tags
+  renderer.html = ({ text }: { text: string }): string => {
+    if (text.includes('{%') || text.includes('{{')) {
+      // Return the HTML as-is without wrapping in paragraphs
+      return text;
+    }
+    return text;
   };
 
   // Configure marked

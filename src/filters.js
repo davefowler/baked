@@ -46,13 +46,14 @@ export class TemplateFilters {
         type = type || inferType(path);
         return this.baker.getAsset(path, type);
       },
-      image: (path, title, maxWidth, maxHeight) => {
+      image: (path, text, title, maxWidth, maxHeight) => {
         const imgAsset = this.baker.getAsset(path, 'image');
         if (!imgAsset) return '';
         
         const escapedStyle = addStyle('maxHeight', maxHeight) + addStyle('maxWidth', maxWidth);
         const escapedTitle = Escape(title);
-        return Safe(`<img ${escapedStyle} alt=${escapedTitle} src=${path}></img>`);
+        const escapedText = Escape(text);
+        return Safe(`<img ${escapedStyle} alt="${escapedText}" title="${escapedTitle}" src="${path}"></img>`);
       },
       css: (path) => {
         const styleAsset = this.baker.getAsset(path, 'css');
