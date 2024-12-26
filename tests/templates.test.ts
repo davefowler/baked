@@ -122,18 +122,21 @@ describe('Template System', () => {
   });
 
   test('safe filter working in template', () => {
-    const page = {htmlTest: `Render this as <div>safe</div>`};
+    const page = {
+      data: {
+        htmlTest: `Render this as <div>safe</div>`
+      }
+    };
     // Double check that by default the template will escape strings
-    const noSafeTemplate = Components.templates(`{{ page.htmlTest}}`);
+    const noSafeTemplate = Components.templates(`{{ page.data.htmlTest }}`);
+    
     const noSafeResult = noSafeTemplate(page, {}, {});
-    expect(noSafeResult).toContain('\<')
-    expect(noSafeResult).toBe('')
+    expect(noSafeResult).toBe('Render this as &lt;div&gt;safe&lt;/div&gt;');
 
     // Now try it with |safe and we should keep the divs
-    const safeAppliedTemplate = Components.templates(`{{ page.htmlTest|safe }}`)
+    const safeAppliedTemplate = Components.templates(`{{ page.data.htmlTest|safe }}`)
     const safeResult = safeAppliedTemplate(page, {}, {});
-    expect(safeResult).toContain('<div>')
-    expect(safeResult).toBe('')
+    expect(safeResult).toBe('Render this as <div>safe</div>');
   });
 
   test('asset helper returns asset', () => {
