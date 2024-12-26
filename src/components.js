@@ -29,11 +29,6 @@ export const cleanAssetName = (name, type) => {
   return name;
 };
 
-const inferType = (path) => {
-  if (path.endsWith('.html')) return 'templates';
-  if (path.endsWith('.css')) return 'css';
-  return null;
-};
 
 const PassThrough = (rawAsset) => {
   return rawAsset;

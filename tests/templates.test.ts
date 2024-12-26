@@ -137,18 +137,16 @@ describe('Template System', () => {
   });
 
   test('date filter works',  () => {
-    const page = {date: '12-25-24', title: "It's Christmas!", content: 'Why am I coding?!'};
-    const t = Components.templates('{{ page.date|date }}');
-    const result = t(page, {}, {});
-    expect(result).toBe('asdf');
+    const testDate = new Date('2024-03-14');
+    const page = { date: testDate };
 
-    const formatT = Components.templates(`{{ page.date|date "YYYY-MM-DD" }}`);
+    const formatT = Components.templates(`{{ page.date|date "yyyy-MM-dd" }}`);
     const formatResult = formatT(page, {}, {});
-    expect(formatResult).toBe('asd');
+    expect(formatResult).toBe('2024-03-14');
 
-    const formatT2 = Components.templates(`{{ page.date|date "YY-WW" }}`);
+    const formatT2 = Components.templates(`{{ page.date|date "yy-'W'ww" }}`);
     const formatResult2 = formatT2(page, {}, {});
-    expect(formatResult2).toBe('asd');
+    expect(formatResult2).toBe('24-W11');
   })
 
   test('asset helper returns asset', () => {
@@ -164,5 +162,48 @@ describe('Template System', () => {
 
     const result = template({}, baker, {});
     expect(result).toEqual('body { color: red; }');
+  });
+
+  describe('Template Variables and Loops', () => {
+    test('set variables and for loops work together', () => {
+      const template = Components.templates(`
+        {% set items = ['apple', 'banana', 'orange'] %}
+        <ul>
+        {% for item in items %}
+          <li>{{ item }}</li>
+        {% endfor %}
+        </ul>
+      `);
+
+      const result = template({}, {}, {});
+      expect(result).toContain('<li>apple</li>');
+      expect(result).toContain('<li>banana</li>');
+      expect(result).toContain('<li>orange</li>');
+    });
+
+    test('set variables from baker methods work', () => {
+      const template = Components.templates(`
+        {% set fruits = baker.getAsset('fruits', 'json') %}
+        <ul>
+        {% for fruit in fruits %}
+          <li>{{ fruit }}</li>
+        {% endfor %}
+        </ul>
+      `);
+
+      const baker = {
+        getAsset: (path: string, type: string) => {
+          if (path === 'fruits' && type === 'json') {
+            return ['apple', 'banana', 'orange'];
+          }
+          return null;
+        }
+      };
+
+      const result = template({}, baker, {});
+      expect(result).toContain('<li>apple</li>');
+      expect(result).toContain('<li>banana</li>');
+      expect(result).toContain('<li>orange</li>');
+    });
   });
 });

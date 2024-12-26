@@ -1,6 +1,7 @@
 // Template Filters
 // TODO - typescript?
 import nunjucks from 'nunjucks';
+import { format } from 'date-fns';
 
 // Short-hand for creating a nunjucks SafeString
 const Safe = (str) => {
@@ -18,6 +19,12 @@ const addStyle = (name, value) => {
   const escapedValue = Escape(value);
   return `$name="${escapedValue}" `
 }
+
+const inferType = (path) => {
+  if (path.endsWith('.html')) return 'templates';
+  if (path.endsWith('.css')) return 'css';
+  return null;
+};
 
 export class TemplateFilters {
   static filterRegistry = new Map();
@@ -61,6 +68,14 @@ export class TemplateFilters {
         const escapedStyle = styleAsset.replace(/<\/style>/gi, '<\\/style>');
         return Safe(`<style>${escapedStyle}</style>`);
       },
+      date: (date, formatStr) => {
+        try {
+          return format(new Date(date), formatStr);
+        } catch (e) {
+          console.warn(`Date formatting error: ${e.message}`);
+          return '';
+        }
+      }
     };
     TemplateFilters.registerFilters(this.defaultFilters);
   }
