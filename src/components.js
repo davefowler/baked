@@ -88,11 +88,15 @@ const Template = (rawAsset) => {
     // Compile template with new environment
     const template = nunjucks.compile(rawAsset, env);
 
+    // render the content first so we can use it in the context
+    const renderedContent = page.content ? env.renderString(page.content, { page, baker, site }) : '';
+    
     // For security reasons we re-specify the interface to these objects
     const context = {
       page: {
         title: page.title || '',
-        content: page.content || '',
+        // Make sure to render the 
+        content: renderedContent,
         data: page.data || {},
         path: validatePath(page.path || ''),
         prevPage: (...args) => baker?.getPrevPage?.(...args) ?? null,

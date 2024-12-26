@@ -72,7 +72,7 @@ describe('build output', () => {
 
     const index = await readFile(indexPath, 'utf8');
     expect(index).toContain('Hello World!');
-    expect(index).toContain('<li>Customizing Your Site</li>\n');
+    expect(index).toContain('<li><a href=\"/blog/customization\">Customizing Your Site</a></li>');
   })
 })
 

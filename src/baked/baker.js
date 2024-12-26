@@ -96,7 +96,9 @@ export class Baker {
       if (!template) {
         throw new Error(`Template not found: ${templateName}`);
       }
+      console.log('baker render page', template, page, this, this.site);
 
+      console.log('rendered page', template(page, this, this.site));
       return template(page, this, this.site);
     } catch (error) {
       console.error(`Failed to render page:`, error);
@@ -127,18 +129,17 @@ export class Baker {
         .all(limit, offset);
     }
 
-    // TODO - fix this query with json parsing by category and add tests
+    // Fixed query to properly parse JSON data field and check category
     return this.db
     .prepare(
       `
           SELECT * FROM pages
+          WHERE json_extract(data, '$.category') = ?
           ORDER BY published_date DESC 
-          WHERE metadata.category = ?
           LIMIT ? OFFSET ?
       `
     )
     .all(category, limit, offset);
-
   }
 
   getPrevPage(currentPage) {
