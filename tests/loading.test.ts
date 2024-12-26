@@ -10,8 +10,12 @@ import { RawAsset, Page } from '../src/types';
 describe('Loading System', () => {
   let tempDir: string;
   let db: DatabaseType;
+  const originalTZ = process.env.TZ;
 
   beforeEach(async () => {
+    // Set timezone to UTC for consistent testing
+    process.env.TZ = 'UTC';
+    
     // Create temporary test directory
     tempDir = await mkdtemp(join(tmpdir(), 'baked-test-'));
     const schema = await readFile(path.join(process.cwd(), 'src/sql/schema.sql'), 'utf-8');
@@ -24,6 +28,9 @@ describe('Loading System', () => {
   });
 
   afterEach(async () => {
+    // Restore original timezone
+    process.env.TZ = originalTZ;
+    
     await rm(tempDir, { recursive: true, force: true });
     db.close();
   });

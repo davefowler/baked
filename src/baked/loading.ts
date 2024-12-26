@@ -108,10 +108,10 @@ export const loadPage = (db: DatabaseType, pagePath: string, content: string, da
   const slug = pagePath.replace(path.extname(pagePath), '').replace(/\.[^/.]+$/, '');
   const title = data.title || path.basename(pagePath, path.extname(pagePath));
 
-  // Handle date normalization - create Date object but keep in local timezone
+  // Handle date normalization - store dates in UTC ISO format
   let publishedDate = null;
   if (data.date) {
-    publishedDate = new Date(data.date).toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+    publishedDate = new Date(data.date).toISOString();
   }
 
   // Sanitize all string values in the data object
