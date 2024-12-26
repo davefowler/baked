@@ -65,6 +65,15 @@ describe('build output', () => {
     expect(index).toContain('<h1>Hello World!</h1>\n');
   })
 
+  // TODO - maybe test this in templates or baker?
+  test('baker can getLatestPosts in templates', async () => {
+    const indexPath = path.join(distDir, 'index.html');
+    expect(existsSync(indexPath)).toBe(true);
+
+    const index = await readFile(indexPath, 'utf8');
+    expect(index).toContain('Hello World!');
+    expect(index).toContain('<li>Customizing Your Site</li>\n');
+  })
 })
 
 describe('pre build process', () => {

@@ -2,15 +2,15 @@
 // TODO - typescript?
 import nunjucks from 'nunjucks';
 
-
+// Short-hand for creating a nunjucks SafeString
 const Safe = (str) => {
   return new nunjucks.runtime.SafeString(str);
 }
 
-// !TODO - ensure this escapes well
-// TODO - write test for filters
+// Using Nunjucks' built-in escape function
 const Escape = (str) => {
-  return str.replace(/\</gi, '\\<');
+  if (!str) return '';
+  return nunjucks.runtime.escape(str);
 }
 
 const addStyle = (name, value) => {
@@ -20,55 +20,51 @@ const addStyle = (name, value) => {
 }
 
 export class TemplateFilters {
+  static filterRegistry = new Map();
+
+  // Static method to register filters
+  static registerFilter(name, filterFn) {
+    this.filterRegistry.set(name, filterFn);
+  }
+
+  // Static method to register multiple filters at once
+  static registerFilters(filtersObject) {
+    Object.entries(filtersObject).forEach(([name, fn]) => {
+      this.registerFilter(name, fn);
+    });
+  }
+
   constructor(baker) {
     this.baker = baker;
     this.applyFilters = this.applyFilters.bind(this);
     // this.applyFilters = this.bind(this.applyFilters);
     // TODO - get things from registered filters
     // Need to do bind?
+    // Register default filters on instantiation
+    this.defaultFilters = {
+      asset: (path, type) => {
+        type = type || inferType(path);
+        return this.baker.getAsset(path, type);
+      },
+      image: (path, title, maxWidth, maxHeight) => {
+        const imgAsset = this.baker.getAsset(path, 'image');
+        if (!imgAsset) return '';
+        
+        const escapedStyle = addStyle('maxHeight', maxHeight) + addStyle('maxWidth', maxWidth);
+        const escapedTitle = Escape(title);
+        return Safe(`<img ${escapedStyle} alt=${escapedTitle} src=${path}></img>`);
+      },
+    };
+    TemplateFilters.registerFilters(this.defaultFilters);
   }
 
 
   // Function to add all filters to a given nunjucks environment
   applyFilters(env) {
-    const excludeFuncs = ['constructor', 'applyFilters'];
-    const filters = Object.getOwnPropertyNames(this).filter(n => !excludeFuncs.includes(n));
-
-    filters.forEach((fName) => {
-      env.addFilter(fName, filters[fName])
+    Object.entries(TemplateFilters.filterRegistry).forEach(([name, fn]) => {
+      console.log('Filter - ', name, fn)
+      env.addFilter(name, fn)
     })
-  }
-
-  // TODO - is this really doing the right thing?
-  safe(str) { return str; }
-
-  // TODO - have this actually take and work with a format
-  date(str, format) { 
-    if (!str) return '';
-    const date = new Date(str);
-    return date.toLocaleDateString();
-  } 
-
-  // Defaults here
-  css(path) {
-    const styleAsset = this.baker.getAsset(path, 'css');
-    if (!styleAsset) return '';
-    const escapedStyle = styleAsset.replace(/<\/style>/gi, '<\\/style>');
-    return Safe(`<style>${escapedStyle}</style>`);
-  }
-
-  asset(path, type) {
-    type = type || inferType(path);
-    return this.baker.getAsset(path, type);
-  }
-
-  image(path, title,  maxWidth, maxHeight) {
-    const imgAsset = this.baker.getAsset(path, 'image');
-    if (!imgAsset) return '';
-    
-    const escapedStyle = addStyle('maxHeight', maxHeight) + addStyle('maxWidth', maxWidth);
-    const escapedTitle = Escape(title);
-    return Safe(`<img ${escapedStyle} alt=${escapedTitle} src=${path}></img>`);
   }
 }
 
