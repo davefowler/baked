@@ -96,6 +96,32 @@ Draft content`;
       const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('draft');
       expect(page).toBeUndefined();
     });
+
+    test('handles dates with and without time components correctly', async () => {
+      const pageWithJustDate = `---
+title: Date Only Test
+date: 2024-03-14
+---
+Content`;
+
+      const pageWithDateTime = `---
+title: DateTime Test
+date: 2024-03-14T15:30:00Z
+---
+Content`;
+
+      await mkdir(join(tempDir, 'pages'), { recursive: true });
+      await writeFile(join(tempDir, 'pages', 'date-test.md'), pageWithJustDate);
+      await writeFile(join(tempDir, 'pages', 'datetime-test.md'), pageWithDateTime);
+
+      await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
+
+      const dateOnlyPage = db.prepare('SELECT * FROM pages WHERE slug = ?').get('date-test') as Page;
+      expect(dateOnlyPage.published_date).toBe('2024-03-14T00:00:00.000Z');
+
+      const dateTimePage = db.prepare('SELECT * FROM pages WHERE slug = ?').get('datetime-test') as Page;
+      expect(dateTimePage.published_date).toBe('2024-03-14T15:30:00.000Z');
+    });
   });
 
   describe('loadAssetsFromDir', () => {

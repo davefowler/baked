@@ -107,7 +107,12 @@ const getMixerByFilename = (filename: string): Mixer => {
 export const loadPage = (db: DatabaseType, pagePath: string, content: string, data: any) => {
   const slug = pagePath.replace(path.extname(pagePath), '').replace(/\.[^/.]+$/, '');
   const title = data.title || path.basename(pagePath, path.extname(pagePath));
-  const publishedDate = data.date ? new Date(data.date).toISOString() : null;
+
+  // Handle date normalization - create Date object but keep in local timezone
+  let publishedDate = null;
+  if (data.date) {
+    publishedDate = new Date(data.date).toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+  }
 
   // Sanitize all string values in the data object
   const sanitizedData = Object.fromEntries(

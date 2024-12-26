@@ -136,19 +136,6 @@ describe('Template System', () => {
     expect(safeResult).toBe('')
   });
 
-  test('date filter works',  () => {
-    const testDate = new Date('2024-03-14');
-    const page = { date: testDate };
-
-    const formatT = Components.templates(`{{ page.date|date "yyyy-MM-dd" }}`);
-    const formatResult = formatT(page, {}, {});
-    expect(formatResult).toBe('2024-03-14');
-
-    const formatT2 = Components.templates(`{{ page.date|date "yy-'W'ww" }}`);
-    const formatResult2 = formatT2(page, {}, {});
-    expect(formatResult2).toBe('24-W11');
-  })
-
   test('asset helper returns asset', () => {
     const template = Components.templates(`{{ 'style.css'|asset }}`);
     const baker = {

@@ -1,7 +1,8 @@
 // Template Filters
 // TODO - typescript?
 import nunjucks from 'nunjucks';
-import { format } from 'date-fns';
+import { parseISO } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 // Short-hand for creating a nunjucks SafeString
 const Safe = (str) => {
@@ -11,13 +12,13 @@ const Safe = (str) => {
 // Using Nunjucks' built-in escape function
 const Escape = (str) => {
   if (!str) return '';
-  return nunjucks.runtime.escape(str);
+  return nunjucks.lib.escape(str);
 }
 
 const addStyle = (name, value) => {
   if (!value) return '';
   const escapedValue = Escape(value);
-  return `$name="${escapedValue}" `
+  return `${name}="${escapedValue}" `
 }
 
 const inferType = (path) => {
@@ -69,8 +70,15 @@ export class TemplateFilters {
         return Safe(`<style>${escapedStyle}</style>`);
       },
       date: (date, formatStr) => {
+        formatStr = formatStr || 'MM/dd/yyyy';
         try {
-          return format(new Date(date), formatStr);
+          // Ensure we're working with UTC dates
+          const d = date instanceof Date ? date : parseISO(date);
+          if (isNaN(d.getTime())) {
+            console.warn('Invalid date provided to date filter');
+            return '';
+          }
+          return formatInTimeZone(d, 'UTC', formatStr);
         } catch (e) {
           console.warn(`Date formatting error: ${e.message}`);
           return '';
