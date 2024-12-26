@@ -44,36 +44,27 @@ export const markdownMixer: Mixer = (filePath, content, metadata, distPath) => {
 
   // Configure marked to use custom renderer for images and blocks
   const renderer = new marked.Renderer();
-  renderer.image = ({href, title, text}) => {
-    return `{{ "${href}" | image("${text}", "${title}") }}`;
+  
+  renderer.image = (info) => {
+    console.log('image renderer', info);
+    return `{{ "${info.href}" | image("${info.text}", "${info.title || ''}") }}`;
   };
 
-  // Add custom handling for HTML blocks that contain Nunjucks tags
-  renderer.html = ({ text }: { text: string }): string => {
-    if (text.includes('{%') || text.includes('{{')) {
-      // Return the HTML as-is without wrapping in paragraphs
-      return text;
-    }
-    return text;
+
+  const options = {
+    renderer
   };
 
-  // Configure marked
-  marked.setOptions({
-    renderer,
-  });
-
-  const parsedContent = marked.parse(frontmatter.content) as string;
+  const parsedContent = marked.parse(frontmatter.content, options) as string;
 
   return {
-    content: parsedContent,
+    content: parsedContent.trim(),
     data: combinedMetadata,
   };
 };
 
 // Process image files
 const imageMixer: Mixer = (filePath, content, metadata, distPath) => {
-
-
   const filename = path.basename(filePath);
   const newPath = path.join('images', filename);
 
@@ -108,7 +99,7 @@ export const loadPage = (db: DatabaseType, pagePath: string, content: string, da
   const slug = pagePath.replace(path.extname(pagePath), '').replace(/\.[^/.]+$/, '');
   const title = data.title || path.basename(pagePath, path.extname(pagePath));
 
-  // Handle date normalization - store dates in UTC ISO format
+  // Handle date normalization
   let publishedDate = null;
   if (data.date) {
     publishedDate = new Date(data.date).toISOString();

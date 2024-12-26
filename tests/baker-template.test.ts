@@ -78,12 +78,19 @@ describe('Baker Template Integration', () => {
     });
 
     test('template can handle missing baker methods gracefully', () => {
+      // Temporarily suppress console.error for this test
+      const originalError = console.error;
+      console.error = jest.fn();
+
       const template = Components.templates(`
                 {{ baker.nonexistentMethod() }}
             `);
 
       const result = template({}, baker, {});
       expect(result).toBe('');
+
+      // Restore console.error
+      console.error = originalError;
     });
 
     test('template can handle null page data', () => {

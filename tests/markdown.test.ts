@@ -42,12 +42,12 @@ Here's an image:
   });
 
   test('handles images without title', async () => {
-    const content = `![Alt text](path/to/image.jpg)`;
+    const content = `![Alt text](path/to/image.jpg "Test title")`;
 
     const result = await markdownMixer('test.md', content, {}, '');
-    expect(result.content).toContain('{{ "path/to/image.jpg" | image("Alt text", "test title") }}');
+    expect(result.content).toContain('{{ "path/to/image.jpg" | image("Alt text", "Test title") }}');
     expect(result.content).not.toContain('<img');
-    
+    expect(result.content).toBe('<p>{{ "path/to/image.jpg" | image("Alt text", "Test title") }}</p>');
   });
 
   test('preserves inline HTML', async () => {
