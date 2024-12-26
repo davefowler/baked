@@ -45,7 +45,9 @@ Here's an image:
     const content = `![Alt text](path/to/image.jpg)`;
 
     const result = await markdownMixer('test.md', content, {}, '');
-    expect(result.content).toContain('{% image "path/to/image.jpg", "Alt text", "" %}');
+    expect(result.content).toContain('{{ "path/to/image.jpg" | image("Alt text", "test title") }}');
+    expect(result.content).not.toContain('<img');
+    
   });
 
   test('preserves inline HTML', async () => {
