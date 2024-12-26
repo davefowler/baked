@@ -54,6 +54,12 @@ export class TemplateFilters {
         const escapedTitle = Escape(title);
         return Safe(`<img ${escapedStyle} alt=${escapedTitle} src=${path}></img>`);
       },
+      css: (path) => {
+        const styleAsset = this.baker.getAsset(path, 'css');
+        if (!styleAsset) return '';
+        const escapedStyle = styleAsset.replace(/<\/style>/gi, '<\\/style>');
+        return Safe(`<style>${escapedStyle}</style>`);
+      },
     };
     TemplateFilters.registerFilters(this.defaultFilters);
   }
