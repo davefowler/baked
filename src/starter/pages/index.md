@@ -17,7 +17,7 @@ Like this line that <b>bolds this text with HTML</b>.
 {% set blogPosts = baker.getLatestPages(100, 0, 'blog') %}
 
 {% for post in blogPosts %}
-<li><a href="/blog/{{post.slug}}">{{post.title}}</a></li>
+<li><a href="/{{post.slug}}">{{post.title}}</a></li>
 {% endfor %}
 </ul>
 

@@ -95,8 +95,10 @@ const getMixerByFilename = (filename: string): Mixer => {
 };
 
 export const loadPage = (db: DatabaseType, pagePath: string, content: string, data: any) => {
-  const slug = pagePath.replace(path.extname(pagePath), '').replace(/\.[^/.]+$/, '');
-  const title = data.title || path.basename(pagePath, path.extname(pagePath));
+  // Remove any leading slashes and normalize path
+  const normalizedPath = pagePath.replace(/^\/+/, '');
+  const slug = normalizedPath.replace(path.extname(normalizedPath), '').replace(/\.[^/.]+$/, '');
+  const title = data.title || path.basename(normalizedPath, path.extname(normalizedPath));
 
   // Handle date normalization
   let publishedDate = null;
