@@ -117,7 +117,6 @@ describe('Baker', () => {
       };
 
       const alltemplatesare = db.prepare('SELECT * FROM assets WHERE type = ?').all('templates');
-      console.log('available templates', alltemplatesare);
       const rendered = await baker.renderPage(testPage);
       expect(rendered).toContain('<h1>Test from a new Page</h1>');
       expect(rendered).toContain('Test content from a new page');

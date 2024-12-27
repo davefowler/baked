@@ -10,6 +10,17 @@ describe('createSite', () => {
   let tempDir: string;
   let starterDir: string;
 
+  // Add console suppression
+  beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  // Restore console
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeEach(async () => {
     // Create temporary directories
     tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
@@ -126,6 +137,17 @@ describe('createSite', () => {
 
 describe('createSite with starter directory', () => {
   let tempDir: string;
+
+  // Add console suppression
+  beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  // Restore console
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
 
   beforeEach(async () => {
     // Create temporary directories

@@ -34,6 +34,12 @@ describe('CLI Commands', () => {
 
   beforeAll(async () => {
     await rm(TEST_DIR, { recursive: true, force: true });
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
   });
 
   jest.setTimeout(30000); // 30 seconds

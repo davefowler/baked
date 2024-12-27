@@ -96,9 +96,6 @@ export class Baker {
       if (!template) {
         throw new Error(`Template not found: ${templateName}`);
       }
-      console.log('baker render page', template, page, this, this.site);
-
-      console.log('rendered page', template(page, this, this.site));
       return template(page, this, this.site);
     } catch (error) {
       console.error(`Failed to render page:`, error);

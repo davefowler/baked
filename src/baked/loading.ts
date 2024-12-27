@@ -46,7 +46,6 @@ export const markdownMixer: Mixer = (filePath, content, metadata, distPath) => {
   const renderer = new marked.Renderer();
   
   renderer.image = (info) => {
-    console.log('image renderer', info);
     return `{{ "${info.href}" | image("${info.text}", "${info.title || ''}") }}`;
   };
 

@@ -13,6 +13,17 @@ describe('build output', () => {
   const SQL_DIR = path.join(__dirname, '../src/sql');
   const distDir = path.join(TEST_DIR, 'dist');
 
+  beforeAll(() => {
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    // Optionally also mock error if you want to suppress those too
+    // jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeAll(async () => {
     // Initial cleanup
     await rm(TEST_DIR, { recursive: true, force: true });
