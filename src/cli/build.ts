@@ -88,7 +88,7 @@ const dish = async (db: DatabaseType, dist: string) => {
           flag: 'w', // 'w' for write (overwrites if file exists)
         });
       } catch (error) {
-        console.error(`Failed to render page ${path}:`, error);
+        console.error(`Failed to pre-render page ${path}:`, error);
         failures++;
       }
     }

@@ -98,7 +98,7 @@ export class Baker {
       }
       return template(page, this, this.site);
     } catch (error) {
-      console.error(`Failed to render page:`, error);
+      console.error(`Failed to render page:`, page.path, error);
       // Return a basic error page in production
       return `
                 <html>

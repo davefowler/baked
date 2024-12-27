@@ -90,7 +90,7 @@ const Template = (rawAsset) => {
 
     // render the content first so we can use it in the context
     const renderedContent = page.content ? env.renderString(page.content, { page, baker, site }) : '';
-    
+
     // For security reasons we re-specify the interface to these objects
     const context = {
       page: {
