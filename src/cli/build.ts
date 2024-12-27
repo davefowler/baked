@@ -148,7 +148,8 @@ export default async function bake(
   await dish(db, tmpDist);
 
   console.log('... and a cherry on top');
-  const bakedDir = join(packageRoot, 'dist', 'baked');
+  // TODO - should i somehow copy the src/baked directory to the dist directory?
+  const bakedDir = join(packageRoot, 'src', 'baked');
   await cp(bakedDir, tmpDist, { recursive: true });
 
   // swap the tmp dist to the final dist
