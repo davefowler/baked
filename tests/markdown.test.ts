@@ -1,5 +1,5 @@
 import { expect, test, describe } from '@jest/globals';
-import { markdownMixer } from '../src/baked/loading';
+import { markdownMixer } from '../src/cli/loading';
 
 describe('Markdown Processing', () => {
   test('basic markdown conversion', async () => {

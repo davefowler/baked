@@ -6,7 +6,7 @@ import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { Components } from '../src/components.js';
 import { Baker } from '../src/baked/baker';
 import { readFile } from 'fs/promises';
-import { loadPage } from '../src/baked/loading.js';
+import { loadPage } from '../src/cli/loading.js';
 
 describe('Security Tests', () => {
   let tempDir: string;

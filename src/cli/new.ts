@@ -2,6 +2,8 @@ import { existsSync } from 'fs';
 import { cp, writeFile, readFile, readdir } from 'fs/promises';
 import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
+import { fileURLToPath } from 'url';
+import { join } from 'path';
 
 // Renamed from prompt to promptUser to avoid naming conflict
 async function promptUser(question: string): Promise<string> {
@@ -19,7 +21,8 @@ async function promptUser(question: string): Promise<string> {
   });
 }
 
-export default async function createSite(destination: string, starterDir: string) {
+export default async function createSite(destination: string, packageRoot: string) {
+  const starterDir = join(packageRoot, 'dist', 'starter');
   await cp(starterDir, destination, { recursive: true });
 
   console.log("Before we get cookin' let's get some info about the site...");

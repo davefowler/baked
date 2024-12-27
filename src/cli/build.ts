@@ -5,11 +5,12 @@
 */
 
 import { rename, cp, mkdir, rm, readdir } from 'fs/promises';
-import path from 'path';
+import path, { dirname, join } from 'path';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
-import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from '../baked/loading.js';
+import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from './loading.js';
 import { Baker } from '../baked/baker.js';
 import { writeFile, readFile } from 'fs/promises';
+import { fileURLToPath } from 'url';
 
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
@@ -101,12 +102,13 @@ const dish = async (db: DatabaseType, dist: string) => {
     console.error('Pre-rendering failed:', error);
     throw error;
   }
+
 };
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
 export default async function bake(
   rootDir: string,
-  sqlDir: string,
+  packageRoot: string,
   includeDrafts: boolean = false
 ) {
   const tmpDist = path.join(rootDir, 'dist-tmp');
@@ -122,6 +124,7 @@ export default async function bake(
   }
 
   // prep the database
+  const sqlDir = join(packageRoot, 'dist', 'sql');
   const db = await prep(tmpDist, sqlDir);
 
   // copy the public files into the tmp dist
@@ -144,7 +147,10 @@ export default async function bake(
   // dish out the pages (pre-render them)
   await dish(db, tmpDist);
 
-  console.log('Site baked, ready to serve!');
+  console.log('... and a cherry on top');
+  const bakedDir = join(packageRoot, 'dist', 'baked');
+  await cp(bakedDir, tmpDist, { recursive: true });
+
   // swap the tmp dist to the final dist
   try {
     await rm(finalDist, { recursive: true, force: true });
@@ -153,4 +159,6 @@ export default async function bake(
     const message = error instanceof Error ? error.message : 'Unknown error';
     throw new Error(`Failed to rename tmp directory: ${message}`);
   }
+
+  console.log('Site baked, ready to serve!');
 }

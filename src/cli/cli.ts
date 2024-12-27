@@ -57,8 +57,7 @@ program
   .action(async (destination) => {
     // TODO - run a check that the site doesn't already exist and this will be overwriting it...
     console.log(`Getting the ingredients for ${destination}...`);
-    const starterDir = join(packageRoot, 'dist', 'starter');
-    await createSite(destination, starterDir);
+    await createSite(destination, packageRoot);
   });
 
 program
@@ -68,8 +67,7 @@ program
   .description("Bake the site - so it's ready to be served!")
   .action(async (options) => {
     console.log("Let's get cooking...");
-    const sqlDir = join(packageRoot, 'dist/sql');
-    await buildSite(process.cwd(), sqlDir, options.drafts);
+    await buildSite(process.cwd(), packageRoot, options.drafts);
   });
 
 program

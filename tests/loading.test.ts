@@ -4,7 +4,7 @@ import path from 'path';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
-import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../src/baked/loading';
+import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../src/cli/loading';
 import { RawAsset, Page } from '../src/types';
 
 describe('Loading System', () => {
