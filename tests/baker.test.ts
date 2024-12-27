@@ -153,4 +153,54 @@ describe('Baker', () => {
       expect(next?.slug).toBe('page3');
     });
   });
+
+  describe('Search and Filtering', () => {
+    beforeEach(() => {
+      // Insert test pages with different categories
+      const pages = [
+        ['blog1', 'Blog Post 1', 'Blog content 1', 'default', '{"category":"blog"}', '2024-01-01'],
+        ['blog2', 'Blog Post 2', 'Blog content 2', 'default', '{"category":"blog"}', '2024-01-02'],
+        ['news1', 'News Item 1', 'News content', 'default', '{"category":"news"}', '2024-01-03'],
+      ];
+
+      const stmt = db.prepare(
+        'INSERT INTO pages (slug, title, content, template, data, published_date) VALUES (?, ?, ?, ?, ?, ?)'
+      );
+      pages.forEach((page) => stmt.run(...page));
+    });
+
+    test('search returns matching pages by title', async () => {
+      const results = baker.search('Blog');
+      expect(results).toHaveLength(2);
+      expect(results[0].title).toBe('Blog Post 2');
+      expect(results[1].title).toBe('Blog Post 1');
+    });
+
+    test('search returns matching pages by content', async () => {
+      const results = baker.search('News content');
+      expect(results).toHaveLength(1);
+      expect(results[0].title).toBe('News Item 1');
+    });
+
+    test('getLatestPages filters by category', async () => {
+      const blogPosts = baker.getLatestPages(10, 0, 'blog');
+      expect(blogPosts).toHaveLength(2);
+      expect(blogPosts[0].slug).toBe('blog2');
+      expect(blogPosts[1].slug).toBe('blog1');
+
+      const newsPosts = baker.getLatestPages(10, 0, 'news');
+      expect(newsPosts).toHaveLength(1);
+      expect(newsPosts[0].slug).toBe('news1');
+    });
+
+    test('getLatestPages respects limit and offset', async () => {
+      const firstPage = baker.getLatestPages(1, 0, 'blog');
+      expect(firstPage).toHaveLength(1);
+      expect(firstPage[0].slug).toBe('blog2');
+
+      const secondPage = baker.getLatestPages(1, 1, 'blog');
+      expect(secondPage).toHaveLength(1);
+      expect(secondPage[0].slug).toBe('blog1');
+    });
+  });
 });
