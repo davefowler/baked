@@ -114,29 +114,37 @@ export class Baker {
   }
 
   getLatestPages(limit = 10, offset = 0, category) {
-    if (category === undefined) {
-      return this.db
-        .prepare(
-          `
-              SELECT * FROM pages
-              ORDER BY published_date DESC 
-              LIMIT ? OFFSET ?
-          `
-        )
-        .all(limit, offset);
+    console.log('getLatestPages params:', { limit, offset, category });
+    
+    // Add type check to prevent undefined being treated as a string
+    if (typeof category === 'string') {
+        console.log('Filtering by category:', category);
+        const results = this.db
+            .prepare(
+                `
+                SELECT * FROM pages
+                WHERE json_extract(data, '$.category') = ?
+                ORDER BY published_date DESC 
+                LIMIT ? OFFSET ?
+                `
+            )
+            .all(category, limit, offset);
+        console.log(`Found ${results.length} pages with category "${category}"`);
+        return results;
     }
 
-    // Fixed query to properly parse JSON data field and check category
-    return this.db
-    .prepare(
-      `
-          SELECT * FROM pages
-          WHERE json_extract(data, '$.category') = ?
-          ORDER BY published_date DESC 
-          LIMIT ? OFFSET ?
-      `
-    )
-    .all(category, limit, offset);
+    // If no category or category is undefined, return all pages
+    const results = this.db
+        .prepare(
+            `
+            SELECT * FROM pages
+            ORDER BY published_date DESC 
+            LIMIT ? OFFSET ?
+            `
+        )
+        .all(limit, offset);
+    console.log(`Found ${results.length} pages`);
+    return results;
   }
 
   getPrevPage(currentPage) {

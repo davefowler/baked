@@ -105,7 +105,7 @@ const Template = (rawAsset) => {
       baker: {
         getAsset: (path, type) => baker?.getAsset?.(validatePath(path), type) ?? null,
         getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
-        getLatestPages: (...args) => baker?.getLatestPages?.(...args) ?? [],
+        getLatestPages: (limit, offset, category) => baker?.getLatestPages?.(limit, offset, category) ?? [],
         search: (...args) => baker?.search?.(...args) ?? [],
         query: (sql, params) => {
           throw new Error('Direct SQL queries not allowed in templates');
@@ -115,6 +115,7 @@ const Template = (rawAsset) => {
     };
 
     try {
+      console.log('rendering template', page.path);
       return template.render(context).trim();
     } catch (error) {
       console.error('Template render error:', error);

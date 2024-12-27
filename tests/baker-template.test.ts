@@ -102,4 +102,112 @@ describe('Baker Template Integration', () => {
       expect(result).toBe('');
     });
   });
+
+  describe('getLatestPages with categories', () => {
+    beforeEach(() => {
+      // Add test pages with different categories
+      db.exec(`
+        INSERT INTO pages (slug, title, content, template, data, published_date)
+        VALUES 
+          ('blog1', 'Blog Post 1', 'Content 1', 'default', '{"category":"blog"}', '2024-01-01'),
+          ('blog2', 'Blog Post 2', 'Content 2', 'default', '{"category":"blog"}', '2024-01-02'),
+          ('news1', 'News Item 1', 'Content 3', 'default', '{"category":"news"}', '2024-01-03');
+      `);
+    });
+
+    test('template handles string category parameter correctly', () => {
+      const template = Components.templates(`
+        {% set posts = baker.getLatestPages(10, 0, "blog") %}
+        {% for post in posts %}
+          <li>{{ post.title }}</li>
+        {% endfor %}
+      `);
+
+      const result = template({}, baker, {});
+      expect(result).toContain('Blog Post 1');
+      expect(result).toContain('Blog Post 2');
+      expect(result).not.toContain('News Item 1');
+    });
+
+    test('template handles category parameter from variable', () => {
+      const template = Components.templates(`
+        {% set category = "blog" %}
+        {% set posts = baker.getLatestPages(10, 0, category) %}
+        {% for post in posts %}
+          <li>{{ post.title }}</li>
+        {% endfor %}
+      `);
+
+      const result = template({}, baker, {});
+      expect(result).toContain('Blog Post 1');
+      expect(result).toContain('Blog Post 2');
+      expect(result).not.toContain('News Item 1');
+    });
+
+    test('template handles category parameter from page data', () => {
+      const template = Components.templates(`
+        {% set posts = baker.getLatestPages(10, 0, page.data.category) %}
+        {% for post in posts %}
+          <li>{{ post.title }}</li>
+        {% endfor %}
+      `);
+
+      const result = template({ data: { category: 'blog' } }, baker, {});
+      expect(result).toContain('Blog Post 1');
+      expect(result).toContain('Blog Post 2');
+      expect(result).not.toContain('News Item 1');
+    });
+
+    test('debug category parameter type', () => {
+      let capturedCategory;
+      const originalGetLatestPages = baker.getLatestPages.bind(baker);
+      baker.getLatestPages = (limit, offset, category) => {
+        capturedCategory = category;
+        console.log('Category type:', typeof category, 'Value:', category);
+        return originalGetLatestPages(limit, offset, category);
+      };
+
+      const template = Components.templates(`
+        {% set posts = baker.getLatestPages(10, 0, "blog") %}
+        {{ posts | length }}
+      `);
+
+      template({}, baker, {});
+      expect(typeof capturedCategory).toBe('string');
+      expect(capturedCategory).toBe('blog');
+    });
+
+    test('handles undefined category parameter', () => {
+      const template = Components.templates(`
+        {% set posts = baker.getLatestPages(10, 0) %}
+        {% for post in posts %}
+          <li>{{ post.title }}</li>
+        {% endfor %}
+      `);
+
+      const result = template({}, baker, {});
+      expect(result).toContain('Blog Post 1');
+      expect(result).toContain('Blog Post 2');
+      expect(result).toContain('News Item 1');
+    });
+
+    test('handles category parameter with special characters', () => {
+      // First add a page with special characters in category
+      db.exec(`
+        INSERT INTO pages (slug, title, content, template, data, published_date)
+        VALUES ('special', 'Special Post', 'Content', 'default', '{"category":"blog-special"}', '2024-01-04');
+      `);
+
+      const template = Components.templates(`
+        {% set posts = baker.getLatestPages(10, 0, "blog-special") %}
+        {% for post in posts %}
+          <li>{{ post.title }}</li>
+        {% endfor %}
+      `);
+
+      const result = template({}, baker, {});
+      expect(result).toContain('Special Post');
+      expect(result).not.toContain('Blog Post 1');
+    });
+  });
 });

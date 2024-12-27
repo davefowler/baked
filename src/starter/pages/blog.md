@@ -7,8 +7,9 @@ Need a seperate home page for your blog? This one's just blog.md, located at /bl
 
 <h2>Latest posts</h2>
 <ul>
+{% set bps = baker.getLatestPages(99, 0, "blog") %}
 
-{% for post in baker.getLatestPages(100, 0, "blog") %}
+{% for post in bps %}
     <li>
         <a href="/{{post.path}}">{{post.title}}</a> - 
         {% if post.metadata.author %}by {{post.metadata.author}}{% endif %} 

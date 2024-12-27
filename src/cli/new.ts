@@ -39,7 +39,7 @@ author: ${siteAuthor}`;
     await writeFile(`${destination}/site.yaml`, siteYamlContent, 'utf-8');
 
     // write author to the pages/blog/meta.yaml file
-    const blogMetaContent = `author: ${siteAuthor}`;
+    const blogMetaContent = `author: ${siteAuthor}\ncategory: blog`;
     await writeFile(`${destination}/pages/blog/meta.yaml`, blogMetaContent, 'utf-8');
 
     // update specific fields in the manifest.json file
