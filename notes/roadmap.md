@@ -7,6 +7,7 @@
  - [x] confirm the templating system working
  - [x] Figure out secure eval of components from db
  - [x] pre-render pages
+ - [ ] ensure baked directory is copied to the project on build
  - [ ] markdown and template rendering complimenting each other
  - [ ] baker functions working in templates - with tests
  - [ ] absurdsql working to store database on client

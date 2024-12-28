@@ -60,35 +60,41 @@ program
     await createSite(destination, packageRoot);
   });
 
+// Extract the core functions
+async function bake(cwd: string, sqlDir: string, drafts?: boolean) {
+  console.log("Let's get cooking...");
+  await buildSite(cwd, sqlDir, drafts);
+}
+
+async function serve() {
+  console.log('Starting development server...');
+  await serveSite();
+}
+
+// Use the functions in the commands
 program
   .command('build')
   .alias('site')
   .option('--drafts', 'Build draft pages')
   .description("Bake the site - so it's ready to be served!")
   .action(async (options) => {
-    console.log("Let's get cooking...");
-    await buildSite(process.cwd(), packageRoot, options.drafts);
+    await bake(process.cwd(), packageRoot, options.drafts);
   });
 
 program
   .command('serve')
   .description('Start development server')
   .action(async () => {
-    console.log('Starting development server...');
-    await serveSite();
+    await serve();
   });
 
 program
   .command('andserve')
   .description('build and serve the site - combo command')
   .action(async (options) => {
-    // TODO - can probably call the other program.commands?  This isn't dry
-    console.log("Let's get cooking...");
-    const sqlDir = join(packageRoot, 'dist/sql');
-    await buildSite(process.cwd(), sqlDir, options.drafts);
-    console.log('Starting development server...');
-    await serveSite();
-  })
+    await bake(process.cwd(), packageRoot, options.drafts);
+    await serve();
+  });
 
 program.command('help').action(() => {
   program.help();
