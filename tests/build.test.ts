@@ -54,7 +54,7 @@ describe('build output', () => {
     // Test that the dist dir was created
     expect(existsSync(distDir)).toBe(true);
     // And the database was put there
-    expect(existsSync(path.join(distDir, 'site.db'))).toBe(true);
+    expect(existsSync(path.join(distDir, 'baked', 'site.db'))).toBe(true);
     // Check that public files were copied
     expect(existsSync(path.join(distDir, 'manifest.json'))).toBe(true);
 
@@ -132,7 +132,7 @@ describe('pre build process', () => {
     await bake(TEST_DIR, packageRoot);
 
     const distDir = path.join(TEST_DIR, 'dist');
-    const dbPath = path.join(distDir, 'site.db');
+    const dbPath = path.join(distDir, 'baked', 'site.db');
 
     const db = new Database(dbPath);
     const assets = db.prepare('SELECT * FROM assets').all();
@@ -146,7 +146,7 @@ describe('pre build process', () => {
     const packageRoot = process.cwd();
     await bake(TEST_DIR, packageRoot);
 
-    const db = new Database(path.join(TEST_DIR, 'dist', 'site.db'));
+    const db = new Database(path.join(TEST_DIR, 'dist', 'baked', 'site.db'));
     const pages = db.prepare('SELECT * FROM pages').all() as Page[];
     expect(pages).toBeDefined();
     expect(Array.isArray(pages)).toBe(true);

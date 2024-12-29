@@ -128,7 +128,7 @@ describe('CLI Commands', () => {
       process.chdir(TEST_DIR); // Change working directory for build
       await bake(TEST_DIR, packageRoot);
 
-      const distDb = join(TEST_DIR, 'dist/site.db');
+      const distDb = join(TEST_DIR, 'dist', 'baked', 'site.db');
       expect(await exists(distDb)).toBe(true);
 
       const db = new Database(distDb);
@@ -146,7 +146,7 @@ describe('CLI Commands', () => {
 
       // Build without drafts
       await bake(TEST_DIR, packageRoot);
-      let db = new Database(join(TEST_DIR, 'dist/site.db'));
+      let db = new Database(join(TEST_DIR, 'dist', 'baked', 'site.db'));
       let draft = db.prepare('SELECT * FROM pages WHERE path = ?').get('draft');
       expect(draft).toBeUndefined();
     });
@@ -158,7 +158,7 @@ describe('CLI Commands', () => {
       );
 
       await bake(TEST_DIR, packageRoot, true);
-      let db = new Database(join(TEST_DIR, 'dist/site.db'));
+      let db = new Database(join(TEST_DIR, 'dist', 'baked', 'site.db'));
       let draft = db.prepare('SELECT * FROM pages WHERE path = ?').get('draft');
       db.close(); // Make sure to close the database
       expect(draft).toBeDefined();

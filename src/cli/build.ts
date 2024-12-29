@@ -25,6 +25,7 @@ const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
   try {
     await rm(dist, { recursive: true, force: true });
     await mkdir(dist, { recursive: true });
+    await mkdir(join(dist, 'baked'), { recursive: true });
   } catch (error: unknown) {
     if (error instanceof Error) {
       // Only throw if it's not a "directory doesn't exist" error during removal
@@ -44,7 +45,7 @@ const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
   // console.log('FTS SQL loaded');
 
   // Create a new sqlite database
-  const db = new Database(`${dist}/site.db`);
+  const db = new Database(`${dist}/baked/site.db`);
   db.exec(schemaSQL);
   // db.exec(ftsSQL);
 

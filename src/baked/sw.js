@@ -1,8 +1,8 @@
 const CACHE_NAME = 'absurdsite-v1';
 const ASSETS = [
   '/',
-  '/db.js',
-  '/site.db',
+  // '/db.js',
+  '/baked/site.db',
   '/manifest.json',
   '/rss.xml',
   '/sitemap.xml',
