@@ -23,8 +23,8 @@ describe('createSite', () => {
 
   beforeEach(async () => {
     // Create temporary directories
-    tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
-    starterDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-starter-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'bakedsite-test-dest-'));
+    starterDir = await mkdtemp(join(tmpdir(), 'bakedsite-test-starter-'));
 
     // Create starter directory structure
     await mkdir(join(starterDir, 'pages', 'blog'), { recursive: true });
@@ -140,7 +140,7 @@ describe('createSite with starter directory', () => {
 
   beforeEach(async () => {
     // Create temporary directories
-    tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'bakedsite-test-dest-'));
   });
 
   afterEach(async () => {

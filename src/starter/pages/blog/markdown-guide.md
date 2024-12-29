@@ -8,7 +8,7 @@ excerpt: Learn how to format your posts using Markdown syntax.
 
 # Markdown Guide
 
-AbsurdSite uses Markdown for formatting posts. Here's a quick guide to get you started.
+Baked Site Generator uses Markdown for formatting posts. Here's a quick guide to get you started.
 
 ## Basic Formatting
 

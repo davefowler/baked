@@ -4,12 +4,12 @@ date: 2024-01-03
 template: blog
 author: <your name>
 tags: [tutorial, customization]
-excerpt: Learn how to customize your AbsurdSite with templates and styles.
+excerpt: Learn how to customize your Baked Site with templates and styles.
 ---
 
 # Customizing Your Site
 
-AbsurdSite is designed to be easily customizable. Here's how to make it your own.
+Baked Site Generator is designed to be easily customizable. Here's how to make it your own.
 
 ## Templates
 

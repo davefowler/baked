@@ -3,7 +3,7 @@ title: My first blog post
 date: 2024-01-01
 template: blog
 tags: [welcome, getting-started]
-excerpt: Welcome to your new AbsurdSite! Let's get started with the basics.
+excerpt: Welcome to your new Baked Site! Let's get started with the basics.
 ---
 
 
