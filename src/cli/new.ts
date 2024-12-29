@@ -21,8 +21,7 @@ async function promptUser(question: string): Promise<string> {
   });
 }
 
-export default async function createSite(destination: string, packageRoot: string) {
-  const starterDir = join(packageRoot, 'dist', 'starter');
+export default async function createSite(destination: string, starterDir: string) {
   await cp(starterDir, destination, { recursive: true });
 
   console.log("Before we get cookin' let's get some info about the site...");

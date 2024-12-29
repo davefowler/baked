@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join, dirname } from 'path';
 import createSite from '../src/cli/new';
 
-const DEFAULT_STARTER_DIR = join(dirname(__dirname), 'src/starter');
+const SRC_STARTER_DIR = join(dirname(__dirname), 'src/starter');
 
 describe('createSite', () => {
   let tempDir: string;
@@ -138,17 +138,6 @@ describe('createSite', () => {
 describe('createSite with starter directory', () => {
   let tempDir: string;
 
-  // Add console suppression
-  beforeAll(() => {
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-  });
-
-  // Restore console
-  afterAll(() => {
-    jest.restoreAllMocks();
-  });
-
   beforeEach(async () => {
     // Create temporary directories
     tempDir = await mkdtemp(join(tmpdir(), 'absurdsite-test-dest-'));
@@ -159,7 +148,7 @@ describe('createSite with starter directory', () => {
   });
 
   test('should copy starter directory structure correctly', async () => {
-    await createSite(tempDir, DEFAULT_STARTER_DIR);
+    await createSite(tempDir, SRC_STARTER_DIR);
 
     // Verify directory structure
     const dirs = await readdir(tempDir);

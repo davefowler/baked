@@ -40,3 +40,4 @@ await esbuild.build({
 await cp('src/starter', 'dist/starter', { recursive: true })
 await mkdir('dist/sql', { recursive: true })
 await cp('src/sql', 'dist/sql', { recursive: true, force: true })
+await cp('src/baked', 'dist/baked', { recursive: true, force: true })

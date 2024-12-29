@@ -107,12 +107,12 @@ const dish = async (db: DatabaseType, dist: string) => {
 
 /* bake the site!  Load the assets and pages into a database and pre-render each page */
 export default async function bake(
-  rootDir: string,
+  siteDir: string,
   packageRoot: string,
   includeDrafts: boolean = false
 ) {
-  const tmpDist = path.join(rootDir, 'dist-tmp');
-  const finalDist = path.join(rootDir, 'dist');
+  const tmpDist = path.join(siteDir, 'dist-tmp');
+  const finalDist = path.join(siteDir, 'dist');
 
   // Clean up and create tmp directory
   try {
@@ -128,19 +128,19 @@ export default async function bake(
   const db = await prep(tmpDist, sqlDir);
 
   // copy the public files into the tmp dist
-  const publicDir = path.join(rootDir, 'public');
+  const publicDir = path.join(siteDir, 'public');
   await cp(publicDir, tmpDist, { recursive: true });
 
   // mix in the assets
-  const assetsDir = path.join(rootDir, 'assets');
+  const assetsDir = path.join(siteDir, 'assets');
   await loadAssetsFromDir(assetsDir, db, tmpDist);
 
   // mix in the pages
-  const pagesDir = path.join(rootDir, 'pages');
+  const pagesDir = path.join(siteDir, 'pages');
   await loadPagesFromDir(pagesDir, db, {}, includeDrafts);
 
   // add in just a splash of site metadata
-  await loadSiteMetadata(rootDir, db);
+  await loadSiteMetadata(siteDir, db);
 
   console.log('...Ingredients mixed, now baking');
 

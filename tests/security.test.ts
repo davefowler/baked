@@ -87,7 +87,7 @@ describe('Security Tests', () => {
       const maliciousPath = '../../../etc/passwd';
 
       try {
-        await baker.getAsset(maliciousPath);
+        await baker.getAsset(maliciousPath, 'templates');
         // If we get here, the test should fail because no error was thrown
         fail('Expected path traversal to throw an error');
       } catch (error: any) {

@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { loadPagesFromDir, loadAssetsFromDir, loadSiteMetadata } from '../src/cli/loading';
-import { RawAsset, Page } from '../src/types';
+import { RawAsset, Page, RawPage } from '../src/types';
 
 describe('Loading System', () => {
   let tempDir: string;
@@ -49,7 +49,7 @@ date: 2024-01-01
 
       await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
 
-      const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as Page;
+      const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('test') as RawPage;
       const data = JSON.parse(page.data);
       expect(page).toBeDefined();
       expect(page.title).toBe('Test A Page');
@@ -77,8 +77,8 @@ Wild content here`;
 
       await loadPagesFromDir(join(tempDir, 'pages'), db, {}, false);
 
-      const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as Page;
-      const allpages = db.prepare('SELECT * FROM pages').all() as Page[];
+      const page = db.prepare('SELECT * FROM pages WHERE slug = ?').get('blog/post') as RawPage;
+      const allpages = db.prepare('SELECT * FROM pages').all() as RawPage[];
       expect(page).toBeDefined();
       const data = JSON.parse(page.data);
       expect(data.template).toBe('blog');

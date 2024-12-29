@@ -1,12 +1,12 @@
 {
   "name": "baked",
-  "version": "0.0.15",
+  "version": "0.0.20",
   "type": "module",
   "bin": {
-    "bake": "./bake.js"
+    "bake": "./dist/cli/cli.js"
   },
   "scripts": {
-    "build": "tsc && cp -r src/baked dist/",
+    "build": "node build.js",
     "test": "jest",
     "start": "node dist/cli/cli.js"
   },

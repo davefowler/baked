@@ -1,64 +1,66 @@
 import nunjucks from 'nunjucks';
-import { TemplateFilters } from './filters'
+import { TemplateFilters } from './filters';
+import type { TypeOfAsset } from './types';
+import type { Baker } from './baked/baker';
 
-const validatePath = (path) => {
-  // Only prevent path traversal, allow absolute paths
+// Type for the context passed to templates
+interface TemplateContext {
+  page: {
+    title: string;
+    content: string;
+    data: Record<string, any>;
+    path: string;
+    prevPage: (...args: any[]) => any | null;
+    nextPage: (...args: any[]) => any | null;
+  };
+  baker: {
+    getAsset: (path: string, type: TypeOfAsset) => any;
+    getPage: (slug: string) => any;
+    getLatestPages: (limit?: number, offset?: number, category?: string) => any[];
+    search: (...args: any[]) => any[];
+    query: (sql: string, params: any[]) => never;
+  };
+  site: Record<string, any>;
+}
+
+const validatePath = (path: string): string => {
   if (path.includes('..')) {
     throw new Error(`Invalid path: ${path}`);
   }
-  // Remove leading slash if present
   return path.replace(/^\//, '');
 };
 
-// We're a little flexible here with the asset names for convenience
-//  - templates don't need the .html extension
-//  - we allow /css/style.css as well as css/style.css
-//  - and you can just use css/style.css instead of style.css - more intuitive sometimes
-export const cleanAssetName = (name, type) => {
-  // add .html to the name if it has no other extension
+export const cleanAssetName = (name: string, type?: TypeOfAsset): string => {
   if (type === 'templates' && !name.includes('.')) name += '.html';
 
-  // if it starts with /, remove it.
   name = validatePath(name);
 
-  // if it starts with it's type name remove it.
-  if (name.startsWith(`${type}/`)) {
+  if (type && name.startsWith(`${type}/`)) {
     name = name.split('/').slice(1).join('/');
   }
 
   return name;
 };
 
+const PassThrough = (rawAsset: string) => rawAsset;
 
-const PassThrough = (rawAsset) => {
-  return rawAsset;
-};
-
-// TODO - should the component wrap the style class?
 const CssComponent = PassThrough;
 
-const JsonComponent = (rawAsset) => {
+const JsonComponent = (rawAsset: string) => {
   return JSON.parse(rawAsset);
 };
 
-// Configure nunjucks
-const env = new nunjucks.Environment(null, {
-  autoescape: true,
-  throwOnUndefined: false,
-  noGlobals: true,
-});
+class BakerLoader implements nunjucks.ILoader {
+  private baker: Baker;
 
-// Create custom loader for templates
-class BakerLoader {
-  constructor(baker) {
+  constructor(baker: Baker) {
     this.baker = baker;
   }
 
-  // Nunjucks loader overwrite to extend or include templates from the baked database instead of a file system
-  getSource(name) {
+  getSource(name: string): nunjucks.LoaderSource {
     name = cleanAssetName(name);
 
-    const { content: template } = this.baker.getRawAsset(name, 'templates');
+    const { content: template } = this.baker.getRawAsset(name, 'templates') || {};
     if (!template) {
       throw new Error(`Template ${name} not found`);
     }
@@ -70,15 +72,14 @@ class BakerLoader {
   }
 }
 
-const Template = (rawAsset) => {
-  let env;
+const Template = (rawAsset: string) => {
+  let env: nunjucks.Environment;
 
-  return (page, baker, site) => {
+  return (page: any, baker: Baker, site: any): string => {
     // Create new environment for each render with the current baker
     env = new nunjucks.Environment(new BakerLoader(baker), {
       autoescape: true,
       throwOnUndefined: false,
-      noGlobals: true,
     });
 
     // Add default and custom filters
@@ -92,22 +93,21 @@ const Template = (rawAsset) => {
     const renderedContent = page.content ? env.renderString(page.content, { page, baker, site }) : '';
 
     // For security reasons we re-specify the interface to these objects
-    const context = {
+    const context: TemplateContext = {
       page: {
         title: page.title || '',
-        // Make sure to render the 
         content: renderedContent,
         data: page.data || {},
         path: validatePath(page.path || ''),
-        prevPage: (...args) => baker?.getPrevPage?.(...args) ?? null,
-        nextPage: (...args) => baker?.getNextPage?.(...args) ?? null,
+        prevPage: () => baker?.getPrevPage?.(page) ?? null,
+        nextPage: () => baker?.getNextPage?.(page) ?? null,
       },
       baker: {
         getAsset: (path, type) => baker?.getAsset?.(validatePath(path), type) ?? null,
         getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
         getLatestPages: (limit, offset, category) => baker?.getLatestPages?.(limit, offset, category) ?? [],
-        search: (...args) => baker?.search?.(...args) ?? [],
-        query: (sql, params) => {
+        search: (query: string, limit = 10, offset = 0) => baker?.search?.(query, limit, offset) ?? [],
+        query: (sql: string, params: any[]) => {
           throw new Error('Direct SQL queries not allowed in templates');
         },
       },
@@ -124,9 +124,12 @@ const Template = (rawAsset) => {
   };
 };
 
-export const Components = {
+type ComponentFunction = typeof PassThrough | typeof JsonComponent | typeof Template;
+
+// Create a type-safe Components object
+export const Components: Record<TypeOfAsset, ComponentFunction> = {
   images: PassThrough,
   css: CssComponent,
   templates: Template,
   json: JsonComponent,
-};
+}; 

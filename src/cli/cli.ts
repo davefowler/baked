@@ -3,9 +3,9 @@ import { program } from 'commander';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import buildSite from './build.js';
+import bake from './build.js';
 import createSite from './new.js';
-import serveSite from './serve.js';
+import startServer from './serve.js';
 
 /* CLI options
 
@@ -57,43 +57,47 @@ program
   .action(async (destination) => {
     // TODO - run a check that the site doesn't already exist and this will be overwriting it...
     console.log(`Getting the ingredients for ${destination}...`);
-    await createSite(destination, packageRoot);
+    const starterDir = join(packageRoot, 'dist', 'starter');
+    await createSite(destination, starterDir);
   });
 
 // Extract the core functions
-async function bake(cwd: string, sqlDir: string, drafts?: boolean) {
+async function buildSite(drafts: boolean) {
+  const siteDir = process.cwd();
   console.log("Let's get cooking...");
-  await buildSite(cwd, sqlDir, drafts);
+  console.log('package root is', packageRoot);
+  await bake(siteDir, packageRoot, drafts);
 }
 
-async function serve() {
+async function serveSite() {
   console.log('Starting development server...');
-  await serveSite();
+  await startServer();
 }
 
 // Use the functions in the commands
 program
   .command('build')
   .alias('site')
-  .option('--drafts', 'Build draft pages')
   .description("Bake the site - so it's ready to be served!")
+  .option('--drafts', 'Include draft pages in the build')
   .action(async (options) => {
-    await bake(process.cwd(), packageRoot, options.drafts);
+    await buildSite(options.drafts);
   });
 
 program
   .command('serve')
   .description('Start development server')
   .action(async () => {
-    await serve();
+    await serveSite();
   });
 
 program
   .command('andserve')
   .description('build and serve the site - combo command')
+  .option('--drafts', 'Include draft pages in the build')
   .action(async (options) => {
-    await bake(process.cwd(), packageRoot, options.drafts);
-    await serve();
+    await buildSite(options.drafts);
+    await serveSite();
   });
 
 program.command('help').action(() => {
