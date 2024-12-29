@@ -1,6 +1,11 @@
 import * as esbuild from 'esbuild'
+import { cp, mkdir, rm } from 'fs/promises'
+
 console.log('Starting build...')
-import { readFile, writeFile, cp, mkdir } from 'fs/promises'
+
+// Clean dist directory
+await rm('dist', { recursive: true, force: true })
+await mkdir('dist', { recursive: true })
 
 // Common config
 const commonConfig = {
@@ -29,6 +34,8 @@ const commonConfig = {
   ],
 }
 
+// CLI - 
+
 // Build the main CLI code
 await esbuild.build({
   ...commonConfig,
@@ -40,4 +47,20 @@ await esbuild.build({
 await cp('src/starter', 'dist/starter', { recursive: true })
 await mkdir('dist/sql', { recursive: true })
 await cp('src/sql', 'dist/sql', { recursive: true, force: true })
+
+
+// Client 
+
+// Copy baked files needed for client
 await cp('src/baked', 'dist/baked', { recursive: true, force: true })
+
+// Build a bundled verfsion of baker for the client into dist/baked
+await esbuild.build({
+  ...commonConfig,
+  platform: 'browser',
+  target: ['es2020'],
+  format: 'esm',
+  external: [],
+  entryPoints: ['src/baker.ts'],
+  outfile: 'dist/baked/baker.js',
+})
