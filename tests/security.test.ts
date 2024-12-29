@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { Components } from '../src/components.js';
-import { Baker } from '../src/baked/baker';
+import { Baker } from '../src/baker';
 import { readFile } from 'fs/promises';
 import { loadPage } from '../src/cli/loading.js';
 

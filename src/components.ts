@@ -1,7 +1,7 @@
 import nunjucks from 'nunjucks';
 import { TemplateFilters } from './filters';
 import type { TypeOfAsset } from './types';
-import type { Baker } from './baked/baker';
+import type { Baker } from './baker';
 
 // Type for the context passed to templates
 interface TemplateContext {

@@ -1,6 +1,6 @@
 import type { Database } from 'better-sqlite3';
-import { Components, cleanAssetName } from '../components';
-import type { Page, RawAsset, TypeOfAsset, RawPage } from '../types';
+import { Components, cleanAssetName } from './components';
+import type { Page, RawAsset, TypeOfAsset, RawPage } from './types';
 
 export interface Site {
   title: string;

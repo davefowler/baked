@@ -1,7 +1,7 @@
 import { expect, test, beforeEach, afterEach, describe } from '@jest/globals';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
-
-import { Baker } from '../src/baked/baker';
+import { Page } from '../src/types';
+import { Baker } from '../src/baker';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -49,7 +49,7 @@ describe('Baker', () => {
 
       const asset = baker.getRawAsset('test.css', 'css');
       expect(asset).toBeDefined();
-      expect(asset.content).toBe('body { color: red; }');
+      expect(asset?.content).toBe('body { color: red; }');
     });
 
     test('getAsset processes assets with components', async () => {
@@ -100,7 +100,7 @@ describe('Baker', () => {
     });
 
     test('getPage retrieves pages with metadata', async () => {
-      const page = baker.getPage('test');
+      const page = baker.getPage('test')!;
       expect(page).toBeDefined();
       expect(page.title).toBe('Test Page');
       expect(page.data.author).toBe('test');
@@ -108,13 +108,18 @@ describe('Baker', () => {
 
     test('renderPage renders pages with template', async () => {
       const testPage = {
+        id: 1,
+        path: 'test',
+        slug: 'test',
+        template: 'test-template',
+        published_date: '2024-01-01',
         title: 'Test from a new Page',
         content: 'Test content from a new page',
         data: {
           author: 'test',
           template: 'test-template',
         },
-      };
+      } as Page;
 
       const alltemplatesare = db.prepare('SELECT * FROM assets WHERE type = ?').all('templates');
       const rendered = await baker.renderPage(testPage);
@@ -145,7 +150,8 @@ describe('Baker', () => {
     });
 
     test('getPrevNext returns correct adjacent pages', async () => {
-      const page = baker.getPage('page2');
+      const page = baker.getPage('page2')!;
+      expect(page).toBeDefined();
       const prev = baker.getPrevPage(page);
       const next = baker.getNextPage(page);
 
