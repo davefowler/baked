@@ -9,9 +9,10 @@ import type { Page } from '../src/types';
 
 describe('build output', () => {
 
+  // WARNING - tests require a build 'npm run build' so that the dist dir exists
   const TEST_DIR = path.join(__dirname, '../tmp/test');
-  const SQL_DIR = path.join(__dirname, '../src/sql');
   const distDir = path.join(TEST_DIR, 'dist');
+  const packageRoot = process.cwd();
 
   beforeAll(() => {
     jest.spyOn(console, 'log').mockImplementation(() => {});
@@ -38,7 +39,7 @@ describe('build output', () => {
     await cp(starterDir, TEST_DIR, { recursive: true });
 
     // bake that site!
-    await bake(TEST_DIR, SQL_DIR);
+    await bake(TEST_DIR, packageRoot);
     // Add delay to ensure async operations complete
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -127,8 +128,8 @@ describe('pre build process', () => {
 
   test('loads assets into database', async () => {
     // Verify directories exist before proceeding
-    const assetsPath = path.join(TEST_DIR, 'assets');
-    await bake(TEST_DIR, SQL_DIR);
+    const packageRoot = process.cwd();
+    await bake(TEST_DIR, packageRoot);
 
     const distDir = path.join(TEST_DIR, 'dist');
     const dbPath = path.join(distDir, 'site.db');
@@ -142,7 +143,8 @@ describe('pre build process', () => {
 
   test('loads pages into database', async () => {
     const num_pages = await readdir(path.join(TEST_DIR, 'pages'));
-    await bake(TEST_DIR, SQL_DIR);
+    const packageRoot = process.cwd();
+    await bake(TEST_DIR, packageRoot);
 
     const db = new Database(path.join(TEST_DIR, 'dist', 'site.db'));
     const pages = db.prepare('SELECT * FROM pages').all() as Page[];
