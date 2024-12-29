@@ -150,7 +150,7 @@ describe('pre build process', () => {
     const pages = db.prepare('SELECT * FROM pages').all() as Page[];
     expect(pages).toBeDefined();
     expect(Array.isArray(pages)).toBe(true);
-    expect(pages.length).toBe(4);
+    expect(num_pages.length - 1).toBe(pages.length);
     expect(pages.map((page) => page.slug)).toEqual([
       'about',
       'blog/customization',

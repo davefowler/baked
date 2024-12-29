@@ -1,12 +1,11 @@
-const CACHE_NAME = 'absurdsite-v1';
+const CACHE_VERSION = 4;
+const CACHE_NAME = `bakedsite-v${CACHE_VERSION}`;
 const ASSETS = [
   '/',
-  // '/db.js',
+  '/baked/baker.js',
   '/baked/site.db',
+  '/baked/offline.html',
   '/manifest.json',
-  '/rss.xml',
-  '/sitemap.xml',
-  '/robots.txt',
 ];
 
 // Cache all HTML pages that are accessed
@@ -26,15 +25,20 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    Promise.all([
+      // Delete old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Take control of all pages immediately
+      clients.claim()
+    ])
   );
 });
 

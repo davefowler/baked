@@ -1,9 +1,7 @@
 import { existsSync } from 'fs';
-import { cp, writeFile, readFile, readdir } from 'fs/promises';
+import { cp, writeFile, readFile } from 'fs/promises';
 import { createInterface } from 'readline';
 import { stdin as input, stdout as output } from 'process';
-import { fileURLToPath } from 'url';
-import { join } from 'path';
 
 // Renamed from prompt to promptUser to avoid naming conflict
 async function promptUser(question: string): Promise<string> {
