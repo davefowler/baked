@@ -25,6 +25,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@jlongster/sql.js": "^1.6.7",
     "@types/cheerio": "^0.22.35",
     "@types/marked": "^6.0.0",
     "@types/nunjucks": "^3.2.6",

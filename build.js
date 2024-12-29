@@ -61,6 +61,9 @@ await esbuild.build({
   target: ['es2020'],
   format: 'esm',
   external: [],
-  entryPoints: ['src/baker.ts'],
-  outfile: 'dist/baked/baker.js',
+  entryPoints: [
+    'src/clientApp.ts',
+    'src/db.worker.ts'
+  ],
+  outdir: 'dist/baked',
 })

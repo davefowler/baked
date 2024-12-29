@@ -7,9 +7,9 @@
  - [x] confirm the templating system working
  - [x] Figure out secure eval of components from db
  - [x] pre-render pages
+ - [x] markdown and template rendering complimenting each other
+ - [x] baker functions working in templates - with tests
  - [ ] ensure baked directory is copied to the project on build
- - [ ] markdown and template rendering complimenting each other
- - [ ] baker functions working in templates - with tests
  - [ ] absurdsql working to store database on client
  - [ ] image assets 
  - [ ] pwa working
@@ -17,9 +17,8 @@
  - [ ] confirm lighthouse scores are good
  - [ ] confirm the build process is fast
  - [ ] make components have both loading and rendering functions
- - [ ] comprehensive testing
- - [ ] change "types" to mimetypes
- - [ ] tests for filters
+ - [x] comprehensive testing
+ - [x] tests for filters
  - [x] suite of tests for pre-rendering (ensure it isn't escaped)
 
 
@@ -61,3 +60,4 @@
 
  - [ ] Diff version?  - see [notes.md](notes.md)
  - [ ] use Svelte instead of nunjucks?
+ - [ ] change "types" to mimetypes

@@ -3,6 +3,7 @@ const CACHE_NAME = `bakedsite-v${CACHE_VERSION}`;
 const ASSETS = [
   '/',
   '/baked/baker.js',
+  '/baked/db.worker.js',
   '/baked/site.db',
   '/baked/offline.html',
   '/manifest.json',

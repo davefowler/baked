@@ -69,9 +69,9 @@ async function buildSite(drafts: boolean) {
   await bake(siteDir, packageRoot, drafts);
 }
 
-async function serveSite() {
+async function serveSite(port: number, indexonly: boolean) {
   console.log('Starting development server...');
-  await startServer();
+  await startServer(port, indexonly);
 }
 
 // Use the functions in the commands
@@ -87,17 +87,21 @@ program
 program
   .command('serve')
   .description('Start development server')
-  .action(async () => {
-    await serveSite();
+  .option('--indexonly', 'Serve only the index.html page to test offline mode')
+  .option('--port <port>', 'Port to serve the site on', '4242')
+  .action(async (options) => {
+    await serveSite(options.port, options.indexonly);
   });
 
 program
   .command('andserve')
   .description('build and serve the site - combo command')
   .option('--drafts', 'Include draft pages in the build')
+  .option('--port <port>', 'Port to serve the site on', '4242')
+  .option('--indexonly', 'Serve only the index.html page to test offline mode')
   .action(async (options) => {
     await buildSite(options.drafts);
-    await serveSite();
+    await serveSite(options.port, options.indexonly);
   });
 
 program.command('help').action(() => {

@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 
-export default function startServer(port: number = 4242) {
+export default function startServer(port: number = 4242, indexonly: boolean = false) {
   const app = express();
 
   // Serve static files from dist directory
@@ -10,6 +10,10 @@ export default function startServer(port: number = 4242) {
   // Handle requests that might need .html extension or index.html
   app.use((req, res, next) => {
     let url = req.url;
+
+    if (indexonly && url !== '/') {
+      return res.status(404).send('Not Found');
+    }
     
     // Try these patterns in order:
     // 1. Original URL (already handled by express.static)
