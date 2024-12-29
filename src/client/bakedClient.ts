@@ -1,24 +1,32 @@
 import { Baker } from '../baker';
-import { Database } from '@vlcn.io/absurd-sql/web';
+import { ClientDatabase } from './clientDb';
 import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
 
-class ClientApp {
-  private baker: Baker;
-  private dbWorker: Worker;
 
-  constructor(baker: Baker) {
-    this.baker = baker;
-    this.initializeDatabase();
+class ClientApp {
+  public baker!: Baker;
+  private dbWorker!: Worker;
+  private clientDb!: ClientDatabase;
+
+  constructor() {
+    this.initializeDatabaseAndBaker();
     this.initializeRouter();
   }
 
-  private async initializeDatabase() {
+  private async initializeDatabaseAndBaker() {
     this.dbWorker = new Worker(new URL('./db.worker.ts', import.meta.url));
     initBackend(this.dbWorker);
     
     // Initialize the database
     await this.sendWorkerMessage({ action: 'init' });
+    
+    // Create client database wrapper
+    this.clientDb = new ClientDatabase(this.dbWorker);
+    
+    // Initialize baker with client database
+    this.baker = new Baker(this.clientDb as any, true);
   }
+
 
   private sendWorkerMessage(message: any): Promise<any> {
     return new Promise((resolve) => {
@@ -101,18 +109,15 @@ declare global {
 }
 
 window.addEventListener('load', async () => {
+  console.log('Loading Baked Client app');
   try {
     // Initialize AbsurdSQL database
-    const db = new Database('baked/db.sql');
-    await db.init(); // Wait for database to initialize
-
-    if (window.baker) {
-      window.clientApp = new ClientApp(window.baker);
-    } else {
-      console.error('Baker not initialized');
-    }
+      window.clientApp = new ClientApp();
+      window.baker = window.clientApp.baker;
   } catch (error) {
     console.error('Failed to initialize database:', error);
   }
 });
+
+
 

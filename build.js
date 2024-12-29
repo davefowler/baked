@@ -48,22 +48,42 @@ await cp('src/starter', 'dist/starter', { recursive: true })
 await mkdir('dist/sql', { recursive: true })
 await cp('src/sql', 'dist/sql', { recursive: true, force: true })
 
-
-// Client 
+// Client-side build config
+const clientConfig = {
+  platform: 'browser',
+  target: ['es2020'],
+  format: 'esm',
+  bundle: true,
+  loader: {
+    '.sql': 'text',
+    '.wasm': 'file',
+  },
+  define: {
+    'process.env.NODE_ENV': '"production"',
+    'global': 'window',
+    '__dirname': '""',
+  },
+  alias: {
+    // Map Node.js built-ins to our shims
+    'path': './src/client/shims.js',
+    'fs': './src/client/shims.js'
+  },
+  external: [],
+}
 
 // Copy baked files needed for client
 await cp('src/baked', 'dist/baked', { recursive: true, force: true })
 
-// Build a bundled verfsion of baker for the client into dist/baked
+// Build client files
 await esbuild.build({
-  ...commonConfig,
-  platform: 'browser',
-  target: ['es2020'],
-  format: 'esm',
-  external: [],
-  entryPoints: [
-    'src/clientApp.ts',
-    'src/db.worker.ts'
-  ],
+  ...clientConfig,
+  entryPoints: ['src/baker.ts', 'src/client/db.worker.ts'],
   outdir: 'dist/baked',
+  splitting: true,
 })
+
+// Copy necessary sql.js files
+await cp(
+  'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm',
+  'dist/baked/sql-wasm.wasm'
+)
