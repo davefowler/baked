@@ -1,5 +1,3 @@
-// Mimicks the used functions of better-sqlite3 
-// but for absurd-sql making requests to the worker
 
 export class ClientDatabase {
   private worker: Worker;
@@ -37,3 +35,6 @@ export class ClientDatabase {
     };
   }
 } 
+
+
+

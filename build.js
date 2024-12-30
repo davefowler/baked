@@ -63,27 +63,45 @@ const clientConfig = {
     'global': 'window',
     '__dirname': '""',
   },
-  alias: {
-    // Map Node.js built-ins to our shims
-    'path': './src/client/shims.js',
-    'fs': './src/client/shims.js'
-  },
   external: [],
+  splitting: true,
 }
 
 // Copy baked files needed for client
 await cp('src/baked', 'dist/baked', { recursive: true, force: true })
 
+// Create directory for sql.js files
+await mkdir('dist/node_modules/@jlongster/sql.js/dist', { recursive: true })
+
+// Copy sql.js files
+await cp(
+  'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm',
+  'dist/node_modules/@jlongster/sql.js/dist/sql-wasm.wasm'
+)
+await cp(
+  'node_modules/@jlongster/sql.js/dist/sql-wasm.js',
+  'dist/node_modules/@jlongster/sql.js/dist/sql-wasm.js'
+)
+
 // Build client files
 await esbuild.build({
   ...clientConfig,
-  entryPoints: ['src/baker.ts', 'src/client/db.worker.ts'],
+  entryPoints: ['src/client/bakedClient.ts'],
   outdir: 'dist/baked',
-  splitting: true,
 })
 
-// Copy necessary sql.js files
-await cp(
-  'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm',
-  'dist/baked/sql-wasm.wasm'
-)
+// Build worker separately with its own config
+await esbuild.build({
+  ...clientConfig,
+  entryPoints: ['src/client/db.worker.ts'],
+  outdir: 'dist/baked',
+  splitting: false,
+  format: 'iife',
+  bundle: false,
+  define: {
+    'process.env.NODE_ENV': '"production"',
+    'global': 'self',
+    '__dirname': '""',
+  }
+})
+

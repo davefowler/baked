@@ -4,13 +4,12 @@
 2. dish - Pre-rendering each page
 */
 
-import { rename, cp, mkdir, rm, readdir } from 'fs/promises';
-import path, { dirname, join } from 'path';
+import { rename, cp, mkdir, rm } from 'fs/promises';
+import path, { join } from 'path';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from './loading.js';
 import { Baker } from '../baker';
 import { writeFile, readFile } from 'fs/promises';
-import { fileURLToPath } from 'url';
 
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
