@@ -5,7 +5,6 @@ import { Baker } from './baker.js';
 let baker = null;
 let absurdDB = null;
 
-
 try {
   const [sqlJs, { SQLiteFS }, IndexedDBBackend] = await Promise.all([
     import('/baked/sql.js/sql-wasm.js'),
@@ -14,7 +13,6 @@ try {
   ]);
   
   console.log('db - ✅ All modules imported successfully');
-  // Rest of your worker code...
   
 } catch (error) {
   console.error('db - 💥 Failed to import modules:', error);
@@ -23,17 +21,22 @@ try {
 console.log('db - 🚀 Worker script starting - after imports...');
 
 // Message handler
-self.addEventListener('message', async (e) => {
+self.onmessage = async (e) => {
+  console.log('db - 📥 Received message:', e.data);
   const { id, action, path } = e.data;
-  console.log('db - received message', id, action, path);
   
   try {
+    console.log('db - 🎯 Processing action:', action);
     switch (action) {
       case 'init':
+        console.log('db - 🏗️ Starting initialization...');
         absurdDB = await initDatabase();
+        console.log('db - ✅ Database initialized');
         baker = new Baker(absurdDB, true);
         await baker.init();
+        console.log('db - ✅ Baker initialized');
         self.postMessage({ id, result: 'initialized' });
+        console.log('db - ✅ Init complete, sent response');
         break;
 
       case 'handleRoute':
@@ -42,12 +45,12 @@ self.addEventListener('message', async (e) => {
         break;
     }
   } catch (error) {
-    console.error('Worker error:', error);
+    console.error('db - 💥 Worker error:', error);
     self.postMessage({ id, error: error.message });
   }
-});
+};
 
-console.log('db - starting message listener');
+console.log('db - 🎧 Message listener registered');
 
 async function initDatabase() {
   console.log('db - 🏗️ Initializing SQL.js...');
