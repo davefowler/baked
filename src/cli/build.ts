@@ -148,9 +148,35 @@ export default async function bake(
   await dish(db, tmpDist);
 
   console.log('... and a cherry on top');
-  // TODO - should i somehow copy the src/baked directory to the dist directory?
+  
+  // Copy baked files
   const bakedDir = join(packageRoot, 'dist', 'baked');
   await cp(bakedDir, join(tmpDist, 'baked'), { recursive: true });
+  
+  // Create directories for client-side dependencies in baked
+  await mkdir(path.join(tmpDist, 'baked/sql.js'), { recursive: true });
+  await mkdir(path.join(tmpDist, 'baked/absurd-sql'), { recursive: true });
+
+  // Copy sql.js files
+  await cp(
+    path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm'),
+    path.join(tmpDist, 'baked/sql.js/sql-wasm.wasm')
+  );
+  await cp(
+    path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.js'),
+    path.join(tmpDist, 'baked/sql.js/sql-wasm.js')
+  );
+
+  // Copy absurd-sql files
+  await cp(
+    path.join(packageRoot, 'node_modules/absurd-sql/dist/index.js'),
+    path.join(tmpDist, 'baked/absurd-sql/index.js')
+  );
+  await cp(
+    path.join(packageRoot, 'node_modules/absurd-sql/dist/indexeddb-backend.js'),
+    path.join(tmpDist, 'baked/absurd-sql/indexeddb-backend.js')
+  );
+
 
   // swap the tmp dist to the final dist
   try {

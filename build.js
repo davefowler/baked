@@ -70,18 +70,6 @@ const clientConfig = {
 // Copy baked files needed for client
 await cp('src/baked', 'dist/baked', { recursive: true, force: true })
 
-// Create directory for sql.js files
-await mkdir('dist/node_modules/@jlongster/sql.js/dist', { recursive: true })
-
-// Copy sql.js files
-await cp(
-  'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm',
-  'dist/node_modules/@jlongster/sql.js/dist/sql-wasm.wasm'
-)
-await cp(
-  'node_modules/@jlongster/sql.js/dist/sql-wasm.js',
-  'dist/node_modules/@jlongster/sql.js/dist/sql-wasm.js'
-)
 
 // Build client files
 await esbuild.build({
