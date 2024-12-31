@@ -13,9 +13,12 @@ class ClientApp {
   public async init() {
     console.log('🚀 Starting database and baker initialization...');
     try {
-      this.dbWorker = new Worker(new URL('./db.worker.js', import.meta.url), {
-        type: 'module'
-      });
+      this.dbWorker = new Worker(
+        new URL('/baked/db.worker.js', import.meta.url),
+        {
+          type: 'module' // cause the bundler is dumb. 
+        }
+      );
       initBackend(this.dbWorker);
       
       console.log('📨 Sending init message to worker...');

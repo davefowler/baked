@@ -89,19 +89,3 @@ await esbuild.build({
   entryPoints: ['src/client/bakedClient.ts'],
   outdir: 'dist/baked',
 })
-
-// Build worker separately with its own config
-await esbuild.build({
-  ...clientConfig,
-  entryPoints: ['src/client/db.worker.ts'],
-  outdir: 'dist/baked',
-  splitting: false,
-  format: 'iife',
-  bundle: false,
-  define: {
-    'process.env.NODE_ENV': '"production"',
-    'global': 'self',
-    '__dirname': '""',
-  }
-})
-
