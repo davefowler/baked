@@ -77,3 +77,9 @@ await esbuild.build({
   entryPoints: ['src/client/bakedClient.ts'],
   outdir: 'dist/baked',
 })
+
+await esbuild.build({
+  ...clientConfig,
+  entryPoints: ['src/baker.ts'],
+  outdir: 'dist/baked',
+})

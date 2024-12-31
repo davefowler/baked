@@ -1,7 +1,9 @@
-import { Baker } from '../baker';
+console.log('db - 🚀 Worker script starting - before imports...');
+
+import { Baker } from './baker.js';
 
 let baker = null;
-let db = null;
+let absurdDB = null;
 
 
 try {
@@ -19,7 +21,33 @@ try {
 }
 
 console.log('db - 🚀 Worker script starting - after imports...');
-let db = null;
+
+// Message handler
+self.addEventListener('message', async (e) => {
+  const { id, action, path } = e.data;
+  console.log('db - received message', id, action, path);
+  
+  try {
+    switch (action) {
+      case 'init':
+        absurdDB = await initDatabase();
+        baker = new Baker(absurdDB, true);
+        await baker.init();
+        self.postMessage({ id, result: 'initialized' });
+        break;
+
+      case 'handleRoute':
+        const html = await handleRoute(path);
+        self.postMessage({ id, html });
+        break;
+    }
+  } catch (error) {
+    console.error('Worker error:', error);
+    self.postMessage({ id, error: error.message });
+  }
+});
+
+console.log('db - starting message listener');
 
 async function initDatabase() {
   console.log('db - 🏗️ Initializing SQL.js...');
@@ -47,42 +75,18 @@ async function initDatabase() {
       SQL.FS.close(stream);
     }
 
-    db = new SQL.Database(bakedDbPath, { filename: true });
-    db.exec(`
+    absurdDB = new SQL.Database(bakedDbPath, { filename: true });
+    absurdDB.exec(`
       PRAGMA journal_mode=MEMORY;
       PRAGMA page_size=8192;
     `);
 
-    return db;
+    return absurdDB;
   } catch (error) {
     console.error('db - 💥 Error initializing database:', error);
     throw error;
   }
 }
-
-// Message handler
-self.addEventListener('message', async (e) => {
-  const { id, action, path } = e.data;
-  
-  try {
-    switch (action) {
-      case 'init':
-        db = await initDatabase();
-        baker = new Baker(db, true);
-        await baker.init();
-        self.postMessage({ id, result: 'initialized' });
-        break;
-
-      case 'handleRoute':
-        const html = await handleRoute(path);
-        self.postMessage({ id, html });
-        break;
-    }
-  } catch (error) {
-    console.error('Worker error:', error);
-    self.postMessage({ id, error: error.message });
-  }
-});
 
 async function handleRoute(path) {
   // Remove trailing slash except for root path
