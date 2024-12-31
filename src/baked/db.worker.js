@@ -1,15 +1,49 @@
-console.log('db - 🚀 Worker script starting - before imports...');
+console.log('db - 🚀 Worker script starting...');
 
-import { Baker } from './baker.js';
-import initSqlJs from '/baked/sql.js/sql-wasm.js';
+// Import all dependencies as ES modules
 import { SQLiteFS } from '/baked/absurd-sql/index.js';
 import IndexedDBBackend from '/baked/absurd-sql/indexeddb-backend.js';
 
+// Now we can use the imported modules
+async function initDatabase() {
+  console.log('db - 🏗️ Initializing SQL.js...');
+  
+  try {
+    // Load SQL.js dynamically
+    await import('./sql.js/sql-wasm.js');
+    console.log('db - 📦 SQL.js module loaded, checking for global initSqlJs:', {
+      hasInitSqlJs: typeof self.initSqlJs === 'function'
+    });
+
+    if (typeof self.initSqlJs !== 'function') {
+      throw new Error('SQL.js loaded but initSqlJs not found in global scope');
+    }
+
+    // Initialize SQL.js using the global function
+    const SQL = await self.initSqlJs({
+      locateFile: file => {
+        console.log('db - 📍 Locating file:', file);
+        return new URL(`./sql.js/${file}`, import.meta.url).href;
+      }
+    });
+
+    console.log('db - ✅ SQL.js initialized');
+
+    const sqlFS = new SQLiteFS(SQL.FS, new IndexedDBBackend());
+    SQL.register_for_idb(sqlFS);
+
+    SQL.FS.mkdir('/sql');
+    SQL.FS.mount(sqlFS, {}, '/sql');
+
+    return SQL;
+  } catch (error) {
+    console.error('db - 💥 Error initializing database:', error);
+    throw error;
+  }
+}
+
 let baker = null;
 let absurdDB = null;
-
-
-console.log('db - 🚀 Worker script starting - after imports...');
 
 // Message handler
 self.addEventListener('message', async (e) => {
@@ -27,7 +61,6 @@ self.addEventListener('message', async (e) => {
         await baker.init();
         console.log('db - ✅ Baker initialized');
         self.postMessage({ id, result: 'initialized' });
-        console.log('db - ✅ Init complete, sent response');
         break;
 
       case 'handleRoute':
@@ -42,45 +75,6 @@ self.addEventListener('message', async (e) => {
 });
 
 console.log('db - 🎧 Message listener registered');
-
-async function initDatabase() {
-  console.log('db - 🏗️ Initializing SQL.js...');
-  
-  try {
-    const SQL = await initSqlJs({ 
-      locateFile: file => file
-    });
-    console.log('db - ✅ SQL.js initialized');
-
-    const sqlFS = new SQLiteFS(SQL.FS, new IndexedDBBackend());
-    SQL.register_for_idb(sqlFS);
-
-    SQL.FS.mkdir('/sql');
-    SQL.FS.mount(sqlFS, {}, '/sql');
-
-    const bakedDbPath = '/baked/site.db';
-    console.log('db - 📚 Opening database at:', bakedDbPath);
-
-    // Handle Safari fallback
-    if (typeof SharedArrayBuffer === 'undefined') {
-      console.log('db - ⚠️ SharedArrayBuffer not available, using fallback...');
-      const stream = SQL.FS.open(bakedDbPath, 'r');
-      await stream.node.contents.readIfFallback();
-      SQL.FS.close(stream);
-    }
-
-    absurdDB = new SQL.Database(bakedDbPath, { filename: true });
-    absurdDB.exec(`
-      PRAGMA journal_mode=MEMORY;
-      PRAGMA page_size=8192;
-    `);
-
-    return absurdDB;
-  } catch (error) {
-    console.error('db - 💥 Error initializing database:', error);
-    throw error;
-  }
-}
 
 async function handleRoute(path) {
   // Remove trailing slash except for root path
@@ -126,4 +120,3 @@ async function handleRoute(path) {
   `;
 }
 
-// ... keep existing initialization code ...
