@@ -1,9 +1,38 @@
-import initSqlJs from './sql.js/sql-wasm.js';
-import { SQLiteFS } from './absurd-sql/index.js';
-import IndexedDBBackend from './absurd-sql/indexeddb-backend.js';
-
 console.log('db - 🚀 Worker script starting...');
 
+// Modify the response format to match what the client expects
+self.addEventListener('message', async (e) => {
+  console.log('db - 📨 Basic message received:', e.data);
+  const { id, action } = e.data;
+  
+  if (action === 'init') {
+    try {
+      console.log('db - 🏗️ Starting database initialization...');
+      db = await initDatabase();
+      console.log('db - ✅ Database initialized, sending response');
+      self.postMessage({ id, result: 'initialized' });  // Correct response format
+    } catch (error) {
+      console.error('db - 💥 Database init error:', error);
+      self.postMessage({ id, error: error.message });
+    }
+  }
+});
+
+try {
+  const [sqlJs, { SQLiteFS }, IndexedDBBackend] = await Promise.all([
+    import('/baked/sql.js/sql-wasm.js'),
+    import('/baked/absurd-sql/index.js'),
+    import('/baked/absurd-sql/indexeddb-backend.js')
+  ]);
+  
+  console.log('db - ✅ All modules imported successfully');
+  // Rest of your worker code...
+  
+} catch (error) {
+  console.error('db - 💥 Failed to import modules:', error);
+}
+
+console.log('db - 🚀 Worker script starting - after imports...');
 let db = null;
 
 async function initDatabase() {
@@ -45,40 +74,4 @@ async function initDatabase() {
   }
 }
 
-// Message handler
-self.onmessage = async (e) => {
-  const { id, action, payload } = e.data;
-  console.log('db - 📥 Received message:', { id, action, payload });
-
-  try {
-    switch (action) {
-      case 'init':
-        console.log('db - 🚀 Starting database initialization...');
-        db = await initDatabase();
-        self.postMessage({ id, result: 'initialized' });
-        break;
-
-      case 'query':
-        if (!db) throw new Error('Database not initialized');
-        const stmt = db.prepare(payload.sql);
-        const results = stmt.all(payload.params);
-        stmt.free();
-        self.postMessage({ id, result: results });
-        break;
-
-      case 'get':
-        if (!db) throw new Error('Database not initialized');
-        const getStmt = db.prepare(payload.sql);
-        const result = getStmt.get(payload.params);
-        getStmt.free();
-        self.postMessage({ id, result });
-        break;
-
-      default:
-        throw new Error(`Unknown action: ${action}`);
-    }
-  } catch (error) {
-    console.error('db - 💥 Error in worker:', error);
-    self.postMessage({ id, error: error.message });
-  }
-}; 
+console.log('db - ✅ Message handler setup complete');
