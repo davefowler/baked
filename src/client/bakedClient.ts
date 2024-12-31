@@ -1,48 +1,66 @@
-import { Baker } from '../baker';
-import { ClientDatabase } from './clientDb';
 import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
 
 
 class ClientApp {
-  public baker!: Baker;
   private dbWorker!: Worker;
-  private clientDb!: ClientDatabase;
 
-  // Setup the client app 
-  // including: database, baker and router
   public async init() {
-    console.log('🚀 Starting database and baker initialization...');
+    console.log('🚀 Starting worker initialization...');
     try {
       this.dbWorker = new Worker(
         new URL('/baked/db.worker.js', import.meta.url),
-        {
-          type: 'module' // cause the bundler is dumb. 
-        }
+        { type: 'module' }
       );
       initBackend(this.dbWorker);
       
-      console.log('📨 Sending init message to worker...');
-      const workerResponse = await this.sendWorkerMessage({ action: 'init' });
-      console.log('✅ Worker response:', workerResponse);
-      
-      console.log('🗄️ Creating client database wrapper...');
-      this.clientDb = new ClientDatabase(this.dbWorker);
-      
-      console.log('🔨 Initializing baker...');
-      this.baker = new Baker(this.clientDb as any, true);
-      
-      // Debug: Check what pages are available in baker
-      console.log('📚 Available pages:', this.baker.getLatestPages?.(999999));
+      // Initialize the worker
+      await this.sendWorkerMessage({ action: 'init' });
       
       console.log('🛣️ Initializing router...');
       this.initializeRouter();
-      console.log('✅ Router initialized');
     } catch (error) {
       console.error('💥 Error during initialization:', error);
       throw error;
     }
   }
 
+  private initializeRouter() {
+    // Handle initial page load
+    this.handleRoute(window.location.pathname);
+
+    // Handle browser back/forward
+    window.addEventListener('popstate', () => {
+      this.handleRoute(window.location.pathname);
+    });
+
+    // Intercept all link clicks
+    document.addEventListener('click', (e) => {
+      const anchor = (e.target as HTMLElement).closest('a');
+      if (anchor && anchor.href && anchor.origin === window.location.origin) {
+        e.preventDefault();
+        const path = anchor.pathname;
+        history.pushState({}, '', path);
+        this.handleRoute(path);
+      }
+    });
+  }
+
+  private async handleRoute(path: string) {
+    try {
+      const response = await this.sendWorkerMessage({ 
+        action: 'handleRoute', 
+        path 
+      });
+      
+      if (response.html) {
+        document.documentElement.innerHTML = response.html;
+      } else {
+        console.error('❌ No HTML returned for route:', path);
+      }
+    } catch (error) {
+      console.error('💥 Error handling route:', error);
+    }
+  }
 
   private sendWorkerMessage(message: any): Promise<any> {
     console.log('📤 Sending worker message:', message);
@@ -88,109 +106,11 @@ class ClientApp {
       }
     });
   }
-
-  private initializeRouter() {
-    // Debug: Log when router is being initialized
-    console.log('🛣️ Router initialization starting...');
-
-    // Handle initial page load
-    console.log('📍 Initial route:', window.location.pathname);
-    this.handleRoute(window.location.pathname);
-
-    // Handle browser back/forward
-    window.addEventListener('popstate', (e) => {
-      console.log('⏪ Popstate event triggered:', e);
-      console.log('Current pathname:', window.location.pathname);
-      this.handleRoute(window.location.pathname);
-    });
-
-    // Intercept all link clicks
-    document.addEventListener('click', (e) => {
-      console.log('🖱️ Click event:', e.target);
-      const target = e.target as HTMLElement;
-      const anchor = target.closest('a');
-      
-      if (anchor) {
-        console.log('📌 Anchor found:', {
-          href: anchor.href,
-          origin: anchor.origin,
-          pathname: anchor.pathname,
-          currentOrigin: window.location.origin
-        });
-      }
-      
-      if (anchor && anchor.href && anchor.origin === window.location.origin) {
-        console.log('🔗 Internal link clicked:', anchor.href);
-        e.preventDefault();
-        const path = anchor.pathname;
-        history.pushState({}, '', path);
-        this.handleRoute(path);
-      }
-    });
-
-    console.log('🛣️ Router initialization complete');
-  }
-
-  private async handleRoute(path: string) {
-    console.log('🎯 Handling route:', path, 'Baker initialized:', !!this.baker);
-
-    if (!this.baker) {
-        console.error('❌ Baker not initialized when handling route!');
-        return;
-    }
-
-    // Remove trailing slash except for root path
-    if (path !== '/' && path.endsWith('/')) {
-        path = path.slice(0, -1);
-        console.log('📝 Removed trailing slash:', path);
-    }
-
-    // Remove .html extension if present
-    if (path.endsWith('.html')) {
-        path = path.replace(/\.html$/, '');
-        console.log('📝 Removed .html extension:', path);
-    }
-
-    // Try to get the page from baker
-    console.log('🔍 Looking for page:', path);
-    let page = this.baker.getPage(path);
-    
-    // If no page found and path ends with '/' or is root, try with 'index'
-    if (!page && (path.endsWith('/') || path === '')) {
-        const indexPath = path === '' ? 'index' : `${path}/index`;
-        console.log('🔍 Trying index path:', indexPath);
-        page = this.baker.getPage(indexPath);
-    }
-    
-    if (page) {
-        console.log('✅ Page found!:', path, 'page', page);
-        const html = this.baker.renderPage(page);
-        document.documentElement.innerHTML = html;
-        return;
-    }
-
-    // If page not found, try with .html extension
-    const htmlPath = path === '' ? 'index.html' : `${path}.html`;
-    console.log('🔍 Page not found, trying with .html extension:', htmlPath);
-    const htmlPage = this.baker.getPage(htmlPath);
-    
-    if (htmlPage) {
-        console.log('✅ HTML page found:', htmlPath);
-        const html = this.baker.renderPage(htmlPage);
-        document.documentElement.innerHTML = html;
-        return;
-    }
-
-    // Handle 404
-    console.error('❌ Page not found:', path);
-    // You might want to render a 404 page here
-  }
 }
 
 // Initialize the app when the database is ready
 declare global {
   interface Window {
-    baker: Baker;
     clientApp: ClientApp;
   }
 }
@@ -201,7 +121,6 @@ window.addEventListener('load', async () => {
     window.clientApp = new ClientApp();
     console.log('📦 Client app created, initializing...');
     await window.clientApp.init();
-    window.baker = window.clientApp.baker;
     console.log('✨ Initialization complete!');
   } catch (error) {
     console.error('💥 Failed to initialize:', error);

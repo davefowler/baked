@@ -69,6 +69,7 @@ export class Baker {
       .prepare('SELECT * FROM pages WHERE slug = ?')
       .get(slug) as RawPage | undefined;
 
+    console.log('getPage', slug, rawPage);
     if (rawPage) {
       try {
         return convertRawPageToPage(rawPage);
@@ -100,7 +101,7 @@ export class Baker {
       }
       return template(page, this, this.site);
     } catch (error) {
-      console.error(`Failed to render page:`, page.path, error);
+      console.error(`Failed to render page:`, page.path, page, error);
       return `
         <html>
           <head><title>Error</title></head>

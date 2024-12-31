@@ -1,22 +1,8 @@
-console.log('db - 🚀 Worker script starting...');
+import { Baker } from '../baker';
 
-// Modify the response format to match what the client expects
-self.addEventListener('message', async (e) => {
-  console.log('db - 📨 Basic message received:', e.data);
-  const { id, action } = e.data;
-  
-  if (action === 'init') {
-    try {
-      console.log('db - 🏗️ Starting database initialization...');
-      db = await initDatabase();
-      console.log('db - ✅ Database initialized, sending response');
-      self.postMessage({ id, result: 'initialized' });  // Correct response format
-    } catch (error) {
-      console.error('db - 💥 Database init error:', error);
-      self.postMessage({ id, error: error.message });
-    }
-  }
-});
+let baker = null;
+let db = null;
+
 
 try {
   const [sqlJs, { SQLiteFS }, IndexedDBBackend] = await Promise.all([
@@ -74,4 +60,72 @@ async function initDatabase() {
   }
 }
 
-console.log('db - ✅ Message handler setup complete');
+// Message handler
+self.addEventListener('message', async (e) => {
+  const { id, action, path } = e.data;
+  
+  try {
+    switch (action) {
+      case 'init':
+        db = await initDatabase();
+        baker = new Baker(db, true);
+        await baker.init();
+        self.postMessage({ id, result: 'initialized' });
+        break;
+
+      case 'handleRoute':
+        const html = await handleRoute(path);
+        self.postMessage({ id, html });
+        break;
+    }
+  } catch (error) {
+    console.error('Worker error:', error);
+    self.postMessage({ id, error: error.message });
+  }
+});
+
+async function handleRoute(path) {
+  // Remove trailing slash except for root path
+  if (path !== '/' && path.endsWith('/')) {
+    path = path.slice(0, -1);
+  }
+
+  // Remove .html extension if present
+  if (path.endsWith('.html')) {
+    path = path.replace(/\.html$/, '');
+  }
+
+  // Try to get the page
+  let page = baker.getPage(path);
+  
+  // Try index if needed
+  if (!page && (path.endsWith('/') || path === '')) {
+    const indexPath = path === '' ? 'index' : `${path}/index`;
+    page = baker.getPage(indexPath);
+  }
+  
+  if (page) {
+    return baker.renderPage(page);
+  }
+
+  // Try with .html extension
+  const htmlPath = path === '' ? 'index.html' : `${path}.html`;
+  page = baker.getPage(htmlPath);
+  
+  if (page) {
+    return baker.renderPage(page);
+  }
+
+  // 404
+  return `
+    <html>
+      <head><title>404 - Not Found</title></head>
+      <body>
+        <h1>Page Not Found</h1>
+        <p>The requested page "${path}" could not be found.</p>
+      </body>
+    </html>
+  `;
+}
+
+// ... keep existing initialization code ...
