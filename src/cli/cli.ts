@@ -3,7 +3,7 @@ import { program } from 'commander';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import bake from './build.js';
+import bake from './buildSite.js';
 import createSite from './new.js';
 import startServer from './serve.js';
 

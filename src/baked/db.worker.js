@@ -1,27 +1,18 @@
 console.log('db - 🚀 Worker script starting - before imports...');
 
 import { Baker } from './baker.js';
+import initSqlJs from '/baked/sql.js/sql-wasm.js';
+import { SQLiteFS } from '/baked/absurd-sql/index.js';
+import IndexedDBBackend from '/baked/absurd-sql/indexeddb-backend.js';
 
 let baker = null;
 let absurdDB = null;
 
-try {
-  const [sqlJs, { SQLiteFS }, IndexedDBBackend] = await Promise.all([
-    import('/baked/sql.js/sql-wasm.js'),
-    import('/baked/absurd-sql/index.js'),
-    import('/baked/absurd-sql/indexeddb-backend.js')
-  ]);
-  
-  console.log('db - ✅ All modules imported successfully');
-  
-} catch (error) {
-  console.error('db - 💥 Failed to import modules:', error);
-}
 
 console.log('db - 🚀 Worker script starting - after imports...');
 
 // Message handler
-self.onmessage = async (e) => {
+self.addEventListener('message', async (e) => {
   console.log('db - 📥 Received message:', e.data);
   const { id, action, path } = e.data;
   
@@ -48,7 +39,7 @@ self.onmessage = async (e) => {
     console.error('db - 💥 Worker error:', error);
     self.postMessage({ id, error: error.message });
   }
-};
+});
 
 console.log('db - 🎧 Message listener registered');
 

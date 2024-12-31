@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import { rm, mkdir, cp, readdir, readFile } from 'fs/promises';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
-import bake from '../src/cli/build';
+import bake from '../src/cli/buildSite';
 import { existsSync } from 'fs';
 import path from 'path';
 import type { Page } from '../src/types';

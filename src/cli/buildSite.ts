@@ -8,7 +8,7 @@ import { rename, cp, mkdir, rm } from 'fs/promises';
 import path, { join } from 'path';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from './loading.js';
-import { Baker } from '../baker';
+import { Baker } from '../baker.js';
 import { writeFile, readFile } from 'fs/promises';
 
 /* prep for the baking process by creating the needed database and directories */
