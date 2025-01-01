@@ -4,6 +4,7 @@ console.log('db - 🚀 Worker script starting...');
 import initSqlJs from '/baked/sql.js/sql-wasm-es.js';
 import { Baker } from '/baked/baker.js';
 
+
 async function initDatabase() {
   console.log('db - 🏗️ Initializing SQL.js...');
   
@@ -28,12 +29,28 @@ async function initDatabase() {
     SQL.FS.mkdir('/sql');
     SQL.FS.mount(sqlFS, {}, '/sql');
 
-    return SQL;
+    // Now fetch the initial data
+    const response = await fetch('/baked/site.sqlite');
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Create a new database directly from the downloaded file
+    const db = new SQL.Database(new Uint8Array(arrayBuffer));
+    
+    // Test that we can query the database
+    const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+    console.log('db - ✅ Database initialized', tables[0]);
+    const npages = db.exec("SELECT count(*) FROM pages");
+    console.log('db - number of pages', npages[0].values[0][0]);
+    const nassets = db.exec("SELECT count(*) FROM assets");
+    console.log('db - number of assets', nassets[0].values[0][0]);
+
+    return db;
   } catch (error) {
     console.error('db - 💥 Error initializing database:', error);
     throw error;
   }
 }
+
 
 let baker = null;
 let absurdDB = null;
@@ -48,12 +65,17 @@ self.addEventListener('message', async (e) => {
     switch (action) {
       case 'init':
         console.log('db - 🏗️ Starting initialization...');
-        const SQL = await initDatabase();
-        const db = new SQL.Database();
-        console.log('db - ✅ Database initialized', db);
-        baker = new Baker(db, true);
-        await baker.init();
-        console.log('db - ✅ Baker initialized');
+        absurdDB = await initDatabase();
+        console.log('db - ✅ Database initialized', absurdDB);
+
+        console.log('db - properties of absurdDB', Object.keys(absurdDB));
+
+        // test the database querying for 1+2
+        const result = absurdDB.exec('SELECT 1+2 as sum');
+        console.log('db - 🧪 Test result: 1+1 = ', result, result[0].values[0][0]);
+        
+        baker = new Baker(absurdDB, true);
+        console.log('db - ✅ Baker initialized', baker);
         self.postMessage({ id, result: 'initialized' });
         break;
 
