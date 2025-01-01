@@ -20,6 +20,7 @@ export class Baker {
   public site: Site;
 
   constructor(db: Database, isClient: boolean) {
+    console.log('baker - constructor', db, isClient);
     this.db = db;
     this.isClient = isClient;
     this.site = this.getAsset('site.yaml', 'json');
