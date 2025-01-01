@@ -1,6 +1,6 @@
 {
   "name": "baked",
-  "version": "0.0.23",
+  "version": "0.0.24",
   "type": "module",
   "bin": {
     "bake": "./dist/cli/cli.js"
@@ -30,7 +30,7 @@
     "@types/marked": "^6.0.0",
     "@types/nunjucks": "^3.2.6",
     "@types/sql.js": "^1.4.9",
-    "absurd-sql": "^0.0.46",
+    "absurd-sql": "^0.0.54",
     "better-sqlite3": "^11.6.0",
     "cheerio": "1.0.0-rc.12",
     "commander": "^12.1.0",

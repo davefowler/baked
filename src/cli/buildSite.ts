@@ -162,10 +162,10 @@ export default async function bake(
     path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm'),
     path.join(tmpDist, 'baked/sql.js/sql-wasm.wasm')
   );
-  await cp(
-    path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.js'),
-    path.join(tmpDist, 'baked/sql.js/sql-wasm.js')
-  );
+  // await cp(
+  //   path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.js'),
+  //   path.join(tmpDist, 'baked/sql.js/sql-wasm.js')
+  // ); // created a sql-wasm-es.js file instead which is the ES module version
 
   // Copy absurd-sql files
   await cp(

@@ -1,34 +1,27 @@
 console.log('db - 🚀 Worker script starting...');
 
-// Import all dependencies as ES modules
-import { SQLiteFS } from '/baked/absurd-sql/index.js';
-import IndexedDBBackend from '/baked/absurd-sql/indexeddb-backend.js';
+// Import dependencies
+import initSqlJs from '/baked/sql.js/sql-wasm-es.js';
+import { Baker } from '/baked/bakedClient.js';
 
-// Now we can use the imported modules
 async function initDatabase() {
   console.log('db - 🏗️ Initializing SQL.js...');
   
   try {
-    // Load SQL.js dynamically
-    await import('./sql.js/sql-wasm.js');
-    console.log('db - 📦 SQL.js module loaded, checking for global initSqlJs:', {
-      hasInitSqlJs: typeof self.initSqlJs === 'function'
-    });
-
-    if (typeof self.initSqlJs !== 'function') {
-      throw new Error('SQL.js loaded but initSqlJs not found in global scope');
-    }
-
-    // Initialize SQL.js using the global function
-    const SQL = await self.initSqlJs({
-      locateFile: file => {
-        console.log('db - 📍 Locating file:', file);
-        return new URL(`./sql.js/${file}`, import.meta.url).href;
+    // First initialize SQL.js
+    const SQL = await initSqlJs({
+      locateFile: (filename) => {
+        console.log('db - 📍 Locating file:', filename);
+        return `/baked/sql.js/${filename}`;
       }
     });
-
     console.log('db - ✅ SQL.js initialized');
 
+    // Then import and setup absurd-sql
+    const { SQLiteFS } = await import('/baked/absurd-sql/index.js');
+    const { default: IndexedDBBackend } = await import('/baked/absurd-sql/indexeddb-backend.js');
+
+    // Setup filesystem
     const sqlFS = new SQLiteFS(SQL.FS, new IndexedDBBackend());
     SQL.register_for_idb(sqlFS);
 

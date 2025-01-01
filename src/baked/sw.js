@@ -17,7 +17,7 @@
 // const ASSETS = [
 //   '/',
 //   '/baked/bakedClient.js',
-//   '/baked/db.worker.js',
+//   '/baked/baked.worker.js',
 //   '/baked/site.db',
 //   '/baked/offline.html',
 //   '/manifest.json',
