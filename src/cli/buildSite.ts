@@ -111,7 +111,7 @@ export default async function bake(
   packageRoot: string,
   includeDrafts: boolean = false
 ) {
-  const tmpDist = path.join(siteDir, 'dist-tmp');
+  const tmpDist = path.join(siteDir, 'tmp', 'dist');
   const finalDist = path.join(siteDir, 'dist');
 
   // Clean up and create tmp directory
