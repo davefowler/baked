@@ -1,6 +1,8 @@
 # Baked -> A Baked Data Site Framework
 
-Baked is a framework for building sites with [Baked Data Architecture](https://bakeddata.org).  It's like a static site generator and will pre-render your full site to be easily hosted on a CDN.  It will also though bundle your full site into a Progressive Web Application (PWA) for instant loading and offline access.  It bakes your full site into a single sqlite database that's persisted on the client side with AbsurdSQL.  As a user navigates around your site, the front end client automatically loads the content stored locally.
+Baked is a framework for building sites with [Baked Data Architecture](https://simonwillison.net/2021/Jul/28/baked-data/).  It's like a static site generator and will pre-render your full site to be easily hosted on a CDN.  It will also though bundle your full site into a Progressive Web Application (PWA) for instant loading and offline access.  It bakes your full site into a single sqlite database that's persisted on the client side with AbsurdSQL.  As a user navigates around your site, the front end client automatically loads the content stored locally.
+
+Read more in the [Architecture description](/notes/architecture.md).
 
 
 ## Benefits
