@@ -3,7 +3,7 @@ console.log('db - 🚀 Worker script starting...');
 // Import dependencies
 import initSqlJs from '/baked/sql.js/sql-wasm-es.js';
 import { Baker } from '/baked/baker.js';
-import { runDbTests, runBakerTests } from '/baked/clientTests.test.js';
+import { runDbTests, runBakerTests } from '/baked/clientTests.js';
 
 async function initDatabase() {
   console.log('db - 🏗️ Initializing SQL.js...');

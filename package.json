@@ -1,6 +1,6 @@
 {
   "name": "baked",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "type": "module",
   "bin": {
     "bake": "./dist/cli/cli.js"
