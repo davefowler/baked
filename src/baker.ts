@@ -91,7 +91,8 @@ export class Baker {
   getPage(path: string): Page | null {
     if (typeof path !== 'string' || path.includes('..') || /[<>"']/.test(path)) {
       return null;
-    }
+    }    
+
     const stmt = this.db.prepare("SELECT * FROM pages WHERE path = ?");
     const rawPage = this.executeQuery<RawPage>(stmt, [path]);
 
@@ -133,10 +134,8 @@ export class Baker {
   }
 
   getLatestPages(limit = 10, offset = 0, category?: string): Page[] {
-    console.log('getLatestPages params:', { limit, offset, category });
     
     if (typeof category === 'string') {
-      console.log('Filtering by category:', category);
       const stmt = this.db.prepare(
         `SELECT * FROM pages
          WHERE json_extract(data, '$.category') = ?
@@ -144,7 +143,6 @@ export class Baker {
          LIMIT ? OFFSET ?`
       );
       const results = this.executeQueryAll<RawPage>(stmt, [category, limit, offset]);
-      console.log(`Found ${results.length} pages with category "${category}"`);
       return results.map(convertRawPageToPage);
     }
   
@@ -154,8 +152,6 @@ export class Baker {
        LIMIT ? OFFSET ?`
     );
     const results = this.executeQueryAll<RawPage>(stmt, [limit, offset]);
-    console.log('baker - getLatestPages results', results);
-    console.log(`Found ${results.length} pages`);
     return results.map(convertRawPageToPage);
   }
 

@@ -35,16 +35,19 @@ class ClientApp {
   }
 
   private initializeRouter() {
-    // Handle initial page load
-    this.handleRoute(window.location.pathname);
+    console.log('🔗 initializing router');
+    // // Handle initial page load
+    // this.handleRoute(window.location.pathname);
 
     // Handle browser back/forward
     window.addEventListener('popstate', () => {
       this.handleRoute(window.location.pathname);
     });
 
+    console.log('🔗 adding click event listener');
     // Intercept all link clicks
     document.addEventListener('click', (e) => {
+      console.log('🔗 click event:', e);
       const anchor = (e.target as HTMLElement).closest('a');
       if (anchor && anchor.href && anchor.origin === window.location.origin) {
         e.preventDefault();

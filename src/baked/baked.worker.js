@@ -3,7 +3,6 @@ console.log('db - 🚀 Worker script starting...');
 // Import dependencies
 import initSqlJs from '/baked/sql.js/sql-wasm-es.js';
 import { Baker } from '/baked/baker.js';
-import { runDbTests, runBakerTests } from '/baked/clientTests.js';
 
 async function initDatabase() {
   console.log('db - 🏗️ Initializing SQL.js...');
@@ -68,8 +67,10 @@ self.addEventListener('message', async (e) => {
 
       case 'test':
         console.log('db - 🧪 Running tests...', absurdDB, baker);
+        const { runDbTests, runBakerTests } = await import('/baked/clientTests.js');
         await runDbTests(absurdDB);
         await runBakerTests(absurdDB, baker);
+        self.postMessage({ id, result: 'tests completed' });
         break;
 
       case 'handleRoute':
@@ -91,6 +92,10 @@ async function handleRoute(path) {
 
   if (path === '/') {
     path = 'index';
+  }
+
+  if (path.startsWith('/')) {
+    path = path.slice(1);
   }
 
   if (path.endsWith('/')) {
