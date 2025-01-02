@@ -14,9 +14,8 @@
 
 // TODO: Make this not declare a global if used in the browser
 var initSqlJsPromise = undefined;
-console.log('sql-wasm.js - loaded. - initSqlJsPromise:', initSqlJsPromise);
+
 var initSqlJs = function (moduleConfig) {
-    console.log('sql-wasm.js - inside initSqlJs. - ', moduleConfig);
     if (initSqlJsPromise){
       return initSqlJsPromise;
     }
@@ -217,17 +216,11 @@ setTimeout(function(){setTimeout(function(){Module.setStatus("")},1);a()},1)):a(
   return initSqlJsPromise;
 } // The end of our initSqlJs function
 
-console.log('sql-wasm.js - loaded. - initSqlJsPromise:', initSqlJsPromise);
-
-
 if (typeof self !== 'undefined') {
     self.initSqlJs = initSqlJs;
 } else if (typeof window !== 'undefined') {
     window.initSqlJs = initSqlJs;
 }
-
-console.log('sql-wasm.js - module exported.', initSqlJs);
-console.log('sql-wasm.js - typeof initSqlJs:', typeof initSqlJs);
 
 // Ensure proper ES Module export
 export default initSqlJs;

@@ -20,8 +20,14 @@ class ClientApp {
       // Initialize the worker
       await this.sendWorkerMessage({ action: 'init' });
       
+      // run tests if in dev mode
+      if (window.location.href.includes('localhost')) {
+        console.log('🧪 Running tests...');
+        await this.sendWorkerMessage({ action: 'test' });
+      }
+
       console.log('🛣️ Initializing router...');
-      this.initializeRouter();
+      // this.initializeRouter();
     } catch (error) {
       console.error('💥 Error during initialization:', error);
       throw error;

@@ -23,7 +23,36 @@ export class Baker {
     console.log('baker - constructor', db, isClient);
     this.db = db;
     this.isClient = isClient;
+    
     this.site = this.getAsset('site.yaml', 'json');
+    console.log('baker - site', this.site);
+  }
+
+  // SQL.js in absurd sql works slightly differently than better-sqlite3
+  // these functions abstract the differences
+  private executeQuery<T>(stmt: any, params: any[]): T | undefined {
+    if (stmt.getAsObject) {
+      // SQL.js style
+      const result = stmt.getAsObject(params);
+      stmt.free();
+      return result as T;
+    }
+    // better-sqlite3 style
+    return stmt.get(...params) as T;
+  }
+
+  private executeQueryAll<T>(stmt: any, params: any[]): T[] {
+    if (stmt.getAsObject) {
+      // SQL.js style
+      const result = [];
+      while (stmt.step()) {
+        result.push(stmt.getAsObject());
+      }
+      stmt.free();
+      return result as T[];
+    }
+    // better-sqlite3 style
+    return stmt.all(...params) as T[];
   }
 
   getRawAsset(name: string, type: TypeOfAsset): RawAsset | null {
@@ -33,12 +62,12 @@ export class Baker {
         throw new Error('Asset name is required');
       }
       const path = name;
-      const result = this.db
-        .prepare('SELECT content, type FROM assets WHERE path = ? and type = ?')
-        .get(path, type) as RawAsset | undefined;
+      const stmt = this.db.prepare('SELECT content, type FROM assets WHERE path = ? and type = ?');
+      const result = this.executeQuery<RawAsset>(stmt, [path, type]);
 
       if (!result) {
-        const allassetsPaths = this.db.prepare('SELECT path, type FROM assets').all();
+        const stmt = this.db.prepare('SELECT path, type FROM assets');
+        const allassetsPaths = this.executeQueryAll<{path: string, type: string}>(stmt, []);
         console.warn(`Asset not found: ${path}, ${type}`, allassetsPaths);
         return null;
       }
@@ -61,26 +90,18 @@ export class Baker {
     return asset.content;
   }
 
-  getPage(slug: string): Page | null {
-    if (typeof slug !== 'string' || slug.includes('..') || /[<>"']/.test(slug)) {
+  getPage(path: string): Page | null {
+    if (typeof path !== 'string' || path.includes('..') || /[<>"']/.test(path)) {
       return null;
     }
+    console.log('baker - about to run getPage for path:', path);
+    
+    const stmt = this.db.prepare("SELECT * FROM pages WHERE path = ?");
+    const rawPage = this.executeQuery<RawPage>(stmt, [path]);
 
-    const rawPage = this.db
-      .prepare('SELECT * FROM pages WHERE slug = ?')
-      .get(slug) as RawPage | undefined;
-
-    console.log('getPage', slug, rawPage);
+    console.log('baker - getPage', path, rawPage);
     if (rawPage) {
-      try {
-        return convertRawPageToPage(rawPage);
-      } catch (error) {
-        console.error(`Invalid metadata JSON for page ${slug}`);
-        return {
-          ...rawPage,
-          data: {}
-        };
-      }
+      return convertRawPageToPage(rawPage);
     }
     return null;
   }
@@ -121,67 +142,64 @@ export class Baker {
     
     if (typeof category === 'string') {
       console.log('Filtering by category:', category);
-      const results = this.db
-        .prepare(
-          `SELECT * FROM pages
-           WHERE json_extract(data, '$.category') = ?
-           ORDER BY published_date DESC 
-           LIMIT ? OFFSET ?`
-        )
-        .all(category, limit, offset) as Page[];
-      console.log(`Found ${results.length} pages with category "${category}"`);
-      return results;
-    }
-
-    const results = this.db
-      .prepare(
+      const stmt = this.db.prepare(
         `SELECT * FROM pages
+         WHERE json_extract(data, '$.category') IS NOT NULL
+         AND json_extract(data, '$.category') = json(?)
          ORDER BY published_date DESC 
          LIMIT ? OFFSET ?`
-      )
-      .all(limit, offset) as Page[];
+      );
+      const results = this.executeQueryAll<RawPage>(stmt, [JSON.stringify(category), limit, offset]);
+      console.log(`Found ${results.length} pages with category "${category}"`);
+      return results.map(convertRawPageToPage);
+    }
+  
+    const stmt = this.db.prepare(
+      `SELECT * FROM pages
+       ORDER BY published_date DESC 
+       LIMIT ? OFFSET ?`
+    );
+    const results = this.executeQueryAll<Page>(stmt, [limit, offset]);
     console.log(`Found ${results.length} pages`);
     return results;
   }
 
   getPrevPage(currentPage: Page): Page | null {
-    return this.db
-      .prepare(
-        `SELECT * FROM pages 
-         WHERE published_date < ? 
-         AND published_date IS NOT NULL 
-         ORDER BY published_date DESC 
-         LIMIT 1`
-      )
-      .get(currentPage.published_date) as Page | null;
+    const stmt = this.db.prepare(
+      `SELECT * FROM pages 
+       WHERE published_date < ? 
+       AND published_date IS NOT NULL 
+       ORDER BY published_date DESC 
+       LIMIT 1`
+    );
+    return this.executeQuery<Page>(stmt, [currentPage.published_date]) || null;
   }
 
   getNextPage(currentPage: Page): Page | null {
-    return this.db
-      .prepare(
-        `SELECT * FROM pages 
-         WHERE published_date > ? 
-         AND published_date IS NOT NULL 
-         ORDER BY published_date ASC 
-         LIMIT 1`
-      )
-      .get(currentPage.published_date) as Page | null;
+    const stmt = this.db.prepare(
+      `SELECT * FROM pages 
+       WHERE published_date > ? 
+       AND published_date IS NOT NULL 
+       ORDER BY published_date ASC 
+       LIMIT 1`
+    );
+    return this.executeQuery<Page>(stmt, [currentPage.published_date]) || null;
   }
 
   search(query: string, limit = 10, offset = 0): Page[] {
-    const results = this.db
-      .prepare(
-        `SELECT * FROM pages 
-         WHERE title LIKE ? 
-         OR content LIKE ? 
-         ORDER BY published_date DESC 
-         LIMIT ? OFFSET ?`
-      )
-      .all(`%${query}%`, `%${query}%`, limit, offset) as RawPage[];
+    const stmt = this.db.prepare(
+      `SELECT * FROM pages 
+       WHERE title LIKE ? 
+       OR content LIKE ? 
+       ORDER BY published_date DESC 
+       LIMIT ? OFFSET ?`
+    );
+    const results = this.executeQueryAll<RawPage>(stmt, [`%${query}%`, `%${query}%`, limit, offset]);
     return results.map(convertRawPageToPage);
   }
 
   query(sql: string, params: any[] = []): any[] {
-    return this.db.prepare(sql).all(...params);
+    const stmt = this.db.prepare(sql);
+    return this.executeQueryAll<any>(stmt, params);
   }
 } 
