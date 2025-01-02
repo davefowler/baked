@@ -71,9 +71,10 @@ describe('Security Tests', () => {
       const scriptInMeta = {
         script: '<script>alert("xss")</script>',
       };
-      loadPage(db, 'sanitization-test.md', 'Content', scriptInMeta);
+      const path = 'sanitization-test.md';
+      loadPage(db, path, 'Content', scriptInMeta);
 
-      const saved = await baker.getPage('sanitization-test');
+      const saved = await baker.getPage(path);
       const data = saved?.data
         ? typeof saved.data === 'string'
           ? JSON.parse(saved.data)

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
 import { rm, mkdir, cp, readdir, readFile } from 'fs/promises';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
-import bake from '../src/cli/build';
+import bake from '../src/cli/buildSite';
 import { existsSync } from 'fs';
 import path from 'path';
 import type { Page } from '../src/types';
@@ -88,6 +88,20 @@ describe('build output', () => {
     expect(index).not.toContain('About Me');
 
   })
+
+  test('copies required sql.js and absurd-sql files', async () => {
+    // Check sql.js files
+    expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm.wasm'))).toBe(true);
+    expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm-es.js'))).toBe(true);
+
+    // Check absurd-sql files
+    expect(existsSync(path.join(distDir, 'baked/absurd-sql/index.js'))).toBe(true);
+    expect(existsSync(path.join(distDir, 'baked/absurd-sql/indexeddb-backend.js'))).toBe(true);
+
+    // Optional: Check file contents to ensure they're not empty
+    const wasmSize = (await readFile(path.join(distDir, 'baked/sql.js/sql-wasm.wasm'))).length;
+    expect(wasmSize).toBeGreaterThan(0);
+  });
 })
 
 describe('pre build process', () => {

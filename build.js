@@ -63,27 +63,23 @@ const clientConfig = {
     'global': 'window',
     '__dirname': '""',
   },
-  alias: {
-    // Map Node.js built-ins to our shims
-    'path': './src/client/shims.js',
-    'fs': './src/client/shims.js'
-  },
   external: [],
+  splitting: true,
 }
 
 // Copy baked files needed for client
 await cp('src/baked', 'dist/baked', { recursive: true, force: true })
 
+
 // Build client files
 await esbuild.build({
   ...clientConfig,
-  entryPoints: ['src/baker.ts', 'src/client/db.worker.ts'],
+  entryPoints: ['src/client/bakedClient.ts'],
   outdir: 'dist/baked',
-  splitting: true,
 })
 
-// Copy necessary sql.js files
-await cp(
-  'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm',
-  'dist/baked/sql-wasm.wasm'
-)
+await esbuild.build({
+  ...clientConfig,
+  entryPoints: ['src/baker.ts'],
+  outdir: 'dist/baked',
+})

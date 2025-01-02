@@ -19,10 +19,10 @@ describe('Baker Template Integration', () => {
     db.exec(schema);
     db.exec(`
             -- Add some test data
-            INSERT INTO pages (slug, title, content, template, data, published_date)
+            INSERT INTO pages (path, slug, title, content, template, data, published_date)
             VALUES 
-                ('test1', 'Test Page 1', 'Content 1', 'default', '{}', '2024-01-01'),
-                ('test2', 'Test Page 2', 'Content 2', 'default', '{}', '2024-01-02');
+                ('test1', 'test1', 'Test Page 1', 'Content 1', 'default', '{}', '2024-01-01'),
+                ('test2', 'test2', 'Test Page 2', 'Content 2', 'default', '{}', '2024-01-02');
 
             INSERT INTO assets (path, content, type)
             VALUES 

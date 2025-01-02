@@ -3,7 +3,7 @@ import { mkdtemp, rm, readFile, mkdir, writeFile, readdir, stat } from 'fs/promi
 import { tmpdir } from 'os';
 import { join } from 'path';
 import createSite from '../src/cli/new';
-import bake from '../src/cli/build';
+import bake from '../src/cli/buildSite';
 import startServer from '../src/cli/serve';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import request from 'supertest';

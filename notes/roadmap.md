@@ -9,14 +9,13 @@
  - [x] pre-render pages
  - [x] markdown and template rendering complimenting each other
  - [x] baker functions working in templates - with tests
- - [ ] ensure baked directory is copied to the project on build
- - [ ] absurdsql working to store database on client
- - [ ] image assets 
- - [ ] pwa working
+ - [x] ensure baked directory is copied to the project on build
+ - [x] absurdsql working to store database on client
+ - [x] front-end tests
+ - [ ] image assets tested
+ - [x] pwa working
  - [ ] app working offline for all pages
  - [ ] confirm lighthouse scores are good
- - [ ] confirm the build process is fast
- - [ ] make components have both loading and rendering functions
  - [x] comprehensive testing
  - [x] tests for filters
  - [x] suite of tests for pre-rendering (ensure it isn't escaped)
@@ -24,22 +23,21 @@
 
 ## Static site things
 
-- [ ] Creating new site should prompt for things in site.yaml
-- [ ] Add support for multiple authors
-- [ ] Add support for tags
-- [ ] Add support for comments
-- [ ] Add support for RSS feeds
-- [ ] Add support for search
-- [ ] Add support for sitemaps
-- [ ] Add support for 404 and 500 pages
-- [ ] Add support for robots.txt
-
+- [x] Creating new site should prompt for things in site.yaml
+- [x] Add support for multiple authors
+- [x] add support for categories
+- [/] Add support for tags
+- [ ] Add example for RSS feeds - as a page
+- [ ] Add search
+- [ ] Add example sitemap
+- [ ] Custom for 404 and 500 pages
+- [ ] robots.txt - as page
 
 
 ## Framework things
 
  - [ ] full text search
- - [ ] generalize collections - like blog posts but general
+ - [x] generalize collections - like blog posts but general
  - [ ] Image assets and others can be loaded into the database optionally
  - [ ] Image processing (resizing, and setting default size and bg color before loading)
  - [ ] introduce a cache for image processing (so you don't have to redo them all each time)
@@ -49,7 +47,8 @@
  - [ ] Docs - as an example of the framework too
  - [ ] research Baked Architecture (https://simonwillison.net/2021/Jul/28/baked-data/)
  - [ ] improve the templating system (needed?)
- - [ ] cms interface?
+ - [ ] cms interface? - headless?  - netlifyCMS?
+ - [ ] easy launch for netlify? - is there a way to package a netlify project and make it easy for someone to just launch a new baked site?
  - [ ] updating from sqlite server (cache api requests? - have the app poll for changes but pasted on the last date it has in the database - this makes the responses cachable)
  - [ ] Incremental Static Regeneration (https://vercel.com/docs/functions/incremental-static-regeneration, https://www.smashingmagazine.com/2021/04/incremental-static-regeneration-nextjs/)
  - [ ] Load ahead - instead of load all (just load the pages that are linked from the current page - not the whole site)

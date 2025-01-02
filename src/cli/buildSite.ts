@@ -4,13 +4,12 @@
 2. dish - Pre-rendering each page
 */
 
-import { rename, cp, mkdir, rm, readdir } from 'fs/promises';
-import path, { dirname, join } from 'path';
+import { rename, cp, mkdir, rm } from 'fs/promises';
+import path, { join } from 'path';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import { loadAssetsFromDir, loadPagesFromDir, loadSiteMetadata } from './loading.js';
-import { Baker } from '../baker';
+import { Baker } from '../baker.js';
 import { writeFile, readFile } from 'fs/promises';
-import { fileURLToPath } from 'url';
 
 /* prep for the baking process by creating the needed database and directories */
 const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
@@ -112,7 +111,7 @@ export default async function bake(
   packageRoot: string,
   includeDrafts: boolean = false
 ) {
-  const tmpDist = path.join(siteDir, 'dist-tmp');
+  const tmpDist = path.join(siteDir, 'tmp', 'dist');
   const finalDist = path.join(siteDir, 'dist');
 
   // Clean up and create tmp directory
@@ -149,9 +148,35 @@ export default async function bake(
   await dish(db, tmpDist);
 
   console.log('... and a cherry on top');
-  // TODO - should i somehow copy the src/baked directory to the dist directory?
+  
+  // Copy baked files
   const bakedDir = join(packageRoot, 'dist', 'baked');
   await cp(bakedDir, join(tmpDist, 'baked'), { recursive: true });
+  
+  // Create directories for client-side dependencies in baked
+  await mkdir(path.join(tmpDist, 'baked/sql.js'), { recursive: true });
+  await mkdir(path.join(tmpDist, 'baked/absurd-sql'), { recursive: true });
+
+  // Copy sql.js files
+  await cp(
+    path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm'),
+    path.join(tmpDist, 'baked/sql.js/sql-wasm.wasm')
+  );
+  // await cp(
+  //   path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.js'),
+  //   path.join(tmpDist, 'baked/sql.js/sql-wasm.js')
+  // ); // created a sql-wasm-es.js file instead which is the ES module version
+
+  // Copy absurd-sql files
+  await cp(
+    path.join(packageRoot, 'node_modules/absurd-sql/dist/index.js'),
+    path.join(tmpDist, 'baked/absurd-sql/index.js')
+  );
+  await cp(
+    path.join(packageRoot, 'node_modules/absurd-sql/dist/indexeddb-backend.js'),
+    path.join(tmpDist, 'baked/absurd-sql/indexeddb-backend.js')
+  );
+
 
   // swap the tmp dist to the final dist
   try {

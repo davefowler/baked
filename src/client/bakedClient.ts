@@ -1,65 +1,57 @@
-import { Baker } from '../baker';
-import { ClientDatabase } from './clientDb';
 import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
 
 
 class ClientApp {
-  public baker!: Baker;
   private dbWorker!: Worker;
-  private clientDb!: ClientDatabase;
 
-  constructor() {
-    this.initializeDatabaseAndBaker();
-    this.initializeRouter();
-  }
-
-  private async initializeDatabaseAndBaker() {
-    this.dbWorker = new Worker(new URL('./db.worker.ts', import.meta.url));
-    initBackend(this.dbWorker);
-    
-    // Initialize the database
-    await this.sendWorkerMessage({ action: 'init' });
-    
-    // Create client database wrapper
-    this.clientDb = new ClientDatabase(this.dbWorker);
-    
-    // Initialize baker with client database
-    this.baker = new Baker(this.clientDb as any, true);
-  }
-
-
-  private sendWorkerMessage(message: any): Promise<any> {
-    return new Promise((resolve) => {
-      const id = Math.random().toString(36).substr(2, 9);
+  public async init() {
+    console.log('🚀 Starting worker initialization...');
+    try {
+      this.dbWorker = new Worker(
+        new URL('/baked/baked.worker.js', import.meta.url),
+        { type: 'module' }
+      );
+      // From Absurd SQL - initBackend: 
+      //This is only required because Safari doesn't support nested
+      // workers. This installs a handler that will proxy creating web
+      // workers through the main thread
+      initBackend(this.dbWorker);
       
-      const handler = (e: MessageEvent) => {
-        if (e.data.id === id) {
-          this.dbWorker.removeEventListener('message', handler);
-          resolve(e.data);
-        }
-      };
+      // Initialize the worker
+      await this.sendWorkerMessage({ action: 'init' });
       
-      this.dbWorker.addEventListener('message', handler);
-      this.dbWorker.postMessage({ ...message, id });
-    });
+      // run tests if in dev mode
+      if (window.location.href.includes('localhost')) {
+        console.log('🧪 Running tests...');
+        await this.sendWorkerMessage({ action: 'test' });
+      }
+
+      console.log('🛣️ Initializing router...');
+      this.initializeRouter();
+    } catch (error) {
+      console.error('💥 Error during initialization:', error);
+      throw error;
+    }
   }
 
   private initializeRouter() {
-    // Handle initial page load
-    this.handleRoute(window.location.pathname);
+    console.log('🔗 initializing router');
+    // // Handle initial page load
+    // this.handleRoute(window.location.pathname);
 
     // Handle browser back/forward
     window.addEventListener('popstate', () => {
       this.handleRoute(window.location.pathname);
     });
 
+    console.log('🔗 adding click event listener');
     // Intercept all link clicks
     document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest('a');
-      
+      console.log('🔗 click event:', e);
+      const anchor = (e.target as HTMLElement).closest('a');
       if (anchor && anchor.href && anchor.origin === window.location.origin) {
         e.preventDefault();
+        console.log('🔗 Clicked link:', anchor.href);
         const path = anchor.pathname;
         history.pushState({}, '', path);
         this.handleRoute(path);
@@ -68,54 +60,86 @@ class ClientApp {
   }
 
   private async handleRoute(path: string) {
-    // Remove trailing slash except for root path
-    if (path !== '/' && path.endsWith('/')) {
-      path = path.slice(0, -1);
+    console.log('🔗 tell worker to handle route:', path);
+    try {
+      const response = await this.sendWorkerMessage({ 
+        action: 'handleRoute', 
+        path 
+      });
+      console.log('🔗 worker response:', response);
+      if (response.html) {
+        
+        document.documentElement.innerHTML = response.html;
+      } else {
+        console.error('❌ No HTML returned for route:', path);
+      }
+    } catch (error) {
+      console.error('💥 Error handling route:', error);
     }
+  }
 
-    // Remove .html extension if present
-    path = path.replace(/\.html$/, '');
+  private sendWorkerMessage(message: any): Promise<any> {
+    console.log('📤 Sending worker message:', message);
+    return new Promise((resolve, reject) => {
+      const id = Math.random().toString(36).substr(2, 9);
+      const timeout = setTimeout(() => {
+        console.error('⏰ Worker message timeout for id:', id);
+        this.dbWorker.removeEventListener('message', handler);
+        reject(new Error('Worker message timeout'));
+      }, 5000); // 5 second timeout
 
-    // Try to get the page from baker
-    const page = this.baker.getPage(path);
-    
-    if (page) {
-      const html = this.baker.renderPage(page);
-      document.documentElement.innerHTML = html;
-      return;
-    }
+      const handler = (e: MessageEvent) => {
+        console.log('📥 Raw worker message received:', e.data);
+        if (e.data.id === id) {
+          clearTimeout(timeout);
+          this.dbWorker.removeEventListener('message', handler);
+          console.log('✅ Matched response for message:', id);
+          resolve(e.data);
+        } else {
+          console.log('⏭️ Skipping message with non-matching id:', e.data.id, 'expected:', id);
+        }
+      };
+      
+      // Add error handler
+      const errorHandler = (error: ErrorEvent) => {
+        console.error('💥 Worker error:', error);
+        this.dbWorker.removeEventListener('error', errorHandler);
+        reject(error);
+      };
 
-    // If page not found, try with .html extension
-    const htmlPage = this.baker.getPage(`${path}.html`);
-    
-    if (htmlPage) {
-      const html = this.baker.renderPage(htmlPage);
-      document.documentElement.innerHTML = html;
-      return;
-    }
-
-    // Handle 404
-    console.error(`Page not found: ${path}`);
-    // You might want to render a 404 page here
+      this.dbWorker.addEventListener('error', errorHandler);
+      this.dbWorker.addEventListener('message', handler);
+      
+      try {
+        this.dbWorker.postMessage({ ...message, id });
+        console.log('📨 Message posted to worker with id:', id);
+      } catch (error) {
+        console.error('💥 Error posting message to worker:', error);
+        clearTimeout(timeout);
+        this.dbWorker.removeEventListener('message', handler);
+        this.dbWorker.removeEventListener('error', errorHandler);
+        reject(error);
+      }
+    });
   }
 }
 
 // Initialize the app when the database is ready
 declare global {
   interface Window {
-    baker: Baker;
     clientApp: ClientApp;
   }
 }
 
 window.addEventListener('load', async () => {
-  console.log('Loading Baked Client app');
+  console.log('🌟 Loading Baked Client app');
   try {
-    // Initialize AbsurdSQL database
-      window.clientApp = new ClientApp();
-      window.baker = window.clientApp.baker;
+    window.clientApp = new ClientApp();
+    console.log('📦 Client app created, initializing...');
+    await window.clientApp.init();
+    console.log('✨ Initialization complete!');
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error('💥 Failed to initialize:', error);
   }
 });
 
