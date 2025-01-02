@@ -92,7 +92,7 @@ describe('build output', () => {
   test('copies required sql.js and absurd-sql files', async () => {
     // Check sql.js files
     expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm.wasm'))).toBe(true);
-    expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm.js'))).toBe(true);
+    expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm-es.js'))).toBe(true);
 
     // Check absurd-sql files
     expect(existsSync(path.join(distDir, 'baked/absurd-sql/index.js'))).toBe(true);

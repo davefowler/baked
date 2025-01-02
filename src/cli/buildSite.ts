@@ -44,7 +44,7 @@ const prep = async (dist: string, sqlDir: string): Promise<DatabaseType> => {
   // console.log('FTS SQL loaded');
 
   // Create a new sqlite database
-  const db = new Database(`${dist}/baked/site.sqlite`);
+  const db = new Database(`${dist}/baked/site.db`);
   db.exec(schemaSQL);
   // db.exec(ftsSQL);
 

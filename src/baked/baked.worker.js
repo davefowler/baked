@@ -30,7 +30,7 @@ async function initDatabase() {
     SQL.FS.mount(sqlFS, {}, '/sql');
 
     // Now fetch the initial data
-    const response = await fetch('/baked/site.sqlite');
+    const response = await fetch('/baked/site.db');
     const arrayBuffer = await response.arrayBuffer();
     
     // Create a new database directly from the downloaded file
