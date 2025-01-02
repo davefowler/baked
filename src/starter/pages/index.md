@@ -14,7 +14,7 @@ Like this line that <b>bolds this text with HTML</b>.
 
 <h2>You can make a list of your latest blog posts like this:</h2>
 <ul>
-{% set blogPosts = [] %}
+{% set blogPosts = baker.getLatestPages(100, 0, "blog") %}
 
 {% for post in blogPosts %}
 <li><a href="/{{post.path}}">{{post.title}}</a></li>

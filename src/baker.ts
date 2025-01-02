@@ -20,12 +20,9 @@ export class Baker {
   public site: Site;
 
   constructor(db: Database, isClient: boolean) {
-    console.log('baker - constructor', db, isClient);
     this.db = db;
     this.isClient = isClient;
-    
     this.site = this.getAsset('site.yaml', 'json');
-    console.log('baker - site', this.site);
   }
 
   // SQL.js in absurd sql works slightly differently than better-sqlite3
@@ -45,6 +42,7 @@ export class Baker {
     if (stmt.getAsObject) {
       // SQL.js style
       const result = [];
+      stmt.bind(params);
       while (stmt.step()) {
         result.push(stmt.getAsObject());
       }
@@ -94,12 +92,9 @@ export class Baker {
     if (typeof path !== 'string' || path.includes('..') || /[<>"']/.test(path)) {
       return null;
     }
-    console.log('baker - about to run getPage for path:', path);
-    
     const stmt = this.db.prepare("SELECT * FROM pages WHERE path = ?");
     const rawPage = this.executeQuery<RawPage>(stmt, [path]);
 
-    console.log('baker - getPage', path, rawPage);
     if (rawPage) {
       return convertRawPageToPage(rawPage);
     }
@@ -144,12 +139,11 @@ export class Baker {
       console.log('Filtering by category:', category);
       const stmt = this.db.prepare(
         `SELECT * FROM pages
-         WHERE json_extract(data, '$.category') IS NOT NULL
-         AND json_extract(data, '$.category') = json(?)
+         WHERE json_extract(data, '$.category') = ?
          ORDER BY published_date DESC 
          LIMIT ? OFFSET ?`
       );
-      const results = this.executeQueryAll<RawPage>(stmt, [JSON.stringify(category), limit, offset]);
+      const results = this.executeQueryAll<RawPage>(stmt, [category, limit, offset]);
       console.log(`Found ${results.length} pages with category "${category}"`);
       return results.map(convertRawPageToPage);
     }
@@ -159,9 +153,10 @@ export class Baker {
        ORDER BY published_date DESC 
        LIMIT ? OFFSET ?`
     );
-    const results = this.executeQueryAll<Page>(stmt, [limit, offset]);
+    const results = this.executeQueryAll<RawPage>(stmt, [limit, offset]);
+    console.log('baker - getLatestPages results', results);
     console.log(`Found ${results.length} pages`);
-    return results;
+    return results.map(convertRawPageToPage);
   }
 
   getPrevPage(currentPage: Page): Page | null {

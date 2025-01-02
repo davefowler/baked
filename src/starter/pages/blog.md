@@ -7,7 +7,7 @@ Need a seperate home page for your blog? This one's just blog.md, located at /bl
 
 <h2>Latest posts</h2>
 <ul>
-{% set bps = [] %}
+{% set bps = baker.getLatestPages(99, 0, "blog") %}
 
 {% for post in bps %}
     <li>

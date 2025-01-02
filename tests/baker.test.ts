@@ -79,10 +79,11 @@ describe('Baker', () => {
     beforeEach(() => {
       db.prepare(
         `
-                INSERT INTO pages (slug, title, content, template, data, published_date)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO pages (path, slug, title, content, template, data, published_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `
       ).run(
+        'test',
         'test',
         'Test Page',
         'Test content',
@@ -131,13 +132,13 @@ describe('Baker', () => {
   describe('Navigation', () => {
     beforeEach(() => {
       const pages = [
-        ['page1', 'Page 1', 'Content 1', 'default', '{}', '2024-01-01'],
-        ['page2', 'Page 2', 'Content 2', 'default', '{}', '2024-01-02'],
-        ['page3', 'Page 3', 'Content 3', 'default', '{}', '2024-01-03'],
+        ['page1', 'page1', 'Page 1', 'Content 1', 'default', '{}', '2024-01-01'],
+        ['page2', 'page2', 'Page 2', 'Content 2', 'default', '{}', '2024-01-02'],
+        ['page3', 'page3', 'Page 3', 'Content 3', 'default', '{}', '2024-01-03'],
       ];
 
       const stmt = db.prepare(
-        'INSERT INTO pages (slug, title, content, template, data, published_date) VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO pages (path, slug, title, content, template, data, published_date) VALUES (?, ?, ?, ?, ?, ?, ?)'
       );
       pages.forEach((page) => stmt.run(...page));
     });
@@ -164,13 +165,13 @@ describe('Baker', () => {
     beforeEach(() => {
       // Insert test pages with different categories
       const pages = [
-        ['blog1', 'Blog Post 1', 'Blog content 1', 'default', '{"category":"blog"}', '2024-01-01'],
-        ['blog2', 'Blog Post 2', 'Blog content 2', 'default', '{"category":"blog"}', '2024-01-02'],
-        ['news1', 'News Item 1', 'News content', 'default', '{"category":"news"}', '2024-01-03'],
+        ['blog1', 'blog1', 'Blog Post 1', 'Blog content 1', 'default', '{"category":"blog"}', '2024-01-01'],
+        ['blog2', 'blog2', 'Blog Post 2', 'Blog content 2', 'default', '{"category":"blog"}', '2024-01-02'],
+        ['news1', 'news1', 'News Item 1', 'News content', 'default', '{"category":"news"}', '2024-01-03'],
       ];
 
       const stmt = db.prepare(
-        'INSERT INTO pages (slug, title, content, template, data, published_date) VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO pages (path, slug, title, content, template, data, published_date) VALUES (?, ?, ?, ?, ?, ?, ?)'
       );
       pages.forEach((page) => stmt.run(...page));
     });

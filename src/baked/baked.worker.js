@@ -68,8 +68,8 @@ self.addEventListener('message', async (e) => {
 
       case 'test':
         console.log('db - 🧪 Running tests...', absurdDB, baker);
-        runDbTests(absurdDB);
-        runBakerTests(absurdDB, baker);
+        await runDbTests(absurdDB);
+        await runBakerTests(absurdDB, baker);
         break;
 
       case 'handleRoute':
