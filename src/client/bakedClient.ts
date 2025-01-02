@@ -27,7 +27,7 @@ class ClientApp {
       }
 
       console.log('🛣️ Initializing router...');
-      // this.initializeRouter();
+      this.initializeRouter();
     } catch (error) {
       console.error('💥 Error during initialization:', error);
       throw error;
@@ -48,6 +48,7 @@ class ClientApp {
       const anchor = (e.target as HTMLElement).closest('a');
       if (anchor && anchor.href && anchor.origin === window.location.origin) {
         e.preventDefault();
+        console.log('🔗 Clicked link:', anchor.href);
         const path = anchor.pathname;
         history.pushState({}, '', path);
         this.handleRoute(path);
@@ -56,13 +57,15 @@ class ClientApp {
   }
 
   private async handleRoute(path: string) {
+    console.log('🔗 tell worker to handle route:', path);
     try {
       const response = await this.sendWorkerMessage({ 
         action: 'handleRoute', 
         path 
       });
-      
+      console.log('🔗 worker response:', response);
       if (response.html) {
+        
         document.documentElement.innerHTML = response.html;
       } else {
         console.error('❌ No HTML returned for route:', path);
