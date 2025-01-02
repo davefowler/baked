@@ -10,7 +10,10 @@ const assert = (value, condition, message) => {
 const runDbTests = async (testDB) => {
     console.log('TESTS - running db tests');
 
-            // test the database querying for 1+2
+    // Add a small delay to ensure AbsurdSQL has finished initialization
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // test the database querying for 1+2
     const result = testDB.exec('SELECT 1+2 as sum');
     const sum = result[0].values[0][0];
     assert(sum, sum === 3, 'can query for math: 1+2 = 3');
@@ -33,6 +36,30 @@ const runDbTests = async (testDB) => {
     const indexPage = testDB.exec("SELECT * FROM pages WHERE path = 'index'");
     const indexPageVal = indexPage[0].values[0];
     assert(indexPageVal, indexPageVal.length > 0, 'Index page exists');
+
+    // Test that the Absurd SQL data is actually backed up in indexedDB
+    const idbDatabases = await self.indexedDB.databases();
+    console.log('TESTS - idbDatabases', idbDatabases);
+    const sqliteDb = idbDatabases.find(db => db.name.includes('sql'));
+    assert(sqliteDb, sqliteDb !== undefined, 'SQLite database exists in IndexedDB');
+
+    // Optional: Check the size of the database
+    const dbRequest = self.indexedDB.open(sqliteDb.name);
+    await new Promise((resolve, reject) => {
+        dbRequest.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(['chunks'], 'readonly');
+            const store = transaction.objectStore('chunks');
+            const countRequest = store.count();
+            
+            countRequest.onsuccess = () => {
+                assert(countRequest.result, countRequest.result > 0, 'IndexedDB contains SQLite chunks');
+                db.close();
+                resolve();
+            };
+        };
+        dbRequest.onerror = () => reject(dbRequest.error);
+    });
 
     // TODO - make this test work.  not loading assets well
     // assert(testDB.site, testDB.site.length > 0, 'Site.yaml loaded onto database');
