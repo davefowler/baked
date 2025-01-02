@@ -10,12 +10,12 @@
  - [x] markdown and template rendering complimenting each other
  - [x] baker functions working in templates - with tests
  - [x] ensure baked directory is copied to the project on build
- - [ ] absurdsql working to store database on client
+ - [x] absurdsql working to store database on client
+ - [x] front-end tests
  - [ ] image assets tested
  - [x] pwa working
  - [ ] app working offline for all pages
  - [ ] confirm lighthouse scores are good
- - [ ] confirm the build process is fast
  - [x] comprehensive testing
  - [x] tests for filters
  - [x] suite of tests for pre-rendering (ensure it isn't escaped)

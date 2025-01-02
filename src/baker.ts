@@ -25,33 +25,6 @@ export class Baker {
     this.site = this.getAsset('site.yaml', 'json');
   }
 
-  // SQL.js in absurd sql works slightly differently than better-sqlite3
-  // these functions abstract the differences
-  private executeQuery<T>(stmt: any, params: any[]): T | undefined {
-    if (stmt.getAsObject) {
-      // SQL.js style
-      const result = stmt.getAsObject(params);
-      stmt.free();
-      return result as T;
-    }
-    // better-sqlite3 style
-    return stmt.get(...params) as T;
-  }
-
-  private executeQueryAll<T>(stmt: any, params: any[]): T[] {
-    if (stmt.getAsObject) {
-      // SQL.js style
-      const result = [];
-      stmt.bind(params);
-      while (stmt.step()) {
-        result.push(stmt.getAsObject());
-      }
-      stmt.free();
-      return result as T[];
-    }
-    // better-sqlite3 style
-    return stmt.all(...params) as T[];
-  }
 
   getRawAsset(name: string, type: TypeOfAsset): RawAsset | null {
     name = cleanAssetName(name, type);
@@ -60,16 +33,8 @@ export class Baker {
         throw new Error('Asset name is required');
       }
       const path = name;
-      const stmt = this.db.prepare('SELECT content, type FROM assets WHERE path = ? and type = ?');
-      const result = this.executeQuery<RawAsset>(stmt, [path, type]);
-
-      if (!result) {
-        const stmt = this.db.prepare('SELECT path, type FROM assets');
-        const allassetsPaths = this.executeQueryAll<{path: string, type: string}>(stmt, []);
-        console.warn(`Asset not found: ${path}, ${type}`, allassetsPaths);
-        return null;
-      }
-      return result;
+      const result = this.db.prepare('SELECT content, type FROM assets WHERE path = ? and type = ?').get(path, type);
+      return result as RawAsset | null;
     } catch (error) {
       console.error(`Failed to get asset ${name}, ${type}:`, error);
       throw error;
@@ -93,9 +58,7 @@ export class Baker {
       return null;
     }    
 
-    const stmt = this.db.prepare("SELECT * FROM pages WHERE path = ?");
-    const rawPage = this.executeQuery<RawPage>(stmt, [path]);
-
+    const rawPage = this.db.prepare("SELECT * FROM pages WHERE path = ?").get(path) as RawPage | undefined;
     if (rawPage) {
       return convertRawPageToPage(rawPage);
     }
@@ -142,7 +105,7 @@ export class Baker {
          ORDER BY published_date DESC 
          LIMIT ? OFFSET ?`
       );
-      const results = this.executeQueryAll<RawPage>(stmt, [category, limit, offset]);
+      const results = stmt.all(category, limit, offset) as RawPage[];
       return results.map(convertRawPageToPage);
     }
   
@@ -151,7 +114,7 @@ export class Baker {
        ORDER BY published_date DESC 
        LIMIT ? OFFSET ?`
     );
-    const results = this.executeQueryAll<RawPage>(stmt, [limit, offset]);
+    const results = stmt.all(limit, offset) as RawPage[];
     return results.map(convertRawPageToPage);
   }
 
@@ -163,7 +126,7 @@ export class Baker {
        ORDER BY published_date DESC 
        LIMIT 1`
     );
-    return this.executeQuery<Page>(stmt, [currentPage.published_date]) || null;
+    return stmt.get(currentPage.published_date) as Page | null;
   }
 
   getNextPage(currentPage: Page): Page | null {
@@ -174,7 +137,7 @@ export class Baker {
        ORDER BY published_date ASC 
        LIMIT 1`
     );
-    return this.executeQuery<Page>(stmt, [currentPage.published_date]) || null;
+    return stmt.get(currentPage.published_date) as Page | null;
   }
 
   search(query: string, limit = 10, offset = 0): Page[] {
@@ -185,12 +148,12 @@ export class Baker {
        ORDER BY published_date DESC 
        LIMIT ? OFFSET ?`
     );
-    const results = this.executeQueryAll<RawPage>(stmt, [`%${query}%`, `%${query}%`, limit, offset]);
+    const results = stmt.all(`%${query}%`, `%${query}%`, limit, offset) as RawPage[];
     return results.map(convertRawPageToPage);
   }
 
   query(sql: string, params: any[] = []): any[] {
     const stmt = this.db.prepare(sql);
-    return this.executeQueryAll<any>(stmt, params);
+    return stmt.all(params);
   }
 } 

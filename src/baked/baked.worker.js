@@ -3,6 +3,7 @@ console.log('db - 🚀 Worker script starting...');
 // Import dependencies
 import initSqlJs from '/baked/sql.js/sql-wasm-es.js';
 import { Baker } from '/baked/baker.js';
+import { DatabaseWrapper } from '/baked/db-wrapper.js';
 
 async function initDatabase() {
   console.log('db - 🏗️ Initializing SQL.js...');
@@ -59,7 +60,8 @@ self.addEventListener('message', async (e) => {
         absurdDB = await initDatabase();
         console.log('db - ✅ Database initialized', absurdDB);
 
-        baker = new Baker(absurdDB, true);
+        const wrappedDB = new DatabaseWrapper(absurdDB);
+        baker = new Baker(wrappedDB, true);
         console.log('db - ✅ Baker initialized', baker);
 
         self.postMessage({ id, result: 'initialized' });
