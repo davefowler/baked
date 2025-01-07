@@ -1,4 +1,3 @@
-import { initBackend } from 'absurd-sql/dist/indexeddb-main-thread';
 
 
 class ClientApp {
@@ -11,11 +10,6 @@ class ClientApp {
         new URL('/baked/baked.worker.js', import.meta.url),
         { type: 'module' }
       );
-      // From Absurd SQL - initBackend: 
-      //This is only required because Safari doesn't support nested
-      // workers. This installs a handler that will proxy creating web
-      // workers through the main thread
-      initBackend(this.dbWorker);
       
       // Initialize the worker
       await this.sendWorkerMessage({ action: 'init' });

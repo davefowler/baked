@@ -4,15 +4,6 @@ const CACHE_NAME = `bakedsite-v${CACHE_VERSION}`;
 // Add this at the top of the file
 const IS_DEVELOPMENT = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
-// CDN URLs
-// const SQL_JS_VERSION = '1.6.7';
-// const ABSURD_SQL_VERSION = '0.0.46';
-// const CDN_ASSETS = {
-//   sqlJs: `https://unpkg.com/@jlongster/sql.js@${SQL_JS_VERSION}/dist/sql-wasm.js`,
-//   sqlWasm: `https://unpkg.com/@jlongster/sql.js@${SQL_JS_VERSION}/dist/sql-wasm.wasm`,
-//   absurdSql: `https://unpkg.com/absurd-sql@${ABSURD_SQL_VERSION}/dist/index.js`,
-//   absurdSqlBackend: `https://unpkg.com/absurd-sql@${ABSURD_SQL_VERSION}/dist/indexeddb-backend.js`
-// };
 
 const ASSETS = [
   '/',
@@ -21,11 +12,8 @@ const ASSETS = [
   '/baked/site.db',
   '/baked/offline.html',
   '/manifest.json',
-  // // Add CDN URLs
-  // CDN_ASSETS.sqlJs,
-  // CDN_ASSETS.sqlWasm,
-  // CDN_ASSETS.absurdSql,
-  // CDN_ASSETS.absurdSqlBackend
+  '/baked/sqlite-wasm/sqlite3.wasm',
+  '/baked/sqlite-wasm/sqlite3.js'
 ];
 
 // Cache all HTML pages that are accessed

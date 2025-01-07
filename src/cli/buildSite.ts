@@ -157,26 +157,11 @@ export default async function bake(
   await mkdir(path.join(tmpDist, 'baked/sql.js'), { recursive: true });
   await mkdir(path.join(tmpDist, 'baked/absurd-sql'), { recursive: true });
 
-  // Copy sql.js files
+  // Copy sqlite-wasm files
   await cp(
-    path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.wasm'),
-    path.join(tmpDist, 'baked/sql.js/sql-wasm.wasm')
+    path.join(packageRoot, 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm'),
+    path.join(tmpDist, 'baked/sqlite-wasm')
   );
-  // await cp(
-  //   path.join(packageRoot, 'node_modules/@jlongster/sql.js/dist/sql-wasm.js'),
-  //   path.join(tmpDist, 'baked/sql.js/sql-wasm.js')
-  // ); // created a sql-wasm-es.js file instead which is the ES module version
-
-  // Copy absurd-sql files
-  await cp(
-    path.join(packageRoot, 'node_modules/absurd-sql/dist/index.js'),
-    path.join(tmpDist, 'baked/absurd-sql/index.js')
-  );
-  await cp(
-    path.join(packageRoot, 'node_modules/absurd-sql/dist/indexeddb-backend.js'),
-    path.join(tmpDist, 'baked/absurd-sql/indexeddb-backend.js')
-  );
-
 
   // swap the tmp dist to the final dist
   try {

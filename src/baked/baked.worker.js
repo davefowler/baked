@@ -1,40 +1,40 @@
 console.log('db - 🚀 Worker script starting...');
 
 // Import dependencies
-import initSqlJs from '/baked/sql.js/sql-wasm-es.js';
 import { Baker } from '/baked/baker.js';
-import { DatabaseWrapper } from '/baked/db-wrapper.js';
+import { DatabaseWrapper } from '/baked/sqlite-opfs-wrapper.js';
 
 async function initDatabase() {
-  console.log('db - 🏗️ Initializing SQL.js...');
+  console.log('db - 🏗️ Initializing SQLite...');
   
   try {
-    // First initialize SQL.js
-    const SQL = await initSqlJs({
-      locateFile: (filename) => {
-        console.log('db - 📍 Locating file:', filename);
-        return `/baked/sql.js/${filename}`;
-      }
-    });
-    console.log('db - ✅ SQL.js initialized');
-
-    // Then import and setup absurd-sql
-    const { SQLiteFS } = await import('/baked/absurd-sql/index.js');
-    const { default: IndexedDBBackend } = await import('/baked/absurd-sql/indexeddb-backend.js');
-
-    // Setup filesystem
-    const sqlFS = new SQLiteFS(SQL.FS, new IndexedDBBackend());
-    SQL.register_for_idb(sqlFS);
-
-    SQL.FS.mkdir('/sql');
-    SQL.FS.mount(sqlFS, {}, '/sql');
-
-    // Now fetch the initial data
-    const response = await fetch('/baked/site.db');
-    const arrayBuffer = await response.arrayBuffer();
+    // Initialize SQLite3 WASM
+    const sqlite3 = await import('@sqlite.org/sqlite-wasm');
+    const SQL = await sqlite3.default();
     
-    // Create a new database directly from the downloaded file
-    const db = new SQL.Database(new Uint8Array(arrayBuffer));
+    // Check for OPFS support
+    if (!('storage' in navigator && 'getDirectory' in navigator.storage)) {
+      throw new Error('OPFS is not supported in this browser');
+    }
+
+    // Get OPFS root directory
+    const root = await navigator.storage.getDirectory();
+    const dbDir = await root.getDirectoryHandle('sqlite-db', { create: true });
+    
+    // Initialize the database
+    const db = await SQL.OpfsDb.open('site.db');
+    
+    // If this is first run, we need to fetch and load the initial database
+    const isFirstRun = !(await dbExists(dbDir));
+    if (isFirstRun) {
+      // Fetch initial database
+      const response = await fetch('/baked/site.db');
+      const arrayBuffer = await response.arrayBuffer();
+      
+      // Write the database to OPFS
+      await db.exec('VACUUM');  // Ensure clean slate
+      await db.deserialize(new Uint8Array(arrayBuffer));
+    }
     
     return db;
   } catch (error) {
@@ -43,9 +43,18 @@ async function initDatabase() {
   }
 }
 
+// Helper to check if database exists
+async function dbExists(dbDir) {
+  try {
+    await dbDir.getFileHandle('site.db');
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 let baker = null;
-let absurdDB = null;
+let db = null;
 
 // Message handler
 self.addEventListener('message', async (e) => {
@@ -57,21 +66,20 @@ self.addEventListener('message', async (e) => {
     switch (action) {
       case 'init':
         console.log('db - 🏗️ Starting initialization...');
-        absurdDB = await initDatabase();
-        console.log('db - ✅ Database initialized', absurdDB);
+        db = await initDatabase();
+        console.log('db - ✅ Database initialized', db);
 
-        const wrappedDB = new DatabaseWrapper(absurdDB);
-        baker = new Baker(wrappedDB, true);
+        baker = new Baker(db, true);
         console.log('db - ✅ Baker initialized', baker);
 
         self.postMessage({ id, result: 'initialized' });
         break;
 
       case 'test':
-        console.log('db - 🧪 Running tests...', absurdDB, baker);
+        console.log('db - 🧪 Running tests...', db, baker);
         const { runDbTests, runBakerTests } = await import('/baked/clientTests.js');
-        await runDbTests(absurdDB);
-        await runBakerTests(absurdDB, baker);
+        await runDbTests(db);
+        await runBakerTests(db, baker);
         self.postMessage({ id, result: 'tests completed' });
         break;
 
