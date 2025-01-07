@@ -4,7 +4,32 @@ import path from 'path';
 export default function startServer(port: number = 4242, indexonly: boolean = false) {
   const app = express();
 
-  // Serve static files from dist directory
+  // Set correct MIME types
+  express.static.mime.define({
+    'application/javascript': ['mjs'],
+    'application/wasm': ['wasm']
+  });
+
+  // Serve static files from dist directory with custom headers
+  app.use((req, res, next) => {
+    // Add security headers required for SharedArrayBuffer
+    res.header('Cross-Origin-Opener-Policy', 'same-origin');
+    res.header('Cross-Origin-Embedder-Policy', 'require-corp');
+    
+    // Add CORS headers for development
+    res.header('Access-Control-Allow-Origin', '*');
+    
+    // Add specific headers for .mjs files
+    if (req.path.endsWith('.mjs')) {
+      res.header('Content-Type', 'application/javascript');
+    }
+    // Add specific headers for .wasm files
+    else if (req.path.endsWith('.wasm')) {
+      res.header('Content-Type', 'application/wasm');
+    }
+    next();
+  });
+
   app.use(express.static('dist'));
 
   // Handle requests that might need .html extension or index.html

@@ -1,5 +1,6 @@
 import * as esbuild from 'esbuild'
 import { cp, mkdir, rm } from 'fs/promises'
+import path from 'path'
 
 console.log('Starting build...')
 
@@ -34,8 +35,6 @@ const commonConfig = {
   ],
 }
 
-// CLI - 
-
 // Build the main CLI code
 await esbuild.build({
   ...commonConfig,
@@ -68,8 +67,20 @@ const clientConfig = {
 }
 
 // Copy baked files needed for client
-await cp('src/baked', 'dist/baked', { recursive: true, force: true })
+await cp('src/baked', 'dist/baked', { recursive: true })
 
+// Copy SQLite WASM files
+await mkdir(path.join('dist', 'baked', 'sqlite-wasm'), { recursive: true });
+await cp(
+  path.join(process.cwd(), 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.mjs'),
+  path.join('dist', 'baked', 'sqlite-wasm', 'sqlite3.mjs')
+);
+await cp(
+  path.join(process.cwd(), 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm'),
+  path.join('dist', 'baked', 'sqlite-wasm', 'sqlite3.wasm')
+);
+
+await cp('src/baked/opfs-worker.js', 'dist/baked/opfs-worker.js')
 
 // Build client files
 await esbuild.build({
@@ -78,8 +89,6 @@ await esbuild.build({
   outdir: 'dist/baked',
 })
 
-await esbuild.build({
-  ...clientConfig,
-  entryPoints: ['src/baker.ts'],
-  outdir: 'dist/baked',
-})
+
+console.log('Build complete!')
+

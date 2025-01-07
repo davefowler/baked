@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Todo - better to set headers in config files of host -->
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
     <title>{{ site.title|default('Site Title') }}</title>
     <meta name="description" content="{{ page.data.description|default('') }}" />
     <link rel="manifest" href="/manifest.json" />
@@ -12,7 +15,10 @@
     <script type="module" src="/baked/bakedClient.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/baked/sw.js');
+        // Add error handling for service worker registration
+        navigator.serviceWorker.register('/baked/sw.js').catch(error => {
+          console.error('Service worker registration failed:', error);
+        });
       }
     </script>
   </head>

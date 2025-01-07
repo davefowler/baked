@@ -149,18 +149,23 @@ export default async function bake(
 
   console.log('... and a cherry on top');
   
-  // Copy baked files
+  // Copy baked files and SQLite WASM files
   const bakedDir = join(packageRoot, 'dist', 'baked');
   await cp(bakedDir, join(tmpDist, 'baked'), { recursive: true });
-  
-  // Create directories for client-side dependencies in baked
-  await mkdir(path.join(tmpDist, 'baked/sql.js'), { recursive: true });
-  await mkdir(path.join(tmpDist, 'baked/absurd-sql'), { recursive: true });
 
-  // Copy sqlite-wasm files
+  // Create sqlite-wasm directory and copy SQLite files
+  const sqliteWasmDir = join(tmpDist, 'baked', 'sqlite-wasm');
+  await mkdir(sqliteWasmDir, { recursive: true });
+  
+  // Copy SQLite WASM files from node_modules - updated paths
+  const sqliteModulePath = join(packageRoot, 'node_modules', '@sqlite.org', 'sqlite-wasm', 'sqlite-wasm', 'jswasm');
   await cp(
-    path.join(packageRoot, 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm'),
-    path.join(tmpDist, 'baked/sqlite-wasm')
+    join(sqliteModulePath, 'sqlite3.mjs'),
+    join(sqliteWasmDir, 'sqlite3.mjs')
+  );
+  await cp(
+    join(sqliteModulePath, 'sqlite3.wasm'),
+    join(sqliteWasmDir, 'sqlite3.wasm')
   );
 
   // swap the tmp dist to the final dist

@@ -12,8 +12,8 @@ const ASSETS = [
   '/baked/site.db',
   '/baked/offline.html',
   '/manifest.json',
-  '/baked/sqlite-wasm/sqlite3.wasm',
-  '/baked/sqlite-wasm/sqlite3.js'
+  '/baked/sqlite-wasm/sqlite3.mjs',
+  '/baked/sqlite-wasm/sqlite3.wasm'
 ];
 
 // Cache all HTML pages that are accessed
