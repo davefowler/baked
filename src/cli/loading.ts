@@ -169,21 +169,26 @@ export async function loadPagesFromDir(
     const metaContent = await fs.readFile(metaPath, 'utf8');
     metadata = { ...metadata, ...yaml.parse(metaContent) };
   } catch (error) {
+    console.log('no meta.yaml at', metaPath);
     // meta.yaml doesn't exist, continue with parent metadata
   }
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
 
+    // Skip hidden files and directories
+    if (entry.name.startsWith('.')) {
+      continue;
+    }
+
     if (entry.isDirectory()) {
       // Pass the root directory through recursive calls
       await loadPagesFromDir(fullPath, db, metadata, includeDrafts, rootDir);
       continue;
-    } else if (entry.name === 'meta.yaml') {
-      // meta.yaml must be handled first (above) so skip here
-      continue;
     }
 
+    if (entry.name === 'meta.yaml') continue;
+    
     // Read the file
     const rawFileContent = await fs.readFile(fullPath, 'utf8');
 
@@ -191,8 +196,11 @@ export async function loadPagesFromDir(
     const mixer = getMixerByFilename(entry.name);
     const { content, data } = await mixer(fullPath, rawFileContent, metadata);
     const pagePath = path.relative(rootDir, fullPath).replace(path.extname(fullPath), '');
+
     // Load the page into the database
-    if (!includeDrafts && data.isDraft) return; // drafts are not included unless --drafts is specified
+    if (!includeDrafts && data.isDraft) {
+      continue; // drafts are not included unless --drafts is specified
+    }
     loadPage(db, pagePath, content, data);
   }
 }

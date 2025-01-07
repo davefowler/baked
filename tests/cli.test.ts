@@ -8,6 +8,7 @@ import startServer from '../src/cli/serve';
 import Database, { Database as DatabaseType } from 'better-sqlite3';
 import request from 'supertest';
 import { Server } from 'http';
+import { RawPage } from '../src/types';
 
 // Helper functions
 const exists = async (path: string): Promise<boolean> => {
@@ -83,6 +84,9 @@ describe('CLI Commands', () => {
       const allFiles = await readdir(TEST_DIR, { recursive: true });
       expect(allFiles).toContain('site.yaml');
       expect(allFiles).toContain('pages/blog/meta.yaml');
+      expect(allFiles).toContain('pages/blog/markdown-guide.md');
+      expect(allFiles).toContain('pages/blog/welcome.md');
+      expect(allFiles).toContain('pages/blog/draft_example.md');
       expect(allFiles).toContain('public/manifest.json');
       expect(allFiles.length).toBeGreaterThan(20);
     });
@@ -133,9 +137,18 @@ describe('CLI Commands', () => {
 
       const db = new Database(distDb);
       const page = db.prepare('SELECT * FROM pages WHERE path = ?').get('blog');
-      db.close(); // Properly close the database connection
       expect(page).toBeDefined();
       expect((page as { title: string }).title).toBe('Blog home page');
+
+      // check that the markdown-guide.md file exists
+      const markdownGuide = db.prepare('SELECT * FROM pages WHERE path = ?').get('blog/markdown-guide') as RawPage;
+      expect(markdownGuide).toBeDefined();
+      expect(markdownGuide.title).toBe('Markdown Guide');
+      // check that the /dist/blog/markdown-guide.html file exists
+      const markdownGuideHtml = join(TEST_DIR, 'dist', 'blog', 'markdown-guide.html');
+      expect(await exists(markdownGuideHtml)).toBe(true);
+      db.close(); // Properly close the database connection
+
     });
 
     test('does not load drafts by default', async () => {

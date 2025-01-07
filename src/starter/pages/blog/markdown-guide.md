@@ -1,12 +1,9 @@
 ---
 title: Markdown Guide
 date: 2024-01-02
-template: blog
 tags: [tutorial, markdown]
 excerpt: Learn how to format your posts using Markdown syntax.
 ---
-
-# Markdown Guide
 
 Baked Site Generator uses Markdown for formatting posts. Here's a quick guide to get you started.
 

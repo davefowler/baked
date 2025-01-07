@@ -139,7 +139,6 @@ describe('createSite with starter directory', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    // Create temporary directories
     tempDir = await mkdtemp(join(tmpdir(), 'bakedsite-test-dest-'));
   });
 
@@ -160,5 +159,15 @@ describe('createSite with starter directory', () => {
     expect(await readdir(join(tempDir, 'pages'))).toContain('blog');
     expect(await readdir(join(tempDir, 'assets'))).toContain('css');
     expect(await readdir(join(tempDir, 'assets'))).toContain('templates');
+
+    // Verify markdown-guide.md exists and contains correct content
+    const blogDir = await readdir(join(tempDir, 'pages', 'blog'));
+    expect(blogDir).toContain('markdown-guide.md');
+
+    // Read and verify content of markdown-guide.md
+    const markdownGuide = await readFile(join(tempDir, 'pages', 'blog', 'markdown-guide.md'), 'utf-8');
+    expect(markdownGuide).toContain('title: Markdown Guide');
+    expect(markdownGuide).toContain('date: 2024-01-02');
+    expect(markdownGuide).toContain('Learn how to format your posts using Markdown syntax');
   });
 });

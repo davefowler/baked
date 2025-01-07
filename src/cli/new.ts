@@ -20,7 +20,7 @@ async function promptUser(question: string): Promise<string> {
 }
 
 export default async function createSite(destination: string, starterDir: string) {
-  await cp(starterDir, destination, { recursive: true });
+  await cp(starterDir, destination, { recursive: true, force: true, preserveTimestamps: true });
 
   console.log("Before we get cookin' let's get some info about the site...");
 
