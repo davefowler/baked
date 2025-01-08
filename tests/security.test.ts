@@ -45,7 +45,7 @@ describe('Security Tests', () => {
     test('restricts template scope and globals access', () => {
       // Nunjucks should not allow access to process.env or window objects (noGlobals: true)
       const template = Components.templates(`{{ process.env }}{{ window.location }}`);
-      const result = template({}, {}, {});
+      const result = await template({}, {}, {});
       expect(result).toBe('');
     });
 

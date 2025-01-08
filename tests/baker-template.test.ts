@@ -43,7 +43,7 @@ describe('Baker Template Integration', () => {
                 {{ baker.getAsset('test.css', 'css') }}
             `);
 
-      const result = template({}, baker, {});
+      const result = await template({}, baker, {});
       expect(result).toContain('body { color: red; }');
     });
 
@@ -73,7 +73,7 @@ describe('Baker Template Integration', () => {
                 <h1>{{ site.title }}</h1>
             `);
 
-      const result = template({}, baker, { title: 'Test Site' });
+      const result = await template({}, baker, { title: 'Test Site' });
       expect(result).toContain('Test Site');
     });
 

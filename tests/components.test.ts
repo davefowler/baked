@@ -43,7 +43,7 @@ describe('Component System', () => {
                 <div>{{ page.content }}</div>
             `);
 
-      const result = template({ content: '<script>alert("xss")</script>' }, {}, {});
+      const result = await template({ content: '<script>alert("xss")</script>' }, {}, {});
 
       expect(result).not.toContain('<script>');
     });
