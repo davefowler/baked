@@ -16,8 +16,8 @@ interface TemplateContext {
   baker: {
     getAsset: (path: string, type: TypeOfAsset) => any;
     getPage: (slug: string) => any;
-    getLatestPages: (limit?: number, offset?: number, category?: string) => any[];
-    search: (...args: any[]) => any[];
+    getLatestPages: (limit?: number, offset?: number, category?: string) => Promise<any[]>;
+    search: (...args: any[]) => Promise<any[]>;
     query: (sql: string, params: any[]) => never;
   };
   site: Record<string, any>;
@@ -57,7 +57,7 @@ class BakerLoader implements nunjucks.ILoader {
     this.baker = baker;
   }
 
-  getSource(name: string): nunjucks.LoaderSource {
+  async getSource(name: string): Promise<nunjucks.LoaderSource> {
     name = cleanAssetName(name);
 
     const asset = await this.baker.getRawAsset(name, 'templates');
@@ -106,8 +106,8 @@ const Template = (rawAsset: string) => {
       baker: {
         getAsset: (path, type) => baker?.getAsset?.(validatePath(path), type) ?? null,
         getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
-        getLatestPages: async (limit, offset, category) => await baker?.getLatestPages?.(limit, offset, category) ?? [],
-        search: async (query: string, limit = 10, offset = 0) => await baker?.search?.(query, limit, offset) ?? [],
+        getLatestPages: (limit, offset, category) => baker?.getLatestPages?.(limit, offset, category) ?? Promise.resolve([]),
+        search: (query: string, limit = 10, offset = 0) => baker?.search?.(query, limit, offset) ?? Promise.resolve([]),
         query: (sql: string, params: any[]) => {
           throw new Error('Direct SQL queries not allowed in templates');
         },
