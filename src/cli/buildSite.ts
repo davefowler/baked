@@ -72,7 +72,6 @@ const dish = async (db: DatabaseType, dist: string) => {
     for (const path of paths) {
       try {
         const page = baker.getPage(path);
-        console.log('dishing', page?.path);
         if (!page) {
           console.error(`Cannot find page: ${path}`);
           failures++;
@@ -82,7 +81,6 @@ const dish = async (db: DatabaseType, dist: string) => {
         // Ensure directory exists before writing file
         const fileDir = `${dist}/${path}`.split('/').slice(0, -1).join('/');
         await mkdir(fileDir, { recursive: true });
-        console.log('dished', page?.path);
 
         // Write the rendered content to a file
         await writeFile(`${dist}/${path}.html`, rendered, {

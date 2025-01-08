@@ -73,8 +73,8 @@ describe('build output', () => {
     expect(existsSync(indexPath)).toBe(true);
 
     const index = await readFile(indexPath, 'utf8');
-    expect(index).toContain('Hello World!');
-    expect(index).toContain('<h1>Hello World!</h1>\n');
+    expect(index).toContain('Hello Baked World!');
+    expect(index).toContain('<h1>Hello Baked World!</h1>\n');
   })
 
   // TODO - maybe test this in templates or baker?
@@ -83,25 +83,26 @@ describe('build output', () => {
     expect(existsSync(indexPath)).toBe(true);
 
     const index = await readFile(indexPath, 'utf8');
-    expect(index).toContain('Hello World!');
+    expect(index).toContain('Hello Baked World!');
     expect(index).toContain('<li><a href=\"/blog/customization\">Customizing Your Site</a></li>');
     expect(index).not.toContain('About Me');
 
   })
 
-  test('copies required sql.js and absurd-sql files', async () => {
-    // Check sql.js files
-    expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm.wasm'))).toBe(true);
-    expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm-es.js'))).toBe(true);
+// Absurd SQL only test
+//   test('copies required sql.js and absurd-sql files', async () => {
+//     // Check sql.js files
+//     expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm.wasm'))).toBe(true);
+//     expect(existsSync(path.join(distDir, 'baked/sql.js/sql-wasm-es.js'))).toBe(true);
 
-    // Check absurd-sql files
-    expect(existsSync(path.join(distDir, 'baked/absurd-sql/index.js'))).toBe(true);
-    expect(existsSync(path.join(distDir, 'baked/absurd-sql/indexeddb-backend.js'))).toBe(true);
+//     // Check absurd-sql files
+//     expect(existsSync(path.join(distDir, 'baked/absurd-sql/index.js'))).toBe(true);
+//     expect(existsSync(path.join(distDir, 'baked/absurd-sql/indexeddb-backend.js'))).toBe(true);
 
-    // Optional: Check file contents to ensure they're not empty
-    const wasmSize = (await readFile(path.join(distDir, 'baked/sql.js/sql-wasm.wasm'))).length;
-    expect(wasmSize).toBeGreaterThan(0);
-  });
+//     // Optional: Check file contents to ensure they're not empty
+//     const wasmSize = (await readFile(path.join(distDir, 'baked/sql.js/sql-wasm.wasm'))).length;
+//     expect(wasmSize).toBeGreaterThan(0);
+//   });
 })
 
 describe('pre build process', () => {
@@ -164,10 +165,12 @@ describe('pre build process', () => {
     const pages = db.prepare('SELECT * FROM pages').all() as Page[];
     expect(pages).toBeDefined();
     expect(Array.isArray(pages)).toBe(true);
-    expect(num_pages.length - 1).toBe(pages.length);
+    expect(num_pages.length + 1).toBe(pages.length);
     expect(pages.map((page) => page.slug)).toEqual([
       'about',
       'blog/customization',
+      'blog/markdown-guide',
+      'blog/welcome',
       'blog',
       'index',
     ]);

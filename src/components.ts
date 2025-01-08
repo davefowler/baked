@@ -76,7 +76,6 @@ const Template = (rawAsset: string) => {
   let env: nunjucks.Environment;
 
   return (page: any, baker: Baker, site: any): string => {
-    console.log('starting template', page.path);
     // Create new environment for each render with the current baker
     env = new nunjucks.Environment(new BakerLoader(baker), {
       autoescape: true,
@@ -116,7 +115,6 @@ const Template = (rawAsset: string) => {
     };
 
     try {
-      console.log('rendering template', page.path);
       return template.render(context).trim();
     } catch (error) {
       console.error('Template render error:', error);

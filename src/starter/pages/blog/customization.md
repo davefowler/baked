@@ -7,8 +7,6 @@ tags: [tutorial, customization]
 excerpt: Learn how to customize your Baked Site with templates and styles.
 ---
 
-# Customizing Your Site
-
 Baked Site Generator is designed to be easily customizable. Here's how to make it your own.
 
 ## Templates

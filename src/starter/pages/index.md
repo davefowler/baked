@@ -1,10 +1,8 @@
 ---
-title: Baked site starter homepage!
+title: Hello Baked World!
 description: This is the baked site starter homepage!  Replace this with your own content.
 template: base
 ---
-
-# Hello World!
 
 This is the baked site starter homepage! Replace this with your own content.
 
