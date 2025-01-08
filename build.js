@@ -75,12 +75,16 @@ await cp(
   path.join(process.cwd(), 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.mjs'),
   path.join('dist', 'baked', 'sqlite-wasm', 'sqlite3.mjs')
 );
+
+await cp(
+  path.join(process.cwd(), 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3-opfs-async-proxy.js'),
+  path.join('dist', 'baked', 'sqlite-wasm', 'sqlite3-opfs-async-proxy.js')
+);
+
 await cp(
   path.join(process.cwd(), 'node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm'),
   path.join('dist', 'baked', 'sqlite-wasm', 'sqlite3.wasm')
 );
-
-await cp('src/baked/opfs-worker.js', 'dist/baked/opfs-worker.js')
 
 // Build client files
 await esbuild.build({

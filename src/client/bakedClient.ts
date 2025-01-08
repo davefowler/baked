@@ -1,9 +1,16 @@
 import { Baker } from '../baker';
+export interface DbProxy {
+  exec: (sql: string, bind?: any[]) => Promise<any>;
+  prepare: (sql: string) => any;
+  transaction: (fn: () => void) => void;
+  pragma: (sql: string, value?: any) => any;
+  migrate: (migrations: any) => void;
+}
 
 class ClientApp {
-  private db: any;
+  private worker: Worker | null = null;
   private baker: Baker | null = null;
-  private opfsWorker: Worker | null = null;
+  private dbProxy: DbProxy | null = null;
 
   public async init() {
     console.log('🚀 Starting initialization...');
@@ -32,35 +39,17 @@ class ClientApp {
     
     try {
       // Initialize OPFS worker
-      this.opfsWorker = new Worker(new URL('../baked/opfs-worker.js', import.meta.url), {
-        type: 'module'
-      });
-
-      // Create a promise that resolves when the worker is ready
-      const workerReady = new Promise((resolve, reject) => {
-        if (!this.opfsWorker) return reject(new Error('Worker not initialized'));
-        
-        this.opfsWorker.onmessage = (e) => {
-          const { id, result, error, db } = e.data;
-          if (error) reject(new Error(error));
-          else {
-            this.db = db;
-            resolve(db);
-          }
-        };
-        
-        this.opfsWorker.postMessage({ action: 'init', id: 'init' });
-      });
-
-      // Wait for worker initialization
-      await workerReady;
+      this.worker = new Worker('/baked/opfs-worker.js', { type: 'module' });
+      
+      // Initialize the database in the worker
+      await this.sendWorkerMessage('init');
 
       // Check for OPFS support
       if (!('storage' in navigator && 'getDirectory' in navigator.storage)) {
         throw new Error('OPFS is not supported in this browser');
       }
 
-      // Get OPFS root directory
+      // Get OPFS root directory for existence check
       const root = await navigator.storage.getDirectory();
       const dbDir = await root.getDirectoryHandle('sqlite-db', { create: true });
       
@@ -72,29 +61,53 @@ class ClientApp {
         const arrayBuffer = await response.arrayBuffer();
         
         // Send the database to the worker
-        await new Promise((resolve, reject) => {
-          if (!this.opfsWorker) return reject(new Error('Worker not initialized'));
-          
-          this.opfsWorker.onmessage = (e) => {
-            const { id, result, error } = e.data;
-            if (error) reject(new Error(error));
-            else resolve(result);
-          };
-          
-          this.opfsWorker.postMessage({ 
-            action: 'deserialize', 
-            id: 'deserialize',
-            data: { arrayBuffer } 
-          });
-        });
+        await this.sendWorkerMessage('deserialize', { arrayBuffer });
       }
 
-      this.baker = new Baker(this.db, true);
+      // Create a proxy object that forwards SQL operations to the worker
+      this.dbProxy = {
+        exec: async (sql: string, bind?: any[]) => {
+          return this.sendWorkerMessage('execute', { sql, bind });
+        },
+        prepare: async (sql: string) => {
+          return this.sendWorkerMessage('prepare', { sql });
+        },
+        transaction: async (fn: () => void) => {
+          await this.sendWorkerMessage('transaction', fn);
+        },
+        pragma: async (sql: string, value?: any) => {
+          return this.sendWorkerMessage('pragma', { sql, value });
+        },
+        migrate: async (migrations: any) => {
+          await this.sendWorkerMessage('migrate', { migrations });
+        }
+      };
+
+      this.baker = new Baker(this.dbProxy, true);
       console.log('db - ✅ Database and Baker initialized');
     } catch (error) {
       console.error('db - 💥 Error initializing database:', error);
       throw error;
     }
+  }
+
+  private async sendWorkerMessage(action: string, data?: any) {
+    return new Promise((resolve, reject) => {
+      if (!this.worker) return reject(new Error('Worker not initialized'));
+      
+      const id = Math.random().toString(36).slice(2);
+      
+      const handler = (e: MessageEvent) => {
+        if (e.data.id === id) {
+          this.worker!.removeEventListener('message', handler);
+          if (e.data.error) reject(new Error(e.data.error));
+          else resolve(e.data.result);
+        }
+      };
+      
+      this.worker.addEventListener('message', handler);
+      this.worker.postMessage({ action, id, data });
+    });
   }
 
   private async dbExists(dbDir: FileSystemDirectoryHandle): Promise<boolean> {
@@ -107,11 +120,11 @@ class ClientApp {
   }
 
   private async runTests() {
-    if (!this.db || !this.baker) return;
+    if (!this.dbProxy || !this.baker) return;
     // Use relative path for TypeScript
     const { runDbTests, runBakerTests } = await import('../baked/clientTests.js');
-    await runDbTests(this.db);
-    await runBakerTests(this.db, this.baker);
+    await runDbTests(this.dbProxy);
+    await runBakerTests(this.dbProxy, this.baker);
   }
 
   private initializeRouter() {
