@@ -38,7 +38,7 @@ describe('Component System', () => {
       expect(result).toContain('<div></div>');
     });
 
-    test('sanitizes dangerous input', () => {
+    test('sanitizes dangerous input', async () => {
       const template = Components.templates(`
                 <div>{{ page.content }}</div>
             `);

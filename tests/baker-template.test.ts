@@ -38,7 +38,7 @@ describe('Baker Template Integration', () => {
   });
 
   describe('Template Baker Integration', () => {
-    test('template can access baker.getAsset', () => {
+    test('template can access baker.getAsset', async () => {
       const template = Components.templates(`
                 {{ baker.getAsset('test.css', 'css') }}
             `);
@@ -68,7 +68,7 @@ describe('Baker Template Integration', () => {
       expect(result).toContain('Test Page 2');
     });
 
-    test('template can access site metadata', () => {
+    test('template can access site metadata', async () => {
       const template = Components.templates(`
                 <h1>{{ site.title }}</h1>
             `);

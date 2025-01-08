@@ -3,19 +3,19 @@ import { Components } from '../src/components.js';
 
 describe('Template System', () => {
   describe('Basic Template Features', () => {
-    test('renders variables correctly', () => {
+    test('renders variables correctly', async () => {
       const template = Components.templates(`<h1>{{ page.title }}</h1>`);
       const result = await template({ title: 'Test Title' }, {}, {});
       expect(result).toBe('<h1>Test Title</h1>');
     });
 
-    test('handles missing variables gracefully', () => {
+    test('handles missing variables gracefully', async () => {
       const template = Components.templates(`<h1>{{ page.nonexistent }}</h1>`);
       const result = await template({}, {}, {});
       expect(result).toBe('<h1></h1>');
     });
 
-    test('supports filters', () => {
+    test('supports filters', async () => {
       const template = Components.templates(`{{ page.content }}`);
       const result = await template({ content: '<p>Test</p>' }, {}, {});
       expect(result).toBe('&lt;p&gt;Test&lt;/p&gt;');
@@ -23,7 +23,7 @@ describe('Template System', () => {
   });
 
   describe('Template Inheritance', () => {
-    test('extends base template correctly', () => {
+    test('extends base template correctly', async () => {
       const rawBase = `
                 <html>{% block content %}{% endblock %}</html>
             `;
@@ -47,7 +47,7 @@ describe('Template System', () => {
   });
 
   describe('Conditional Logic', () => {
-    test('if statements work correctly', () => {
+    test('if statements work correctly', async () => {
       const template = Components.templates(`
                 {% if page.data.show %}
                     <div>Shown</div>
@@ -67,7 +67,7 @@ describe('Template System', () => {
   });
 
   describe('Loops', () => {
-    test('for loops work correctly', () => {
+    test('for loops work correctly', async () => {
       const template = Components.templates(`
                 <ul>
                 {% for item in page.data.items %}
@@ -90,20 +90,20 @@ describe('Template System', () => {
   });
 
   describe('Security', () => {
-    test('escapes HTML by default', () => {
+    test('escapes HTML by default', async () => {
       const template = Components.templates(`{{ page.content }}`);
       const result = await template({ content: '<script>alert("xss")</script>' }, {}, {});
       expect(result).not.toContain('<script>');
       expect(result).toContain('&lt;script&gt;');
     });
 
-    test('safe filter allows HTML', () => {
+    test('safe filter allows HTML', async () => {
       const template = Components.templates(`{{ page.content }}`);
       const result = await template({ content: '<div>Safe HTML</div>' }, {}, {});
       expect(result).toBe('&lt;div&gt;Safe HTML&lt;/div&gt;');
     });
 
-    test('css helper escapes style tags correctly', () => {
+    test('css helper escapes style tags correctly', async () => {
       const template = Components.templates(`{{ 'style.css'|css }}`);
       const baker = {
         getAsset: (path: string, type: string) => {
@@ -121,7 +121,7 @@ describe('Template System', () => {
     });
   });
 
-  test('safe filter working in template', () => {
+  test('safe filter working in template', async () => {
     const page = {
       data: {
         htmlTest: `Render this as <div>safe</div>`
@@ -139,7 +139,7 @@ describe('Template System', () => {
     expect(safeResult).toBe('Render this as <div>safe</div>');
   });
 
-  test('asset helper returns asset', () => {
+  test('asset helper returns asset', async () => {
     const template = Components.templates(`{{ 'style.css'|asset }}`);
     const baker = {
       getAsset: (path: string, type: string) => {
@@ -155,7 +155,7 @@ describe('Template System', () => {
   });
 
   describe('Template Variables and Loops', () => {
-    test('set variables and for loops work together', () => {
+    test('set variables and for loops work together', async () => {
       const template = Components.templates(`
         {% set items = ['apple', 'banana', 'orange'] %}
         <ul>
@@ -171,7 +171,7 @@ describe('Template System', () => {
       expect(result).toContain('<li>orange</li>');
     });
 
-    test('set variables from baker methods work', () => {
+    test('set variables from baker methods work', async () => {
       const template = Components.templates(`
         {% set fruits = baker.getAsset('fruits', 'json') %}
         <ul>

@@ -60,7 +60,8 @@ class BakerLoader implements nunjucks.ILoader {
   getSource(name: string): nunjucks.LoaderSource {
     name = cleanAssetName(name);
 
-    const { content: template } = this.baker.getRawAsset(name, 'templates') || {};
+    const asset = await this.baker.getRawAsset(name, 'templates');
+    const template = asset?.content;
     if (!template) {
       throw new Error(`Template ${name} not found`);
     }
@@ -105,8 +106,8 @@ const Template = (rawAsset: string) => {
       baker: {
         getAsset: (path, type) => baker?.getAsset?.(validatePath(path), type) ?? null,
         getPage: (slug) => baker?.getPage?.(validatePath(slug)) ?? null,
-        getLatestPages: (limit, offset, category) => baker?.getLatestPages?.(limit, offset, category) ?? [],
-        search: (query: string, limit = 10, offset = 0) => baker?.search?.(query, limit, offset) ?? [],
+        getLatestPages: async (limit, offset, category) => await baker?.getLatestPages?.(limit, offset, category) ?? [],
+        search: async (query: string, limit = 10, offset = 0) => await baker?.search?.(query, limit, offset) ?? [],
         query: (sql: string, params: any[]) => {
           throw new Error('Direct SQL queries not allowed in templates');
         },
