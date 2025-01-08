@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 import { Components, cleanAssetName } from './components';
 import type { Page, RawAsset, TypeOfAsset, RawPage } from './types';
-import type { DbProxy } from './client/bakedClient';
+
 export interface Site {
   title: string;
   [key: string]: any;
@@ -15,11 +15,11 @@ const convertRawPageToPage = (rawPage: RawPage): Page => {
 };
 
 export class Baker {
-  private db: Database | DbProxy;
+  private db: Database;
   private isClient: boolean;
   public site: Site;
 
-  constructor(db: Database | DbProxy, isClient: boolean) {
+  constructor(db: Database, isClient: boolean) {
     this.db = db;
     this.isClient = isClient;
     this.site = this.getAsset('site.yaml', 'json');
